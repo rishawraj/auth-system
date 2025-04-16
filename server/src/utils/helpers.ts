@@ -1,0 +1,171 @@
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import * as path from "node:path";
+import * as fs from "node:fs";
+import { IncomingMessage, ServerResponse } from "http";
+import { fileURLToPath } from "node:url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const userFile = path.join(__dirname, "../data/users.json");
+const SECRET = "supsersecretkey";
+
+interface User {
+  name?: string;
+  email: string;
+  password: string;
+}
+
+function readBody(req: IncomingMessage): Promise<User> {
+  return new Promise((resolve, reject) => {
+    let body = "";
+    req.on("data", (chunk) => (body += chunk.toString()));
+    req.on("end", () => {
+      try {
+        resolve(JSON.parse(body));
+      } catch (error) {
+        reject(error);
+      }
+    });
+    req.on("error", (error) => reject(error));
+  });
+}
+
+function send(res: ServerResponse, statusCode: number, data: object): void {
+  res.writeHead(statusCode, { "Content-type": "application/json" });
+  res.end(JSON.stringify(data));
+}
+
+function getUsers(): User[] {
+  try {
+    if (!fs.existsSync(userFile)) return [];
+    const data = fs.readFileSync(userFile, "utf-8");
+    return JSON.parse(data || "[]");
+  } catch (error) {
+    // Handle potential JSON parse errors
+    console.error("Error reading users file:", error);
+    return [];
+  }
+}
+
+function saveUsers(users: User[]): void {
+  // Ensure directory exists before writing
+  const dir = path.dirname(userFile);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+  fs.writeFileSync(userFile, JSON.stringify(users, null, 2));
+}
+
+async function handleRegister(
+  req: IncomingMessage,
+  res: ServerResponse
+): Promise<void> {
+  try {
+    const { name, email, password } = await readBody(req);
+
+    if (!email || !password) {
+      return send(res, 400, { error: "Email and password are required" });
+    }
+
+    const users = getUsers();
+    if (users.find((user) => user.email === email)) {
+      return send(res, 400, { error: "User already exists" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    users.push({ name, email, password: hashedPassword });
+    saveUsers(users);
+
+    send(res, 201, { message: "User registered successfully" });
+  } catch (error) {
+    console.error("Registration error:", error);
+    send(res, 500, { error: "Internal server error" });
+  }
+}
+
+async function handleLogin(
+  req: IncomingMessage,
+  res: ServerResponse
+): Promise<void> {
+  try {
+    const { email, password } = await readBody(req);
+
+    if (!email || !password) {
+      return send(res, 400, { error: "Email and password are required" });
+    }
+
+    const users = getUsers();
+    const user = users.find((u) => u.email === email);
+
+    if (!user) return send(res, 401, { error: "Invalid credentials" });
+
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) return send(res, 401, { error: "Invalid credentials" });
+
+    const token = jwt.sign({ email: user.email }, SECRET, { expiresIn: "1h" });
+    send(res, 200, { message: "Login successful", token });
+  } catch (error) {
+    console.error("Login error:", error);
+    send(res, 500, { error: "Internal server error" });
+  }
+}
+
+async function handleProfile(
+  req: IncomingMessage,
+  res: ServerResponse
+): Promise<void> {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return send(res, 401, { error: "No token provided" });
+
+    const token = authHeader.split(" ")[1];
+    if (!token) {
+      return send(res, 401, { error: "Invalid authorization format" });
+    }
+
+    try {
+      const decoded = jwt.verify(token, SECRET);
+      if (
+        typeof decoded === "object" &&
+        decoded !== null &&
+        "email" in decoded
+      ) {
+        send(res, 200, { message: `Welcome ${decoded.email}` });
+      } else {
+        send(res, 400, { error: "Invalid token payload" });
+      }
+    } catch (error) {
+      send(res, 401, { error: "Invalid token" });
+    }
+  } catch (error) {
+    console.error("Profile error:", error);
+    send(res, 500, { error: "Internal server error" });
+  }
+}
+
+export async function handleRequest(
+  req: IncomingMessage,
+  res: ServerResponse
+): Promise<void> {
+  try {
+    if (req.method === "POST" && req.url === "/register") {
+      return await handleRegister(req, res);
+    }
+
+    if (req.method === "POST" && req.url === "/login") {
+      return await handleLogin(req, res);
+    }
+
+    if (req.method === "GET" && req.url === "/profile") {
+      return await handleProfile(req, res);
+    }
+
+    res.writeHead(404);
+    res.end("Not found");
+  } catch (error) {
+    console.error("Request handling error:", error);
+    send(res, 500, { error: "Internal server error" });
+  }
+}
