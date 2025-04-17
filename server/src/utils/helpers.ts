@@ -32,7 +32,16 @@ function readBody(req: IncomingMessage): Promise<User> {
   });
 }
 
+// helper to send responsed with proper headers
 function send(res: ServerResponse, statusCode: number, data: object): void {
+  // Add CORS headers
+  res.setHeader("Access-Control-Allow-Origin", "*"); // Or specify your frontend origin
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET, POST, OPTIONS, PUT, DELETE"
+  );
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
   res.writeHead(statusCode, { "Content-type": "application/json" });
   res.end(JSON.stringify(data));
 }
@@ -55,7 +64,9 @@ function saveUsers(users: User[]): void {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
+
   fs.writeFileSync(userFile, JSON.stringify(users, null, 2));
+  console.log(getUsers());
 }
 
 async function handleRegister(
@@ -64,6 +75,7 @@ async function handleRegister(
 ): Promise<void> {
   try {
     const { name, email, password } = await readBody(req);
+    console.log({ name, email, password });
 
     if (!email || !password) {
       return send(res, 400, { error: "Email and password are required" });
@@ -150,7 +162,16 @@ export async function handleRequest(
   res: ServerResponse
 ): Promise<void> {
   try {
+    // Handle OPTIONS requests
+    if (req.method === "OPTIONS") {
+      res.writeHead(204); // Respond with 204 No Content for successful preflight
+      res.end();
+      return; // Stop further processing for OPTIONS requests
+    }
+
     if (req.method === "POST" && req.url === "/register") {
+      console.log("register function called");
+
       return await handleRegister(req, res);
     }
 

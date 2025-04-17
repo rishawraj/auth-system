@@ -2,6 +2,15 @@ import { handleRequest } from "./utils/helpers.js";
 import http from "node:http";
 
 const server = http.createServer(async (req, res) => {
+  // log incoming request for debuggin
+  console.log(`${req.method} ${req.url}`);
+
+  // Set default CORS headers that will be applied to all responses
+  res.setHeader("Access-Control-Allow-Origin", "*"); // Adjust to your frontend's origin in production
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept");
+  res.setHeader("Access-Control-Max-Age", 2592000); // 30 days (in seconds) for preflight cache
+
   await handleRequest(req, res);
 });
 
