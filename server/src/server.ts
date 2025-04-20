@@ -6,9 +6,13 @@ const server = http.createServer(async (req, res) => {
   console.log(`${req.method} ${req.url}`);
 
   // Set default CORS headers that will be applied to all responses
-  res.setHeader("Access-Control-Allow-Origin", "*"); // Adjust to your frontend's origin in production
+  res.setHeader("Access-Control-Allow-Origin", "http://localhost:5173"); // Adjust to your frontend's origin in production
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept");
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Accept, Authorization"
+  );
+  res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader("Access-Control-Max-Age", 2592000); // 30 days (in seconds) for preflight cache
 
   await handleRequest(req, res);

@@ -12,8 +12,11 @@
 
 import { Route as rootRoute } from './routes/__root'
 import { Route as RegisterImport } from './routes/register'
+import { Route as ProfileImport } from './routes/profile'
+import { Route as LogoutImport } from './routes/logout'
 import { Route as LoginImport } from './routes/login'
 import { Route as AboutImport } from './routes/about'
+import { Route as ProtectedRouteImport } from './routes/protected.route'
 import { Route as IndexImport } from './routes/index'
 
 // Create/Update Routes
@@ -21,6 +24,18 @@ import { Route as IndexImport } from './routes/index'
 const RegisterRoute = RegisterImport.update({
   id: '/register',
   path: '/register',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const ProfileRoute = ProfileImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const LogoutRoute = LogoutImport.update({
+  id: '/logout',
+  path: '/logout',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -33,6 +48,12 @@ const LoginRoute = LoginImport.update({
 const AboutRoute = AboutImport.update({
   id: '/about',
   path: '/about',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const ProtectedRouteRoute = ProtectedRouteImport.update({
+  id: '/protected',
+  path: '/protected',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -53,6 +74,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexImport
       parentRoute: typeof rootRoute
     }
+    '/protected': {
+      id: '/protected'
+      path: '/protected'
+      fullPath: '/protected'
+      preLoaderRoute: typeof ProtectedRouteImport
+      parentRoute: typeof rootRoute
+    }
     '/about': {
       id: '/about'
       path: '/about'
@@ -65,6 +93,20 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginImport
+      parentRoute: typeof rootRoute
+    }
+    '/logout': {
+      id: '/logout'
+      path: '/logout'
+      fullPath: '/logout'
+      preLoaderRoute: typeof LogoutImport
+      parentRoute: typeof rootRoute
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileImport
       parentRoute: typeof rootRoute
     }
     '/register': {
@@ -81,46 +123,83 @@ declare module '@tanstack/react-router' {
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/protected': typeof ProtectedRouteRoute
   '/about': typeof AboutRoute
   '/login': typeof LoginRoute
+  '/logout': typeof LogoutRoute
+  '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/protected': typeof ProtectedRouteRoute
   '/about': typeof AboutRoute
   '/login': typeof LoginRoute
+  '/logout': typeof LogoutRoute
+  '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
+  '/protected': typeof ProtectedRouteRoute
   '/about': typeof AboutRoute
   '/login': typeof LoginRoute
+  '/logout': typeof LogoutRoute
+  '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/about' | '/login' | '/register'
+  fullPaths:
+    | '/'
+    | '/protected'
+    | '/about'
+    | '/login'
+    | '/logout'
+    | '/profile'
+    | '/register'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/login' | '/register'
-  id: '__root__' | '/' | '/about' | '/login' | '/register'
+  to:
+    | '/'
+    | '/protected'
+    | '/about'
+    | '/login'
+    | '/logout'
+    | '/profile'
+    | '/register'
+  id:
+    | '__root__'
+    | '/'
+    | '/protected'
+    | '/about'
+    | '/login'
+    | '/logout'
+    | '/profile'
+    | '/register'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ProtectedRouteRoute: typeof ProtectedRouteRoute
   AboutRoute: typeof AboutRoute
   LoginRoute: typeof LoginRoute
+  LogoutRoute: typeof LogoutRoute
+  ProfileRoute: typeof ProfileRoute
   RegisterRoute: typeof RegisterRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ProtectedRouteRoute: ProtectedRouteRoute,
   AboutRoute: AboutRoute,
   LoginRoute: LoginRoute,
+  LogoutRoute: LogoutRoute,
+  ProfileRoute: ProfileRoute,
   RegisterRoute: RegisterRoute,
 }
 
@@ -135,19 +214,31 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/",
+        "/protected",
         "/about",
         "/login",
+        "/logout",
+        "/profile",
         "/register"
       ]
     },
     "/": {
       "filePath": "index.tsx"
     },
+    "/protected": {
+      "filePath": "protected.route.tsx"
+    },
     "/about": {
       "filePath": "about.tsx"
     },
     "/login": {
       "filePath": "login.tsx"
+    },
+    "/logout": {
+      "filePath": "logout.tsx"
+    },
+    "/profile": {
+      "filePath": "profile.tsx"
     },
     "/register": {
       "filePath": "register.tsx"

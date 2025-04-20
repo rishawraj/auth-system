@@ -1,13 +1,13 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import UserLoginForm from "../components/UserLoginForm";
+import Cookies from "js-cookie";
 
 export const Route = createFileRoute("/login")({
-  component: Login,
+  beforeLoad: async () => {
+    const token = Cookies.get("token");
+    if (token) {
+      throw redirect({ to: "/profile" });
+    }
+  },
+  component: UserLoginForm,
 });
-
-function Login() {
-  return (
-    <div className="p-2">
-      <h3>Welcome to Login!</h3>
-    </div>
-  );
-}

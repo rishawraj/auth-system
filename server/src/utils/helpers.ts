@@ -4,6 +4,7 @@ import * as path from "node:path";
 import * as fs from "node:fs";
 import { IncomingMessage, ServerResponse } from "http";
 import { fileURLToPath } from "node:url";
+import { z } from "zod";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,6 +17,17 @@ interface User {
   email: string;
   password: string;
 }
+
+const registerSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters long"),
+});
+
+const loginSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters long"),
+});
 
 function readBody(req: IncomingMessage): Promise<User> {
   return new Promise((resolve, reject) => {
@@ -35,12 +47,12 @@ function readBody(req: IncomingMessage): Promise<User> {
 // helper to send responsed with proper headers
 function send(res: ServerResponse, statusCode: number, data: object): void {
   // Add CORS headers
-  res.setHeader("Access-Control-Allow-Origin", "*"); // Or specify your frontend origin
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET, POST, OPTIONS, PUT, DELETE"
-  );
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  // res.setHeader("Access-Control-Allow-Origin", "http://localhost:5173"); // Or specify your frontend origin
+  // res.setHeader(
+  //   "Access-Control-Allow-Methods",
+  //   "GET, POST, OPTIONS, PUT, DELETE"
+  // );
+  // res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
   res.writeHead(statusCode, { "Content-type": "application/json" });
   res.end(JSON.stringify(data));
@@ -74,7 +86,14 @@ async function handleRegister(
   res: ServerResponse
 ): Promise<void> {
   try {
-    const { name, email, password } = await readBody(req);
+    const body = await readBody(req);
+    const result = registerSchema.safeParse(body);
+    if (!result.success) {
+      const errors = result.error.flatten().fieldErrors;
+      return send(res, 400, { errors });
+    }
+
+    const { name, email, password } = result.data;
     console.log({ name, email, password });
 
     if (!email || !password) {
@@ -102,7 +121,15 @@ async function handleLogin(
   res: ServerResponse
 ): Promise<void> {
   try {
-    const { email, password } = await readBody(req);
+    const body = await readBody(req);
+    const result = loginSchema.safeParse(body);
+
+    if (!result.success) {
+      const errors = result.error.flatten().fieldErrors;
+      return send(res, 400, { errors });
+    }
+
+    const { email, password } = result.data;
 
     if (!email || !password) {
       return send(res, 400, { error: "Email and password are required" });
@@ -133,12 +160,14 @@ async function handleProfile(
     if (!authHeader) return send(res, 401, { error: "No token provided" });
 
     const token = authHeader.split(" ")[1];
+
     if (!token) {
       return send(res, 401, { error: "Invalid authorization format" });
     }
 
     try {
       const decoded = jwt.verify(token, SECRET);
+
       if (
         typeof decoded === "object" &&
         decoded !== null &&
@@ -157,6 +186,12 @@ async function handleProfile(
   }
 }
 
+async function handleLogut(req: IncomingMessage, res: ServerResponse) {
+  res.setHeader("Set-Cookie", "token=; httpOnly; Path=/;Max-Age=0");
+  res.writeHead(200, { "content-type": "application/json" });
+  res.end(JSON.stringify({ message: "Logged out successfully" }));
+}
+
 export async function handleRequest(
   req: IncomingMessage,
   res: ServerResponse
@@ -167,6 +202,10 @@ export async function handleRequest(
       res.writeHead(204); // Respond with 204 No Content for successful preflight
       res.end();
       return; // Stop further processing for OPTIONS requests
+    }
+
+    if (req.method === "GET" && req.url === "/health") {
+      return send(res, 200, { status: "OK", message: "Server is healthy" });
     }
 
     if (req.method === "POST" && req.url === "/register") {
@@ -181,6 +220,9 @@ export async function handleRequest(
 
     if (req.method === "GET" && req.url === "/profile") {
       return await handleProfile(req, res);
+    }
+    if (req.method === "POST" && req.url === "/logout") {
+      return handleLogut(req, res);
     }
 
     res.writeHead(404);
