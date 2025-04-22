@@ -5,6 +5,7 @@ import * as fs from "node:fs";
 import { IncomingMessage, ServerResponse } from "http";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
+import { pool } from "./db.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -58,6 +59,19 @@ function send(res: ServerResponse, statusCode: number, data: object): void {
   res.end(JSON.stringify(data));
 }
 
+async function getAllUsers() {
+  console.log("getting all the user");
+
+  try {
+    const result = await pool.query("SELECT * FROM users");
+    console.log("Users:", result.rows);
+    return result.rows;
+  } catch (err) {
+    console.error("Error executing query:", err);
+    throw err;
+  }
+}
+
 function getUsers(): User[] {
   try {
     if (!fs.existsSync(userFile)) return [];
@@ -100,16 +114,29 @@ async function handleRegister(
       return send(res, 400, { error: "Email and password are required" });
     }
 
-    const users = getUsers();
-    if (users.find((user) => user.email === email)) {
-      return send(res, 400, { error: "User already exists" });
-    }
+    // const users = getUsers();
+    // if (users.find((user) => user.email === email)) {
+    //   return send(res, 400, { error: "User already exists" });
+    // }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    users.push({ name, email, password: hashedPassword });
-    saveUsers(users);
 
-    send(res, 201, { message: "User registered successfully" });
+    const existingUserResult = await pool.query(
+      "SELECT id FROM users where email = $1",
+      [email]
+    );
+
+    if (existingUserResult.rows.length > 0) {
+      return send(res, 400, { error: "User with this email already exists" });
+    }
+
+    const newUserResult = await pool.query(
+      "INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING id, name, email, is_active, registration_date",
+      [name, email, hashedPassword]
+    );
+
+    const newUser = newUserResult.rows[0];
+    send(res, 201, { message: "User registered successfully", user: newUser });
   } catch (error) {
     console.error("Registration error:", error);
     send(res, 500, { error: "Internal server error" });
@@ -135,15 +162,26 @@ async function handleLogin(
       return send(res, 400, { error: "Email and password are required" });
     }
 
-    const users = getUsers();
-    const user = users.find((u) => u.email === email);
+    // const users = getUsers();
+    // const user = users.find((u) => u.email === email);
+
+    const user = await pool.query<User>(
+      "SELECT * FROM users WHERE email = $1",
+      [email]
+    );
+
+    console.log(user.rows[0]);
 
     if (!user) return send(res, 401, { error: "Invalid credentials" });
 
-    const match = await bcrypt.compare(password, user.password);
+    const match = await bcrypt.compare(password, user.rows[0].password);
+
     if (!match) return send(res, 401, { error: "Invalid credentials" });
 
-    const token = jwt.sign({ email: user.email }, SECRET, { expiresIn: "1h" });
+    const token = jwt.sign({ email: user.rows[0].email }, SECRET, {
+      expiresIn: "1h",
+    });
+
     send(res, 200, { message: "Login successful", token });
   } catch (error) {
     console.error("Login error:", error);
@@ -173,7 +211,11 @@ async function handleProfile(
         decoded !== null &&
         "email" in decoded
       ) {
-        send(res, 200, { message: `Welcome ${decoded.email}` });
+        const user = await pool.query("SELECT * FROM users WHERE email = $1", [
+          decoded.email,
+        ]);
+
+        send(res, 200, { message: user.rows[0] });
       } else {
         send(res, 400, { error: "Invalid token payload" });
       }

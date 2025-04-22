@@ -2,7 +2,7 @@ import { handleRequest } from "./utils/helpers.js";
 import http from "node:http";
 
 const server = http.createServer(async (req, res) => {
-  // log incoming request for debuggin
+  // log incoming request
   console.log(`${req.method} ${req.url}`);
 
   // Set default CORS headers that will be applied to all responses
