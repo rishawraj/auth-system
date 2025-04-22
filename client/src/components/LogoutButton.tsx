@@ -22,5 +22,12 @@ export function LogoutButton() {
     }
   };
 
-  return <button onClick={handleLogout}>Logout</button>;
+  return (
+    <button
+      className="p-2 bg-red-300 text-white cursor-pointer"
+      onClick={handleLogout}
+    >
+      Logout
+    </button>
+  );
 }

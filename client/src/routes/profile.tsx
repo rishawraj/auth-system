@@ -40,8 +40,8 @@ function RouteComponent() {
 
   return (
     <div>
-      <pre>{JSON.stringify(profile, null, 2)}</pre>
       <LogoutButton />
+      <pre>{JSON.stringify(profile, null, 2)}</pre>
     </div>
   );
 }
