@@ -1,7 +1,7 @@
 import nodemailer from "nodemailer";
 import "dotenv/config";
 
-export async function sendEmail() {
+export async function sendVerificationEmail(to: string, code: string) {
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
@@ -10,22 +10,27 @@ export async function sendEmail() {
     },
   });
 
-  // setup email data
   const mailOptions = {
-    from: '"Rishaw Raj" <rishawraj0703@gmail.com>',
-    to: "blueboss2280@gmail.com",
-    subject: "Hello",
-    text: "plaintext",
-    html: "<b>this is an html message</b>",
+    from: '"Auth System" <rishawraj0703@gmail.com>',
+    to: to,
+    subject: "Your Verification Code",
+    text: `Your verification code is: ${code}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; padding: 16px;">
+        <h2>Email Verification</h2>
+        <p>Your verification code is:</p>
+        <div style="font-size: 24px; font-weight: bold; margin: 12px 0;">
+          ${code}
+        </div>
+        <p>This code will expire in 60 minutes.</p>
+      </div>
+    `,
   };
 
-  // send mail
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log("Email sent" + info.response);
+    console.log("Verification email sent: " + info.response);
   } catch (error) {
-    console.error("Error sending mail", error);
+    console.error("Error sending verification email:", error);
   }
 }
-
-// sendEmail();

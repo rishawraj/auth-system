@@ -6,12 +6,14 @@ import { IncomingMessage, ServerResponse } from "http";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import { pool } from "./db.ts";
+import { sendEmailWorker } from "../workers/sendEmailWorker.ts";
+import "dotenv/config";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const userFile = path.join(__dirname, "../data/users.json");
-const SECRET = "supsersecretkey";
+const SECRET = process.env.SECRET;
 
 interface User {
   name?: string;
@@ -30,7 +32,26 @@ const loginSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters long"),
 });
 
-function readBody(req: IncomingMessage): Promise<User> {
+const verifySchema = z.object({
+  code: z.string().length(6, "Code is a 6 digit number"),
+});
+
+type CodeWithExpiry = {
+  code: string;
+  expiresAt: Date;
+};
+
+function generateSixDigitCodeWithExpiry(minutesValid = 60): CodeWithExpiry {
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiresAt = new Date(Date.now() + minutesValid * 60 * 1000); // e.g. 5 minutes from now
+  return { code, expiresAt };
+}
+
+function isCodeExpired(expiresAt: Date): boolean {
+  return new Date() > expiresAt;
+}
+
+function readBody<T>(req: IncomingMessage): Promise<T> {
   return new Promise((resolve, reject) => {
     let body = "";
     req.on("data", (chunk) => (body += chunk.toString()));
@@ -45,16 +66,7 @@ function readBody(req: IncomingMessage): Promise<User> {
   });
 }
 
-// helper to send responsed with proper headers
 function send(res: ServerResponse, statusCode: number, data: object): void {
-  // Add CORS headers
-  // res.setHeader("Access-Control-Allow-Origin", "http://localhost:5173"); // Or specify your frontend origin
-  // res.setHeader(
-  //   "Access-Control-Allow-Methods",
-  //   "GET, POST, OPTIONS, PUT, DELETE"
-  // );
-  // res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-
   res.writeHead(statusCode, { "Content-type": "application/json" });
   res.end(JSON.stringify(data));
 }
@@ -100,7 +112,7 @@ async function handleRegister(
   res: ServerResponse
 ): Promise<void> {
   try {
-    const body = await readBody(req);
+    const body = await readBody<{ token: string; code: string }>(req);
     const result = registerSchema.safeParse(body);
     if (!result.success) {
       const errors = result.error.flatten().fieldErrors;
@@ -114,13 +126,6 @@ async function handleRegister(
       return send(res, 400, { error: "Email and password are required" });
     }
 
-    // const users = getUsers();
-    // if (users.find((user) => user.email === email)) {
-    //   return send(res, 400, { error: "User already exists" });
-    // }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
     const existingUserResult = await pool.query(
       "SELECT id FROM users where email = $1",
       [email]
@@ -130,13 +135,35 @@ async function handleRegister(
       return send(res, 400, { error: "User with this email already exists" });
     }
 
-    const newUserResult = await pool.query(
-      "INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING id, name, email, is_active, registration_date",
-      [name, email, hashedPassword]
-    );
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const CodeWithExpiry = generateSixDigitCodeWithExpiry();
+    const verificationCode = CodeWithExpiry.code;
+    const verification_code_expiry_time = CodeWithExpiry.expiresAt;
 
+    const newUserResult = await pool.query(
+      "INSERT INTO users (name, email, password, verification_code, verification_code_expiry_time) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, is_active, registration_date",
+      [
+        name,
+        email,
+        hashedPassword,
+        verificationCode,
+        verification_code_expiry_time,
+      ]
+    );
     const newUser = newUserResult.rows[0];
-    send(res, 201, { message: "User registered successfully", user: newUser });
+
+    const token = jwt.sign({ email: newUser.email }, SECRET, {
+      expiresIn: "1h",
+    });
+
+    // fire and forget
+    setImmediate(() => sendEmailWorker(email, verificationCode));
+
+    send(res, 201, {
+      message: "User registered successfully",
+      user: newUser,
+      token: token,
+    });
   } catch (error) {
     console.error("Registration error:", error);
     send(res, 500, { error: "Internal server error" });
@@ -161,9 +188,6 @@ async function handleLogin(
     if (!email || !password) {
       return send(res, 400, { error: "Email and password are required" });
     }
-
-    // const users = getUsers();
-    // const user = users.find((u) => u.email === email);
 
     const user = await pool.query<User>(
       "SELECT * FROM users WHERE email = $1",
@@ -234,6 +258,72 @@ async function handleLogut(req: IncomingMessage, res: ServerResponse) {
   res.end(JSON.stringify({ message: "Logged out successfully" }));
 }
 
+async function handleVerify(req: IncomingMessage, res: ServerResponse) {
+  try {
+    const body = await readBody<{ token: string; code: string }>(req);
+
+    const { token, code } = body;
+    console.log({ token, code });
+
+    if (!token || !code) {
+      return send(res, 400, { error: "Missing token or verification code" });
+    }
+
+    let decodedToken;
+
+    try {
+      decodedToken = jwt.verify(token, SECRET);
+    } catch (error) {
+      console.error("Token verification failed:", error.message);
+      return send(res, 401, { error: "Invalid or expired token" });
+    }
+
+    const { email } = decodedToken;
+
+    // Query the database to check verification code
+    const userQuery =
+      "SELECT id, verification_code, verification_code_expiry_time FROM users WHERE email = $1";
+    const userResult = await pool.query(userQuery, [email]);
+
+    if (userResult.rows.length === 0) {
+      return send(res, 404, { error: "User not found" });
+    }
+    const user = userResult.rows[0];
+    const currentTime = new Date();
+
+    // Check if verification code is valid and not expired
+    if (user.verification_code !== code) {
+      return send(res, 400, { error: "Invalid verification code" });
+    }
+
+    if (
+      user.verification_code_expiry_time &&
+      new Date(user.verification_code_expiry_time) < currentTime
+    ) {
+      return send(res, 400, { error: "Verification code has expired" });
+    }
+
+    // Update user account to active status
+    const updateQuery = `
+      UPDATE users 
+      SET is_active = TRUE, 
+          verification_code = NULL, 
+          verification_code_expiry_time = NULL 
+      WHERE id = $1
+    `;
+
+    await pool.query(updateQuery, [user.id]);
+    // Send success response
+    send(res, 200, {
+      message: "Account verified successfully",
+      email: email,
+    });
+  } catch (error) {
+    console.error("Verification error: ", error);
+    send(res, 500, { error: "Internal server error duing verification" });
+  }
+}
+
 export async function handleRequest(
   req: IncomingMessage,
   res: ServerResponse
@@ -241,6 +331,7 @@ export async function handleRequest(
   try {
     // Handle OPTIONS requests
     if (req.method === "OPTIONS") {
+      console.log("/options");
       res.writeHead(204); // Respond with 204 No Content for successful preflight
       res.end();
       return; // Stop further processing for OPTIONS requests
@@ -265,6 +356,9 @@ export async function handleRequest(
     }
     if (req.method === "POST" && req.url === "/logout") {
       return handleLogut(req, res);
+    }
+    if (req.method === "POST" && req.url === "/verify") {
+      return handleVerify(req, res);
     }
 
     res.writeHead(404);

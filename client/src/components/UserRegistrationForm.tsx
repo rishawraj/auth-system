@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
+// import Cookies from "js-cookie";
 
 interface FormData {
   name: string;
@@ -23,6 +25,8 @@ export default function RegistrationForm() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  const navigate = useNavigate({ from: "/register" });
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -82,8 +86,12 @@ export default function RegistrationForm() {
         );
       }
 
+      const responseData = await response.json();
+      // Cookies.set("token", responseData.token, { expires: 1 });
+
       setSuccess(true);
       setFormData({ name: "", email: "", password: "" });
+      navigate({ to: "/verify", search: { token: responseData.token } });
     } catch (error) {
       console.error("Registration error:", error);
       if (

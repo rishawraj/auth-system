@@ -11,15 +11,21 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as VerifyImport } from './routes/verify'
 import { Route as RegisterImport } from './routes/register'
 import { Route as ProfileImport } from './routes/profile'
 import { Route as LogoutImport } from './routes/logout'
 import { Route as LoginImport } from './routes/login'
 import { Route as AboutImport } from './routes/about'
-import { Route as ProtectedRouteImport } from './routes/protected.route'
 import { Route as IndexImport } from './routes/index'
 
 // Create/Update Routes
+
+const VerifyRoute = VerifyImport.update({
+  id: '/verify',
+  path: '/verify',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const RegisterRoute = RegisterImport.update({
   id: '/register',
@@ -51,12 +57,6 @@ const AboutRoute = AboutImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const ProtectedRouteRoute = ProtectedRouteImport.update({
-  id: '/protected',
-  path: '/protected',
-  getParentRoute: () => rootRoute,
-} as any)
-
 const IndexRoute = IndexImport.update({
   id: '/',
   path: '/',
@@ -72,13 +72,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexImport
-      parentRoute: typeof rootRoute
-    }
-    '/protected': {
-      id: '/protected'
-      path: '/protected'
-      fullPath: '/protected'
-      preLoaderRoute: typeof ProtectedRouteImport
       parentRoute: typeof rootRoute
     }
     '/about': {
@@ -116,6 +109,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegisterImport
       parentRoute: typeof rootRoute
     }
+    '/verify': {
+      id: '/verify'
+      path: '/verify'
+      fullPath: '/verify'
+      preLoaderRoute: typeof VerifyImport
+      parentRoute: typeof rootRoute
+    }
   }
 }
 
@@ -123,84 +123,84 @@ declare module '@tanstack/react-router' {
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/protected': typeof ProtectedRouteRoute
   '/about': typeof AboutRoute
   '/login': typeof LoginRoute
   '/logout': typeof LogoutRoute
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
+  '/verify': typeof VerifyRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/protected': typeof ProtectedRouteRoute
   '/about': typeof AboutRoute
   '/login': typeof LoginRoute
   '/logout': typeof LogoutRoute
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
+  '/verify': typeof VerifyRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
-  '/protected': typeof ProtectedRouteRoute
   '/about': typeof AboutRoute
   '/login': typeof LoginRoute
   '/logout': typeof LogoutRoute
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
+  '/verify': typeof VerifyRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/protected'
     | '/about'
     | '/login'
     | '/logout'
     | '/profile'
     | '/register'
+    | '/verify'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/protected'
     | '/about'
     | '/login'
     | '/logout'
     | '/profile'
     | '/register'
+    | '/verify'
   id:
     | '__root__'
     | '/'
-    | '/protected'
     | '/about'
     | '/login'
     | '/logout'
     | '/profile'
     | '/register'
+    | '/verify'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  ProtectedRouteRoute: typeof ProtectedRouteRoute
   AboutRoute: typeof AboutRoute
   LoginRoute: typeof LoginRoute
   LogoutRoute: typeof LogoutRoute
   ProfileRoute: typeof ProfileRoute
   RegisterRoute: typeof RegisterRoute
+  VerifyRoute: typeof VerifyRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  ProtectedRouteRoute: ProtectedRouteRoute,
   AboutRoute: AboutRoute,
   LoginRoute: LoginRoute,
   LogoutRoute: LogoutRoute,
   ProfileRoute: ProfileRoute,
   RegisterRoute: RegisterRoute,
+  VerifyRoute: VerifyRoute,
 }
 
 export const routeTree = rootRoute
@@ -214,19 +214,16 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/",
-        "/protected",
         "/about",
         "/login",
         "/logout",
         "/profile",
-        "/register"
+        "/register",
+        "/verify"
       ]
     },
     "/": {
       "filePath": "index.tsx"
-    },
-    "/protected": {
-      "filePath": "protected.route.tsx"
     },
     "/about": {
       "filePath": "about.tsx"
@@ -242,6 +239,9 @@ export const routeTree = rootRoute
     },
     "/register": {
       "filePath": "register.tsx"
+    },
+    "/verify": {
+      "filePath": "verify.tsx"
     }
   }
 }
