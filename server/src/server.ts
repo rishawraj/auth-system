@@ -1,5 +1,5 @@
-import { handleRequest } from "./utils/helpers.js";
 import http from "node:http";
+import handleRoutes from "./routes/index.ts";
 
 const server = http.createServer(async (req, res) => {
   // log incoming request
@@ -15,7 +15,13 @@ const server = http.createServer(async (req, res) => {
   res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader("Access-Control-Max-Age", 2592000); // 30 days (in seconds) for preflight cache
 
-  await handleRequest(req, res);
+  // await handleRequest(req, res);
+
+  if (!handleRoutes(req, res)) {
+    res.statusCode = 404;
+    res.setHeader("Content-Type", "text/plain");
+    res.end("Not Found\n");
+  }
 });
 
 server.listen(3000, () => {
