@@ -1,4 +1,4 @@
-import userRoutes from "./users.ts";
+import userRoutes from "./users.routes.ts";
 
 const routes = [
   userRoutes,

@@ -59,29 +59,6 @@ export default function UserLoginForm() {
     return true;
   };
 
-  // const validateForm = (): boolean => {
-  //   const newErrors: FormErrors = {};
-
-  //   if (!formData.name.trim()) {
-  //     newErrors.name = "Name is required";
-  //   }
-
-  //   if (!formData.email.trim()) {
-  //     newErrors.email = "Email is required";
-  //   } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-  //     newErrors.email = "Email is invalid";
-  //   }
-
-  //   if (!formData.password) {
-  //     newErrors.password = "Password is required";
-  //   } else if (formData.password.length < 6) {
-  //     newErrors.password = "Password must be at least 6 characters";
-  //   }
-
-  //   setErrors(newErrors);
-  //   return Object.keys(newErrors).length === 0;
-  // };
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -339,6 +316,18 @@ export default function UserLoginForm() {
                 {errorMessage}
               </p>
             )}
+          </div>
+          <div className="my-2 p-1">
+            <p>
+              forgot password{" "}
+              <button
+                onClick={() => navigate({ to: "/forgot-password" })}
+                className="text-blue-400 font-bold cursor-pointer"
+              >
+                click here
+              </button>
+              .
+            </p>
           </div>
         </div>
       </div>

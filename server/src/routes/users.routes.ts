@@ -6,7 +6,9 @@ import {
   handleProfile,
   handleVerify,
   handleLogut,
-} from "../controllers/userController.ts";
+  handleForgotPassword,
+  handleResetPassword,
+} from "../controllers/user.controller.ts";
 import { send } from "../utils/helpers.ts";
 
 export default async (req: IncomingMessage, res: ServerResponse) => {
@@ -46,6 +48,14 @@ export default async (req: IncomingMessage, res: ServerResponse) => {
   }
   if (req.method === "POST" && req.url === "/verify") {
     handleVerify(req, res);
+    return true;
+  }
+  if (req.method === "POST" && req.url === "/forgot-password") {
+    handleForgotPassword(req, res);
+    return true;
+  }
+  if (req.method === "POST" && req.url === "/reset-password") {
+    handleResetPassword(req, res);
     return true;
   }
 

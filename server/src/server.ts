@@ -1,9 +1,9 @@
 import http from "node:http";
-import handleRoutes from "./routes/index.ts";
+import handleRoutes from "./routes/index.routes.ts";
 
 const server = http.createServer(async (req, res) => {
   // log incoming request
-  console.log(`${req.method} ${req.url}`);
+  console.log(`\x1b[32m\x1b[44m${req.method} ${req.url}.\x1b[0m`);
 
   // Set default CORS headers that will be applied to all responses
   res.setHeader("Access-Control-Allow-Origin", "http://localhost:5173"); // Adjust to your frontend's origin in production

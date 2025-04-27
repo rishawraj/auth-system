@@ -5,19 +5,18 @@ import {
   send,
 } from "../utils/helpers.ts";
 import { z } from "zod";
-import { pool } from "../db/db.ts";
-import { sendEmailWorker } from "../workers/sendEmailWorker.ts";
+import { pool } from "../config/db.config.ts";
+import {
+  sendResetPasswordEmailWorker,
+  sendVerificationEmailWorker,
+} from "../workers/sendEmail.Worker.ts";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import "dotenv/config";
+import { User } from "../models/user.model.ts";
 
 const SECRET = process.env.SECRET;
-
-interface User {
-  name?: string;
-  email: string;
-  password: string;
-}
+const FRONTEND_URL = process.env.FRONTEND_URL;
 
 const registerSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -94,7 +93,7 @@ export async function handleRegister(
     });
 
     // fire and forget
-    setImmediate(() => sendEmailWorker(email, verificationCode));
+    setImmediate(() => sendVerificationEmailWorker(email, verificationCode));
 
     send(res, 201, {
       message: "User registered successfully",
@@ -121,6 +120,7 @@ export async function handleLogin(
     }
 
     const { email, password } = result.data;
+    console.log({ email, password });
 
     if (!email || !password) {
       return send(res, 400, { error: "Email and password are required" });
@@ -258,5 +258,123 @@ export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
   } catch (error) {
     console.error("Verification error: ", error);
     send(res, 500, { error: "Internal server error duing verification" });
+  }
+}
+
+export async function handleForgotPassword(
+  req: IncomingMessage,
+  res: ServerResponse
+) {
+  try {
+    const body = await readBody<{ email: string }>(req);
+    const { email } = body;
+    if (!email) {
+      return send(res, 400, { error: "Email is required" });
+    }
+
+    const userResult = await pool.query<User>(
+      "SELECT * FROM users WHERE email = $1",
+      [email]
+    );
+    const user = userResult.rows[0];
+    console.log(user);
+    if (!user) {
+      console.log("user not found");
+      return send(res, 404, { error: "User not found" });
+    }
+
+    //  send email with token
+    const token = jwt.sign({ email: user.email }, SECRET);
+    const resetEmailLink = `${FRONTEND_URL}/reset-password?token=${token}`;
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1hr
+
+    const passWordResetResult = await pool.query(
+      "UPDATE users SET reset_password_token = $1, reset_passsword_token_expiry_time = $2 WHERE email = $3 RETURNING *",
+      [token, expiresAt, email]
+    );
+
+    const userId = passWordResetResult.rows[0];
+    console.log(userId);
+
+    // fire and forget
+    setImmediate(() => sendResetPasswordEmailWorker(email, resetEmailLink));
+
+    send(res, 200, {
+      message: "Password reset email sent successfully",
+      userId: userId,
+    });
+  } catch (error) {
+    console.error("Error in forgot password:", error);
+    send(res, 500, { error: "Internal server error" });
+  }
+}
+
+export async function handleResetPassword(
+  req: IncomingMessage,
+  res: ServerResponse
+) {
+  try {
+    console.log("Reset password");
+    const body = await readBody<{ token: string; password: string }>(req);
+    const { token, password } = body;
+
+    if (!token || !password) {
+      return send(res, 400, { error: "Token and new password are required" });
+    }
+
+    let decodedToken;
+
+    try {
+      decodedToken = jwt.verify(token, SECRET);
+    } catch (error) {
+      console.error("Token verification failed:", error.message);
+      return send(res, 401, { error: "Invalid or expired token" });
+    }
+
+    const { email } = decodedToken;
+    console.log({ email });
+
+    // Query the database to check reset password token
+    const userQuery =
+      "SELECT id, reset_password_token, reset_passsword_token_expiry_time FROM users WHERE email = $1";
+    const userResult = await pool.query(userQuery, [email]);
+
+    if (userResult.rows.length === 0) {
+      return send(res, 404, { error: "User not found" });
+    }
+    const user = userResult.rows[0];
+    const currentTime = new Date();
+
+    // Check if reset password token is valid and not expired
+    if (user.reset_password_token !== token) {
+      return send(res, 400, { error: "Invalid reset password token" });
+    }
+
+    if (
+      user.reset_passsword_token_expiry_time &&
+      new Date(user.reset_passsword_token_expiry_time) < currentTime
+    ) {
+      return send(res, 400, { error: "Reset password token has expired" });
+    }
+
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Update user's password in the database
+    const updateQuery = `
+      UPDATE users 
+      SET password = $1, 
+          reset_password_token = NULL, 
+          reset_passsword_token_expiry_time = NULL 
+      WHERE id = $2
+    `;
+
+    await pool.query(updateQuery, [hashedPassword, user.id]);
+
+    // Send success response
+    send(res, 200, { message: "Password reset successfully" });
+  } catch (error) {
+    console.error("Reset password error:", error);
+    send(res, 500, { error: "Internal server error during password reset" });
   }
 }
