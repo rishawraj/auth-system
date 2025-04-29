@@ -14,6 +14,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import "dotenv/config";
 import { User } from "../models/user.model.ts";
+import { OAuth2Client, TokenPayload } from "google-auth-library";
 
 const SECRET = process.env.SECRET;
 const FRONTEND_URL = process.env.FRONTEND_URL;
@@ -131,9 +132,17 @@ export async function handleLogin(
       [email]
     );
 
-    console.log(user.rows[0]);
+    // console.log(user.rows[0]);
 
     if (!user) return send(res, 401, { error: "Invalid credentials" });
+
+    // Check if this is an OAuth user with no password
+    if (user.rows[0].oauth_provider && !user.rows[0].password) {
+      return send(res, 400, {
+        error:
+          "This account was created with Google. Please use Google login instead.",
+      });
+    }
 
     const match = await bcrypt.compare(password, user.rows[0].password);
 
@@ -376,5 +385,60 @@ export async function handleResetPassword(
   } catch (error) {
     console.error("Reset password error:", error);
     send(res, 500, { error: "Internal server error during password reset" });
+  }
+}
+
+// New handler for linking OAuth account to existing account
+export async function handleLinkOAuthAccount(
+  req: IncomingMessage,
+  res: ServerResponse,
+  userId: number,
+  oauthProvider: string,
+  oauthId: string,
+  oauthToken: string
+): Promise<void> {
+  try {
+    await pool.query(
+      `UPDATE users SET 
+        oauth_provider = $1, 
+        oauth_id = $2, 
+        oauth_access_token = $3
+      WHERE id = $4`,
+      [oauthProvider, oauthId, oauthToken, userId]
+    );
+
+    send(res, 200, { message: "Account linked successfully" });
+  } catch (error) {
+    console.error("Account linking error:", error);
+    send(res, 500, { error: "Internal server error" });
+  }
+}
+
+export async function verifyJWT(
+  req: IncomingMessage
+): Promise<{ userId: number; email: string } | null> {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return null;
+    }
+
+    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    const decoded = jwt.verify(token, SECRET) as { email: string; id: number };
+
+    // Check if user exists and is active
+    const userResult = await pool.query<User>(
+      "SELECT id FROM users WHERE id = $1 AND is_active = true",
+      [decoded.id]
+    );
+
+    if (userResult.rows.length === 0) {
+      return null;
+    }
+
+    return { userId: decoded.id, email: decoded.email };
+  } catch (error) {
+    console.error("JWT verification error:", error);
+    return null;
   }
 }

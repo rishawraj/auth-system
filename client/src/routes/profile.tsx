@@ -9,6 +9,7 @@ import { LogoutButton } from "../components/LogoutButton";
 export const Route = createFileRoute("/profile")({
   beforeLoad: async () => {
     const token = Cookies.get("token");
+    console.log({ token });
     if (!token) {
       throw redirect({ to: "/login" });
     }

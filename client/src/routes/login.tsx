@@ -5,6 +5,7 @@ import Cookies from "js-cookie";
 export const Route = createFileRoute("/login")({
   beforeLoad: async () => {
     const token = Cookies.get("token");
+    console.log("Token from cookies:", token);
     if (token) {
       throw redirect({ to: "/profile" });
     }
