@@ -70,7 +70,6 @@ export default async (req: IncomingMessage, res: ServerResponse) => {
     return true;
   }
   if (req.method === "GET" && pathname === "/auth/google/callback") {
-    console.log("Google Callback deadpool");
     handleGoogleCallback(req, res);
     return true;
   }

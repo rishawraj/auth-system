@@ -5,7 +5,7 @@ import {
 } from "@tanstack/react-router";
 import React, { useState, ChangeEvent, KeyboardEvent } from "react";
 
-export const Route = createFileRoute("/verify")({
+export const Route = createFileRoute("/(auth)/verify")({
   component: VerifyComponent,
 });
 

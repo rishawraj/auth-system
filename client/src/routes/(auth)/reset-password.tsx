@@ -10,7 +10,7 @@ const resetPasswordSearchSchema = z.object({
   token: z.string().optional().default(""), // Expect a token string, optional, defaults to empty string
 });
 
-export const Route = createFileRoute("/reset-password")({
+export const Route = createFileRoute("/(auth)/reset-password")({
   component: RouteComponent,
   validateSearch: resetPasswordSearchSchema, // Validate the search parameters using zod
 });

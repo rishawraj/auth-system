@@ -127,30 +127,38 @@ export async function handleLogin(
       return send(res, 400, { error: "Email and password are required" });
     }
 
-    const user = await pool.query<User>(
+    const userResult = await pool.query<User>(
       "SELECT * FROM users WHERE email = $1",
       [email]
     );
 
-    // console.log(user.rows[0]);
+    const user = userResult.rows[0];
+    console.log(user);
 
     if (!user) return send(res, 401, { error: "Invalid credentials" });
 
     // Check if this is an OAuth user with no password
-    if (user.rows[0].oauth_provider && !user.rows[0].password) {
+    if (user.oauth_provider && !user.password) {
+      console.log("OAuth user detected");
       return send(res, 400, {
         error:
           "This account was created with Google. Please use Google login instead.",
       });
     }
 
-    const match = await bcrypt.compare(password, user.rows[0].password);
+    const match = await bcrypt.compare(password, user.password);
 
     if (!match) return send(res, 401, { error: "Invalid credentials" });
 
-    const token = jwt.sign({ email: user.rows[0].email }, SECRET, {
+    const token = jwt.sign({ email: user.email }, SECRET, {
       expiresIn: "1h",
     });
+
+    // update last login time
+    await pool.query("UPDATE users SET last_login = $1 WHERE email = $2", [
+      new Date(),
+      email,
+    ]);
 
     send(res, 200, { message: "Login successful", token });
   } catch (error) {
@@ -388,7 +396,7 @@ export async function handleResetPassword(
   }
 }
 
-// New handler for linking OAuth account to existing account
+//todo link it: New handler for linking OAuth account to existing account
 export async function handleLinkOAuthAccount(
   req: IncomingMessage,
   res: ServerResponse,

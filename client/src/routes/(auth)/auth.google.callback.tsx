@@ -1,6 +1,6 @@
 import {
   createFileRoute,
-  // useNavigate,
+  useNavigate,
   useSearch,
 } from "@tanstack/react-router";
 import { z } from "zod";
@@ -10,20 +10,20 @@ const authTokenSchema = z.object({
   token: z.string().optional().default(""),
 });
 
-export const Route = createFileRoute("/auth/google/callback")({
+export const Route = createFileRoute("/(auth)/auth/google/callback")({
   component: RouteComponent,
   validateSearch: authTokenSchema, // ValAidate the search parameters using zod
 });
 
 function RouteComponent() {
-  // const navigate = useNavigate({ from: "/auth/google/callback" });
+  const navigate = useNavigate({ from: "/auth/google/callback" });
   const search = useSearch({ from: "/auth/google/callback" });
   const token = search.token;
   console.log("Token from search params:", token);
   // Here you can handle the token, e.g., store it in cookies or local storage
   if (token) {
     Cookies.set("token", token, { expires: 7 });
-    // navigate({ to: "/profile" });
+    navigate({ to: "/profile" });
   }
 
   if (!token) {

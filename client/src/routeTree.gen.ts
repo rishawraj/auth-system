@@ -11,58 +11,22 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
-import { Route as VerifyImport } from './routes/verify'
-import { Route as ResetPasswordImport } from './routes/reset-password'
-import { Route as RegisterImport } from './routes/register'
 import { Route as ProfileImport } from './routes/profile'
-import { Route as LogoutImport } from './routes/logout'
-import { Route as LoginImport } from './routes/login'
-import { Route as ForgotPasswordImport } from './routes/forgot-password'
 import { Route as AboutImport } from './routes/about'
 import { Route as IndexImport } from './routes/index'
-import { Route as AuthGoogleCallbackImport } from './routes/auth.google.callback'
+import { Route as authVerifyImport } from './routes/(auth)/verify'
+import { Route as authResetPasswordImport } from './routes/(auth)/reset-password'
+import { Route as authRegisterImport } from './routes/(auth)/register'
+import { Route as authLogoutImport } from './routes/(auth)/logout'
+import { Route as authLoginImport } from './routes/(auth)/login'
+import { Route as authForgotPasswordImport } from './routes/(auth)/forgot-password'
+import { Route as authAuthGoogleCallbackImport } from './routes/(auth)/auth.google.callback'
 
 // Create/Update Routes
-
-const VerifyRoute = VerifyImport.update({
-  id: '/verify',
-  path: '/verify',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const ResetPasswordRoute = ResetPasswordImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const RegisterRoute = RegisterImport.update({
-  id: '/register',
-  path: '/register',
-  getParentRoute: () => rootRoute,
-} as any)
 
 const ProfileRoute = ProfileImport.update({
   id: '/profile',
   path: '/profile',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const LogoutRoute = LogoutImport.update({
-  id: '/logout',
-  path: '/logout',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const LoginRoute = LoginImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const ForgotPasswordRoute = ForgotPasswordImport.update({
-  id: '/forgot-password',
-  path: '/forgot-password',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -78,8 +42,44 @@ const IndexRoute = IndexImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const AuthGoogleCallbackRoute = AuthGoogleCallbackImport.update({
-  id: '/auth/google/callback',
+const authVerifyRoute = authVerifyImport.update({
+  id: '/(auth)/verify',
+  path: '/verify',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const authResetPasswordRoute = authResetPasswordImport.update({
+  id: '/(auth)/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const authRegisterRoute = authRegisterImport.update({
+  id: '/(auth)/register',
+  path: '/register',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const authLogoutRoute = authLogoutImport.update({
+  id: '/(auth)/logout',
+  path: '/logout',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const authLoginRoute = authLoginImport.update({
+  id: '/(auth)/login',
+  path: '/login',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const authForgotPasswordRoute = authForgotPasswordImport.update({
+  id: '/(auth)/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const authAuthGoogleCallbackRoute = authAuthGoogleCallbackImport.update({
+  id: '/(auth)/auth/google/callback',
   path: '/auth/google/callback',
   getParentRoute: () => rootRoute,
 } as any)
@@ -102,27 +102,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AboutImport
       parentRoute: typeof rootRoute
     }
-    '/forgot-password': {
-      id: '/forgot-password'
-      path: '/forgot-password'
-      fullPath: '/forgot-password'
-      preLoaderRoute: typeof ForgotPasswordImport
-      parentRoute: typeof rootRoute
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginImport
-      parentRoute: typeof rootRoute
-    }
-    '/logout': {
-      id: '/logout'
-      path: '/logout'
-      fullPath: '/logout'
-      preLoaderRoute: typeof LogoutImport
-      parentRoute: typeof rootRoute
-    }
     '/profile': {
       id: '/profile'
       path: '/profile'
@@ -130,32 +109,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfileImport
       parentRoute: typeof rootRoute
     }
-    '/register': {
-      id: '/register'
+    '/(auth)/forgot-password': {
+      id: '/(auth)/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof authForgotPasswordImport
+      parentRoute: typeof rootRoute
+    }
+    '/(auth)/login': {
+      id: '/(auth)/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof authLoginImport
+      parentRoute: typeof rootRoute
+    }
+    '/(auth)/logout': {
+      id: '/(auth)/logout'
+      path: '/logout'
+      fullPath: '/logout'
+      preLoaderRoute: typeof authLogoutImport
+      parentRoute: typeof rootRoute
+    }
+    '/(auth)/register': {
+      id: '/(auth)/register'
       path: '/register'
       fullPath: '/register'
-      preLoaderRoute: typeof RegisterImport
+      preLoaderRoute: typeof authRegisterImport
       parentRoute: typeof rootRoute
     }
-    '/reset-password': {
-      id: '/reset-password'
+    '/(auth)/reset-password': {
+      id: '/(auth)/reset-password'
       path: '/reset-password'
       fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordImport
+      preLoaderRoute: typeof authResetPasswordImport
       parentRoute: typeof rootRoute
     }
-    '/verify': {
-      id: '/verify'
+    '/(auth)/verify': {
+      id: '/(auth)/verify'
       path: '/verify'
       fullPath: '/verify'
-      preLoaderRoute: typeof VerifyImport
+      preLoaderRoute: typeof authVerifyImport
       parentRoute: typeof rootRoute
     }
-    '/auth/google/callback': {
-      id: '/auth/google/callback'
+    '/(auth)/auth/google/callback': {
+      id: '/(auth)/auth/google/callback'
       path: '/auth/google/callback'
       fullPath: '/auth/google/callback'
-      preLoaderRoute: typeof AuthGoogleCallbackImport
+      preLoaderRoute: typeof authAuthGoogleCallbackImport
       parentRoute: typeof rootRoute
     }
   }
@@ -166,41 +166,41 @@ declare module '@tanstack/react-router' {
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/forgot-password': typeof ForgotPasswordRoute
-  '/login': typeof LoginRoute
-  '/logout': typeof LogoutRoute
   '/profile': typeof ProfileRoute
-  '/register': typeof RegisterRoute
-  '/reset-password': typeof ResetPasswordRoute
-  '/verify': typeof VerifyRoute
-  '/auth/google/callback': typeof AuthGoogleCallbackRoute
+  '/forgot-password': typeof authForgotPasswordRoute
+  '/login': typeof authLoginRoute
+  '/logout': typeof authLogoutRoute
+  '/register': typeof authRegisterRoute
+  '/reset-password': typeof authResetPasswordRoute
+  '/verify': typeof authVerifyRoute
+  '/auth/google/callback': typeof authAuthGoogleCallbackRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/forgot-password': typeof ForgotPasswordRoute
-  '/login': typeof LoginRoute
-  '/logout': typeof LogoutRoute
   '/profile': typeof ProfileRoute
-  '/register': typeof RegisterRoute
-  '/reset-password': typeof ResetPasswordRoute
-  '/verify': typeof VerifyRoute
-  '/auth/google/callback': typeof AuthGoogleCallbackRoute
+  '/forgot-password': typeof authForgotPasswordRoute
+  '/login': typeof authLoginRoute
+  '/logout': typeof authLogoutRoute
+  '/register': typeof authRegisterRoute
+  '/reset-password': typeof authResetPasswordRoute
+  '/verify': typeof authVerifyRoute
+  '/auth/google/callback': typeof authAuthGoogleCallbackRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/forgot-password': typeof ForgotPasswordRoute
-  '/login': typeof LoginRoute
-  '/logout': typeof LogoutRoute
   '/profile': typeof ProfileRoute
-  '/register': typeof RegisterRoute
-  '/reset-password': typeof ResetPasswordRoute
-  '/verify': typeof VerifyRoute
-  '/auth/google/callback': typeof AuthGoogleCallbackRoute
+  '/(auth)/forgot-password': typeof authForgotPasswordRoute
+  '/(auth)/login': typeof authLoginRoute
+  '/(auth)/logout': typeof authLogoutRoute
+  '/(auth)/register': typeof authRegisterRoute
+  '/(auth)/reset-password': typeof authResetPasswordRoute
+  '/(auth)/verify': typeof authVerifyRoute
+  '/(auth)/auth/google/callback': typeof authAuthGoogleCallbackRoute
 }
 
 export interface FileRouteTypes {
@@ -208,10 +208,10 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
+    | '/profile'
     | '/forgot-password'
     | '/login'
     | '/logout'
-    | '/profile'
     | '/register'
     | '/reset-password'
     | '/verify'
@@ -220,10 +220,10 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
+    | '/profile'
     | '/forgot-password'
     | '/login'
     | '/logout'
-    | '/profile'
     | '/register'
     | '/reset-password'
     | '/verify'
@@ -232,41 +232,41 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/about'
-    | '/forgot-password'
-    | '/login'
-    | '/logout'
     | '/profile'
-    | '/register'
-    | '/reset-password'
-    | '/verify'
-    | '/auth/google/callback'
+    | '/(auth)/forgot-password'
+    | '/(auth)/login'
+    | '/(auth)/logout'
+    | '/(auth)/register'
+    | '/(auth)/reset-password'
+    | '/(auth)/verify'
+    | '/(auth)/auth/google/callback'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
-  ForgotPasswordRoute: typeof ForgotPasswordRoute
-  LoginRoute: typeof LoginRoute
-  LogoutRoute: typeof LogoutRoute
   ProfileRoute: typeof ProfileRoute
-  RegisterRoute: typeof RegisterRoute
-  ResetPasswordRoute: typeof ResetPasswordRoute
-  VerifyRoute: typeof VerifyRoute
-  AuthGoogleCallbackRoute: typeof AuthGoogleCallbackRoute
+  authForgotPasswordRoute: typeof authForgotPasswordRoute
+  authLoginRoute: typeof authLoginRoute
+  authLogoutRoute: typeof authLogoutRoute
+  authRegisterRoute: typeof authRegisterRoute
+  authResetPasswordRoute: typeof authResetPasswordRoute
+  authVerifyRoute: typeof authVerifyRoute
+  authAuthGoogleCallbackRoute: typeof authAuthGoogleCallbackRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
-  ForgotPasswordRoute: ForgotPasswordRoute,
-  LoginRoute: LoginRoute,
-  LogoutRoute: LogoutRoute,
   ProfileRoute: ProfileRoute,
-  RegisterRoute: RegisterRoute,
-  ResetPasswordRoute: ResetPasswordRoute,
-  VerifyRoute: VerifyRoute,
-  AuthGoogleCallbackRoute: AuthGoogleCallbackRoute,
+  authForgotPasswordRoute: authForgotPasswordRoute,
+  authLoginRoute: authLoginRoute,
+  authLogoutRoute: authLogoutRoute,
+  authRegisterRoute: authRegisterRoute,
+  authResetPasswordRoute: authResetPasswordRoute,
+  authVerifyRoute: authVerifyRoute,
+  authAuthGoogleCallbackRoute: authAuthGoogleCallbackRoute,
 }
 
 export const routeTree = rootRoute
@@ -281,14 +281,14 @@ export const routeTree = rootRoute
       "children": [
         "/",
         "/about",
-        "/forgot-password",
-        "/login",
-        "/logout",
         "/profile",
-        "/register",
-        "/reset-password",
-        "/verify",
-        "/auth/google/callback"
+        "/(auth)/forgot-password",
+        "/(auth)/login",
+        "/(auth)/logout",
+        "/(auth)/register",
+        "/(auth)/reset-password",
+        "/(auth)/verify",
+        "/(auth)/auth/google/callback"
       ]
     },
     "/": {
@@ -297,29 +297,29 @@ export const routeTree = rootRoute
     "/about": {
       "filePath": "about.tsx"
     },
-    "/forgot-password": {
-      "filePath": "forgot-password.tsx"
-    },
-    "/login": {
-      "filePath": "login.tsx"
-    },
-    "/logout": {
-      "filePath": "logout.tsx"
-    },
     "/profile": {
       "filePath": "profile.tsx"
     },
-    "/register": {
-      "filePath": "register.tsx"
+    "/(auth)/forgot-password": {
+      "filePath": "(auth)/forgot-password.tsx"
     },
-    "/reset-password": {
-      "filePath": "reset-password.tsx"
+    "/(auth)/login": {
+      "filePath": "(auth)/login.tsx"
     },
-    "/verify": {
-      "filePath": "verify.tsx"
+    "/(auth)/logout": {
+      "filePath": "(auth)/logout.tsx"
     },
-    "/auth/google/callback": {
-      "filePath": "auth.google.callback.tsx"
+    "/(auth)/register": {
+      "filePath": "(auth)/register.tsx"
+    },
+    "/(auth)/reset-password": {
+      "filePath": "(auth)/reset-password.tsx"
+    },
+    "/(auth)/verify": {
+      "filePath": "(auth)/verify.tsx"
+    },
+    "/(auth)/auth/google/callback": {
+      "filePath": "(auth)/auth.google.callback.tsx"
     }
   }
 }

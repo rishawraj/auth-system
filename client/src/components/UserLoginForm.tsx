@@ -94,9 +94,9 @@ export default function UserLoginForm() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
-        throw new Error(
-          errorData?.message || `Server error: ${response.status}`
-        );
+        console.log(errorData.error);
+        setErrorMessage(errorData?.error || "Login failed");
+        return;
       }
       // set the cookie with token
 

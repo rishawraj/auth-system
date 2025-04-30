@@ -14,6 +14,7 @@ export const Route = createFileRoute("/profile")({
       throw redirect({ to: "/login" });
     }
   },
+
   loader: async () => {
     const token = Cookies.get("token");
     if (!token) {
@@ -24,7 +25,13 @@ export const Route = createFileRoute("/profile")({
         Authorization: `Bearer ${token}`,
       },
     });
+
     if (!response.ok) {
+      if (response.status === 401) {
+        // Token expired or invalid
+        Cookies.remove("token");
+        throw redirect({ to: "/login" });
+      }
       throw new Error("Failed to fetch profile data");
     }
 
