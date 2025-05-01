@@ -194,9 +194,13 @@ export async function handleGoogleCallback(
     }
 
     // generate JWT token
-    token = jwt.sign({ email: user.email }, config.jwtSecret, {
-      expiresIn: "1h",
-    });
+    token = jwt.sign(
+      { email: user.email, is_super_user: user.is_super_user },
+      config.jwtSecret,
+      {
+        expiresIn: "1h",
+      }
+    );
 
     //  redirect to frontend with token
     const redirectUrl = `${FRONTEND_URL}/auth/google/callback?token=${token}`;

@@ -1,6 +1,5 @@
 import { IncomingMessage, ServerResponse } from "http";
 import {
-  getAllUsers,
   handleRegister,
   handleLogin,
   handleProfile,
@@ -26,11 +25,7 @@ export default async (req: IncomingMessage, res: ServerResponse) => {
   }
 
   if (req.method === "GET" && pathname === "/health") {
-    return send(res, 200, { status: "OK", message: "Server is healthy" });
-  }
-
-  if (req.method === "GET" && pathname === "/users") {
-    await getAllUsers(req, res);
+    send(res, 200, { status: "OK", message: "Server is healthy" });
     return true; // indicate router handled the request
   }
 
@@ -65,7 +60,6 @@ export default async (req: IncomingMessage, res: ServerResponse) => {
     return true;
   }
   if (req.method === "GET" && pathname === "/auth/google") {
-    console.log("Google Auth");
     handleGoogleAuth(req, res);
     return true;
   }

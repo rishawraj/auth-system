@@ -1,9 +1,41 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { redirect } from "@tanstack/react-router";
+import { getUserFromToken } from "../../utils/authToken";
+import { toast } from "react-toastify";
 
 export const Route = createFileRoute("/admin/")({
+  beforeLoad: async () => {
+    const user = getUserFromToken();
+    console.log("User from token:", user);
+    if (!user) {
+      throw redirect({ to: "/login" });
+    }
+    if (!user.is_super_user) {
+      console.log("User is not super user");
+      // alert("You are not authorized to access this page.");
+      toast.error("You are not authorized to access this page.");
+      throw redirect({ to: "/login" });
+    }
+  },
+
   component: RouteComponent,
+  errorComponent: () => <div>Something went wrong</div>,
 });
 
 function RouteComponent() {
-  return <div>Hello "/admin/"!</div>;
+  const navigate = useNavigate();
+
+  return (
+    <div>
+      <h1>Admin</h1>
+      <p>This is the admin page.</p>
+
+      <button
+        className="p-2 bg-green-400 rounded-md m-2 cursor-pointer"
+        onClick={() => navigate({ to: "/admin/users" })}
+      >
+        manage users
+      </button>
+    </div>
+  );
 }

@@ -29,3 +29,20 @@ export const isAuthenticated = (): boolean => {
   }
   return !isTokenExpired(token);
 };
+
+// utils/auth.ts
+export function getUserFromToken(): {
+  email: string;
+  is_super_user: boolean;
+} | null {
+  const token = getToken();
+  if (!token) return null;
+
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload;
+  } catch (err) {
+    console.error("Failed to parse token", err);
+    return null;
+  }
+}

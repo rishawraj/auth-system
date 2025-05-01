@@ -1,5 +1,6 @@
 import { createRootRoute, Link, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+import { ToastContainer } from "react-toastify";
 
 export const Route = createRootRoute({
   component: () => (
@@ -20,11 +21,26 @@ export const Route = createRootRoute({
         <Link to="/profile" className="[&.active]:font-bold">
           Profile
         </Link>
+        <Link to="/admin" className="[&.active]:font-bold">
+          Admin
+        </Link>
       </div>
       <hr />
 
       <main className="container scheme-dark">
         <Outlet />
+        <ToastContainer
+          position="top-right"
+          autoClose={5000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="dark"
+        />
       </main>
       <TanStackRouterDevtools />
     </>

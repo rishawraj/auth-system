@@ -21,6 +21,8 @@ import { Route as authRegisterImport } from './routes/(auth)/register'
 import { Route as authLogoutImport } from './routes/(auth)/logout'
 import { Route as authLoginImport } from './routes/(auth)/login'
 import { Route as authForgotPasswordImport } from './routes/(auth)/forgot-password'
+import { Route as AdminUsersIndexImport } from './routes/admin/users/index'
+import { Route as AdminUsersPostIdImport } from './routes/admin/users/$postId'
 import { Route as authAuthGoogleCallbackImport } from './routes/(auth)/auth.google.callback'
 
 // Create/Update Routes
@@ -82,6 +84,18 @@ const authLoginRoute = authLoginImport.update({
 const authForgotPasswordRoute = authForgotPasswordImport.update({
   id: '/(auth)/forgot-password',
   path: '/forgot-password',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const AdminUsersIndexRoute = AdminUsersIndexImport.update({
+  id: '/admin/users/',
+  path: '/admin/users/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const AdminUsersPostIdRoute = AdminUsersPostIdImport.update({
+  id: '/admin/users/$postId',
+  path: '/admin/users/$postId',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -165,6 +179,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexImport
       parentRoute: typeof rootRoute
     }
+    '/admin/users/$postId': {
+      id: '/admin/users/$postId'
+      path: '/admin/users/$postId'
+      fullPath: '/admin/users/$postId'
+      preLoaderRoute: typeof AdminUsersPostIdImport
+      parentRoute: typeof rootRoute
+    }
+    '/admin/users/': {
+      id: '/admin/users/'
+      path: '/admin/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersIndexImport
+      parentRoute: typeof rootRoute
+    }
     '/(auth)/auth/google/callback': {
       id: '/(auth)/auth/google/callback'
       path: '/auth/google/callback'
@@ -188,6 +216,8 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof authResetPasswordRoute
   '/verify': typeof authVerifyRoute
   '/admin': typeof AdminIndexRoute
+  '/admin/users/$postId': typeof AdminUsersPostIdRoute
+  '/admin/users': typeof AdminUsersIndexRoute
   '/auth/google/callback': typeof authAuthGoogleCallbackRoute
 }
 
@@ -202,6 +232,8 @@ export interface FileRoutesByTo {
   '/reset-password': typeof authResetPasswordRoute
   '/verify': typeof authVerifyRoute
   '/admin': typeof AdminIndexRoute
+  '/admin/users/$postId': typeof AdminUsersPostIdRoute
+  '/admin/users': typeof AdminUsersIndexRoute
   '/auth/google/callback': typeof authAuthGoogleCallbackRoute
 }
 
@@ -217,6 +249,8 @@ export interface FileRoutesById {
   '/(auth)/reset-password': typeof authResetPasswordRoute
   '/(auth)/verify': typeof authVerifyRoute
   '/admin/': typeof AdminIndexRoute
+  '/admin/users/$postId': typeof AdminUsersPostIdRoute
+  '/admin/users/': typeof AdminUsersIndexRoute
   '/(auth)/auth/google/callback': typeof authAuthGoogleCallbackRoute
 }
 
@@ -233,6 +267,8 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/verify'
     | '/admin'
+    | '/admin/users/$postId'
+    | '/admin/users'
     | '/auth/google/callback'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -246,6 +282,8 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/verify'
     | '/admin'
+    | '/admin/users/$postId'
+    | '/admin/users'
     | '/auth/google/callback'
   id:
     | '__root__'
@@ -259,6 +297,8 @@ export interface FileRouteTypes {
     | '/(auth)/reset-password'
     | '/(auth)/verify'
     | '/admin/'
+    | '/admin/users/$postId'
+    | '/admin/users/'
     | '/(auth)/auth/google/callback'
   fileRoutesById: FileRoutesById
 }
@@ -274,6 +314,8 @@ export interface RootRouteChildren {
   authResetPasswordRoute: typeof authResetPasswordRoute
   authVerifyRoute: typeof authVerifyRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminUsersPostIdRoute: typeof AdminUsersPostIdRoute
+  AdminUsersIndexRoute: typeof AdminUsersIndexRoute
   authAuthGoogleCallbackRoute: typeof authAuthGoogleCallbackRoute
 }
 
@@ -288,6 +330,8 @@ const rootRouteChildren: RootRouteChildren = {
   authResetPasswordRoute: authResetPasswordRoute,
   authVerifyRoute: authVerifyRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminUsersPostIdRoute: AdminUsersPostIdRoute,
+  AdminUsersIndexRoute: AdminUsersIndexRoute,
   authAuthGoogleCallbackRoute: authAuthGoogleCallbackRoute,
 }
 
@@ -311,6 +355,8 @@ export const routeTree = rootRoute
         "/(auth)/reset-password",
         "/(auth)/verify",
         "/admin/",
+        "/admin/users/$postId",
+        "/admin/users/",
         "/(auth)/auth/google/callback"
       ]
     },
@@ -343,6 +389,12 @@ export const routeTree = rootRoute
     },
     "/admin/": {
       "filePath": "admin/index.tsx"
+    },
+    "/admin/users/$postId": {
+      "filePath": "admin/users/$postId.tsx"
+    },
+    "/admin/users/": {
+      "filePath": "admin/users/index.tsx"
     },
     "/(auth)/auth/google/callback": {
       "filePath": "(auth)/auth.google.callback.tsx"

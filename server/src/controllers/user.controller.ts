@@ -34,16 +34,6 @@ const verifySchema = z.object({
   code: z.string().length(6, "Code is a 6 digit number"),
 });
 
-export const getAllUsers = (req, res) => {
-  res.writeHead(200, { "Content-Type": "application/json" });
-  res.end(
-    JSON.stringify([
-      { id: 1, name: "raj" },
-      { id: 2, name: "taj" },
-    ])
-  );
-};
-
 export async function handleRegister(
   req: IncomingMessage,
   res: ServerResponse
@@ -150,9 +140,13 @@ export async function handleLogin(
 
     if (!match) return send(res, 401, { error: "Invalid credentials" });
 
-    const token = jwt.sign({ email: user.email }, SECRET, {
-      expiresIn: "1h",
-    });
+    const token = jwt.sign(
+      { email: user.email, is_super_user: user.is_super_user },
+      SECRET,
+      {
+        expiresIn: "1h",
+      }
+    );
 
     // update last login time
     await pool.query("UPDATE users SET last_login = $1 WHERE email = $2", [

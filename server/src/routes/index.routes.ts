@@ -1,15 +1,15 @@
+import { IncomingMessage, ServerResponse } from "http";
 import userRoutes from "./users.routes.ts";
+import adminRoutes from "./admin.routes.ts";
+import { checkSuperUser } from "../middleware/checkSuperUser.ts";
 
-const routes = [
-  userRoutes,
-  //  add other route modules to this array
-];
+export default async (req: IncomingMessage, res: ServerResponse) => {
+  const parsedUrl = new URL(req.url || "", `http://${req.headers.host}`);
+  const pathname = parsedUrl.pathname;
 
-export default (req, res) => {
-  for (const routeHandler of routes) {
-    if (routeHandler(req, res)) {
-      return true; // request handled by a router
-    }
+  if (pathname.startsWith("/admin")) {
+    return adminRoutes(req, res);
+  } else {
+    return userRoutes(req, res);
   }
-  return false;
 };
