@@ -396,57 +396,31 @@ export async function handleResetPassword(
   }
 }
 
-//todo link it: New handler for linking OAuth account to existing account
-export async function handleLinkOAuthAccount(
-  req: IncomingMessage,
-  res: ServerResponse,
-  userId: number,
-  oauthProvider: string,
-  oauthId: string,
-  oauthToken: string
-): Promise<void> {
-  try {
-    await pool.query(
-      `UPDATE users SET 
-        oauth_provider = $1, 
-        oauth_id = $2, 
-        oauth_access_token = $3
-      WHERE id = $4`,
-      [oauthProvider, oauthId, oauthToken, userId]
-    );
+// export async function verifyJWT(
+//   req: IncomingMessage
+// ): Promise<{ userId: number; email: string } | null> {
+//   try {
+//     const authHeader = req.headers.authorization;
+//     if (!authHeader || !authHeader.startsWith("Bearer ")) {
+//       return null;
+//     }
 
-    send(res, 200, { message: "Account linked successfully" });
-  } catch (error) {
-    console.error("Account linking error:", error);
-    send(res, 500, { error: "Internal server error" });
-  }
-}
+//     const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+//     const decoded = jwt.verify(token, SECRET) as { email: string; id: number };
 
-export async function verifyJWT(
-  req: IncomingMessage
-): Promise<{ userId: number; email: string } | null> {
-  try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return null;
-    }
+//     // Check if user exists and is active
+//     const userResult = await pool.query<User>(
+//       "SELECT id FROM users WHERE id = $1 AND is_active = true",
+//       [decoded.id]
+//     );
 
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
-    const decoded = jwt.verify(token, SECRET) as { email: string; id: number };
+//     if (userResult.rows.length === 0) {
+//       return null;
+//     }
 
-    // Check if user exists and is active
-    const userResult = await pool.query<User>(
-      "SELECT id FROM users WHERE id = $1 AND is_active = true",
-      [decoded.id]
-    );
-
-    if (userResult.rows.length === 0) {
-      return null;
-    }
-
-    return { userId: decoded.id, email: decoded.email };
-  } catch (error) {
-    console.error("JWT verification error:", error);
-    return null;
-  }
-}
+//     return { userId: decoded.id, email: decoded.email };
+//   } catch (error) {
+//     console.error("JWT verification error:", error);
+//     return null;
+//   }
+// }

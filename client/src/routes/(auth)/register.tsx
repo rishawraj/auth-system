@@ -1,5 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import UserRegistrationForm from "../components/UserRegistrationForm";
+import UserRegistrationForm from "../../components/UserRegistrationForm";
 import Cookies from "js-cookie";
 
 export const Route = createFileRoute("/(auth)/register")({

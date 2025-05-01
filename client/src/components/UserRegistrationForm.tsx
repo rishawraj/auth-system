@@ -14,7 +14,7 @@ interface FormErrors {
   password?: string;
 }
 
-export default function RegistrationForm() {
+export default function UserRegistrationForm() {
   const [formData, setFormData] = useState<FormData>({
     name: "",
     email: "",

@@ -18,7 +18,7 @@ export const Route = createFileRoute("/(auth)/reset-password")({
 import { z } from "zod"; // Import a validation library like zod
 
 function RouteComponent() {
-  const search = useSearch({ from: "/reset-password" }); // Use the search schema to validate the search parameters
+  const search = useSearch({ from: "/(auth)/reset-password" }); // Use the search schema to validate the search parameters
   const token = search.token;
 
   const [password, setPassword] = useState("");

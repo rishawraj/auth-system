@@ -17,7 +17,7 @@ export const Route = createFileRoute("/(auth)/auth/google/callback")({
 
 function RouteComponent() {
   const navigate = useNavigate({ from: "/auth/google/callback" });
-  const search = useSearch({ from: "/auth/google/callback" });
+  const search = useSearch({ from: "/(auth)/auth/google/callback" });
   const token = search.token;
   console.log("Token from search params:", token);
   // Here you can handle the token, e.g., store it in cookies or local storage

@@ -87,20 +87,55 @@ export async function handleGoogleCallback(
       return send(res, 400, { error: "Invalid ID token" });
     }
 
+    console.log("Payload:", payload);
+
     const { email, name } = payload;
 
     console.log({ email, name });
-    // check if user exists in the database
-    // Check if user exists in database
-    const existingUserResult = await pool.query<User>(
-      "SELECT * FROM users WHERE email = $1 OR (oauth_provider = $2 AND oauth_id = $3)",
-      [payload.email, "google", payload.sub]
-    );
 
     let user: User;
     let token: string;
 
-    if (existingUserResult.rows.length === 0) {
+    // check if email user exists in the database with no oauth provider
+    const existingUserResult = await pool.query<User>(
+      "SELECT * FROM users WHERE email = $1 AND oauth_provider IS NULL",
+      [email]
+    );
+
+    if (existingUserResult.rows.length > 0) {
+      // user exists, update oauth provider and id
+      user = existingUserResult.rows[0];
+      const updateUserResult = await pool.query<User>(
+        `UPDATE users SET 
+          oauth_provider = $1, 
+          oauth_id = $2, 
+          oauth_access_token = $3, 
+          oauth_refresh_token = $4, 
+          oauth_token_expires_at = $5,
+          is_active = $6,
+          last_login = $7
+        WHERE id = $8`,
+        [
+          "google",
+          payload.sub,
+          tokens.access_token,
+          tokens.refresh_token || null,
+          tokens.expiry_date ? new Date(tokens.expiry_date) : null,
+          true,
+          new Date(),
+          user.id,
+        ]
+      );
+      user = updateUserResult.rows[0];
+    }
+
+    // check if google user exists in the database
+    const existingGoogleUserResult = await pool.query<User>(
+      "SELECT * FROM users WHERE email = $1 OR (oauth_provider = $2 AND oauth_id = $3)",
+      [payload.email, "google", payload.sub]
+    );
+
+    if (existingGoogleUserResult.rows.length === 0) {
       // create a new user
       const newUserResult = await pool.query<User>(
         `INSERT INTO users (
@@ -132,7 +167,7 @@ export async function handleGoogleCallback(
       user = newUserResult.rows[0];
     } else {
       // user exists, update access token and refresh token
-      user = existingUserResult.rows[0];
+      user = existingGoogleUserResult.rows[0];
       const updateUserResult = await pool.query<User>(
         `UPDATE users SET 
           oauth_provider = $1, 
@@ -159,19 +194,9 @@ export async function handleGoogleCallback(
     }
 
     // generate JWT token
-
     token = jwt.sign({ email: user.email }, config.jwtSecret, {
       expiresIn: "1h",
     });
-
-    // set the token in the response cookie and redirect to /profile
-    // res.setHeader(
-    //   "Set-Cookie",
-    //   `token=${token}; HttpOnly; Path=/; Max-Age=3600;`
-    // );
-    // res.setHeader("Content-Type", "application/json");
-    // res.writeHead(302, { location: `${FRONTEND_URL}/profile` });
-    // res.end();
 
     //  redirect to frontend with token
     const redirectUrl = `${FRONTEND_URL}/auth/google/callback?token=${token}`;
@@ -184,117 +209,142 @@ export async function handleGoogleCallback(
 }
 
 // Handler to refresh OAuth tokens when they expire
-export async function refreshOAuthTokens(userId: "string"): Promise<boolean> {
-  try {
-    const userResult = await pool.query<User>(
-      "SELECT oauth_refresh_token FROM users WHERE id = $1 AND oauth_provider = $2",
-      [userId, "google"]
-    );
+// export async function refreshOAuthTokens(userId: "string"): Promise<boolean> {
+//   try {
+//     const userResult = await pool.query<User>(
+//       "SELECT oauth_refresh_token FROM users WHERE id = $1 AND oauth_provider = $2",
+//       [userId, "google"]
+//     );
 
-    if (
-      userResult.rows.length === 0 ||
-      !userResult.rows[0].oauth_refresh_token
-    ) {
-      console.error("User not found or not using Google OAuth");
-      return false;
-    }
-    const refreshToken = userResult.rows[0].oauth_refresh_token;
-    // setup credentials
-    OAuthClient.setCredentials({
-      refresh_token: refreshToken,
-    });
+//     if (
+//       userResult.rows.length === 0 ||
+//       !userResult.rows[0].oauth_refresh_token
+//     ) {
+//       console.error("User not found or not using Google OAuth");
+//       return false;
+//     }
+//     const refreshToken = userResult.rows[0].oauth_refresh_token;
+//     // setup credentials
+//     OAuthClient.setCredentials({
+//       refresh_token: refreshToken,
+//     });
 
-    // refresh tokens
-    const { credentials } = await OAuthClient.refreshAccessToken();
-    await pool.query(
-      `UPDATE users SET 
-        oauth_access_token = $1, 
-        oauth_token_expires_at = $2,
-        oauth_refresh_token = $3
-      WHERE id = $4`,
-      [
-        credentials.access_token,
-        credentials.expiry_date ? new Date(credentials.expiry_date) : null,
-        credentials.refresh_token || refreshToken,
-        userId,
-      ]
-    );
-    return true;
-  } catch (error) {
-    console.error("Error refreshing OAuth tokens:", error);
-    return false;
-  }
-}
+//     // refresh tokens
+//     const { credentials } = await OAuthClient.refreshAccessToken();
+//     await pool.query(
+//       `UPDATE users SET
+//         oauth_access_token = $1,
+//         oauth_token_expires_at = $2,
+//         oauth_refresh_token = $3
+//       WHERE id = $4`,
+//       [
+//         credentials.access_token,
+//         credentials.expiry_date ? new Date(credentials.expiry_date) : null,
+//         credentials.refresh_token || refreshToken,
+//         userId,
+//       ]
+//     );
+//     return true;
+//   } catch (error) {
+//     console.error("Error refreshing OAuth tokens:", error);
+//     return false;
+//   }
+// }
 
 // middleware to check if user is authenticated
-export async function validateOAuthToken(req: IncomingMessage, userId: string) {
+// export async function validateOAuthToken(req: IncomingMessage, userId: string) {
+//   try {
+//     const userResult = await pool.query<User>(
+//       "SELECT oauth_token_expires_at FROM users WHERE id = $1 AND oauth_provider = $2",
+//       [userId, "google"]
+//     );
+//     if (userResult.rows.length === 0) {
+//       console.error("User not found or not using Google OAuth");
+//       return false;
+//     }
+
+//     const tokenExpiresAt = userResult.rows[0].oauth_token_expires_at;
+
+//     // If token is expired, try to refresh it
+//     if (!tokenExpiresAt || new Date() > tokenExpiresAt) {
+//       return await refreshGoogleToken(userId);
+//     }
+
+//     return true;
+//   } catch (error) {
+//     console.error("Error validating OAuth token:", error);
+//     return false;
+//   }
+// }
+
+// async function refreshGoogleToken(userId: string): Promise<boolean> {
+//   try {
+//     const userResult = await pool.query<User>(
+//       "SELECT oauth_refresh_token FROM users WHERE id = $1 AND oauth_provider = $2",
+//       [userId, "google"]
+//     );
+
+//     if (
+//       userResult.rows.length === 0 ||
+//       !userResult.rows[0].oauth_refresh_token
+//     ) {
+//       console.error("User not found or not using Google OAuth");
+//       return false;
+//     }
+
+//     const refreshToken = userResult.rows[0].oauth_refresh_token;
+
+//     // Set up credentials with the refresh token
+//     OAuthClient.setCredentials({
+//       refresh_token: refreshToken,
+//     });
+
+//     // Refresh the access token
+//     const { credentials } = await OAuthClient.refreshAccessToken();
+
+//     // Update the user's tokens in the database
+//     await pool.query(
+//       `UPDATE users SET
+//         oauth_access_token = $1,
+//         oauth_token_expires_at = $2,
+//         oauth_refresh_token = $3
+//       WHERE id = $4`,
+//       [
+//         credentials.access_token,
+//         credentials.expiry_date ? new Date(credentials.expiry_date) : null,
+//         credentials.refresh_token || refreshToken,
+//         userId,
+//       ]
+//     );
+
+//     return true;
+//   } catch (error) {
+//     console.error("Error refreshing Google OAuth tokens:", error);
+//     return false;
+//   }
+// }
+
+async function handleLinkOAuthAccount(
+  req: IncomingMessage,
+  res: ServerResponse,
+  userId: number,
+  oauthProvider: string,
+  oauthId: string,
+  oauthToken: string
+): Promise<void> {
   try {
-    const userResult = await pool.query<User>(
-      "SELECT oauth_token_expires_at FROM users WHERE id = $1 AND oauth_provider = $2",
-      [userId, "google"]
-    );
-    if (userResult.rows.length === 0) {
-      console.error("User not found or not using Google OAuth");
-      return false;
-    }
-
-    const tokenExpiresAt = userResult.rows[0].oauth_token_expires_at;
-
-    // If token is expired, try to refresh it
-    if (!tokenExpiresAt || new Date() > tokenExpiresAt) {
-      return await refreshGoogleToken(userId);
-    }
-
-    return true;
-  } catch (error) {
-    console.error("Error validating OAuth token:", error);
-    return false;
-  }
-}
-
-async function refreshGoogleToken(userId: string): Promise<boolean> {
-  try {
-    const userResult = await pool.query<User>(
-      "SELECT oauth_refresh_token FROM users WHERE id = $1 AND oauth_provider = $2",
-      [userId, "google"]
-    );
-
-    if (
-      userResult.rows.length === 0 ||
-      !userResult.rows[0].oauth_refresh_token
-    ) {
-      console.error("User not found or not using Google OAuth");
-      return false;
-    }
-
-    const refreshToken = userResult.rows[0].oauth_refresh_token;
-
-    // Set up credentials with the refresh token
-    OAuthClient.setCredentials({
-      refresh_token: refreshToken,
-    });
-
-    // Refresh the access token
-    const { credentials } = await OAuthClient.refreshAccessToken();
-
-    // Update the user's tokens in the database
     await pool.query(
       `UPDATE users SET 
-        oauth_access_token = $1, 
-        oauth_token_expires_at = $2,
-        oauth_refresh_token = $3
+        oauth_provider = $1, 
+        oauth_id = $2, 
+        oauth_access_token = $3
       WHERE id = $4`,
-      [
-        credentials.access_token,
-        credentials.expiry_date ? new Date(credentials.expiry_date) : null,
-        credentials.refresh_token || refreshToken,
-        userId,
-      ]
+      [oauthProvider, oauthId, oauthToken, userId]
     );
 
-    return true;
+    send(res, 200, { message: "Account linked successfully" });
   } catch (error) {
-    console.error("Error refreshing Google OAuth tokens:", error);
-    return false;
+    console.error("Account linking error:", error);
+    send(res, 500, { error: "Internal server error" });
   }
 }

@@ -11,7 +11,7 @@ export const Route = createFileRoute("/(auth)/verify")({
 
 function VerifyComponent() {
   const navigate = useNavigate({ from: "/verify" });
-  const search = useSearch({ from: "/verify" }) as { token?: string }; // Let useSearch infer the correct type
+  const search = useSearch({ from: "/(auth)/verify" }) as { token?: string }; // Let useSearch infer the correct type
 
   console.log(search);
 
