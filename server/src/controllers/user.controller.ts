@@ -80,7 +80,7 @@ export async function handleRegister(
     const newUser = newUserResult.rows[0];
 
     const token = jwt.sign({ email: newUser.email }, SECRET, {
-      expiresIn: "1h",
+      expiresIn: "1d",
     });
 
     // fire and forget
@@ -144,7 +144,7 @@ export async function handleLogin(
       { email: user.email, is_super_user: user.is_super_user },
       SECRET,
       {
-        expiresIn: "1h",
+        expiresIn: "1d",
       }
     );
 
