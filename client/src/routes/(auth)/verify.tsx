@@ -4,6 +4,7 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import React, { useState, ChangeEvent, KeyboardEvent } from "react";
+import { setToken } from "../../utils/authToken";
 
 export const Route = createFileRoute("/(auth)/verify")({
   component: VerifyComponent,
@@ -72,7 +73,8 @@ function VerifyComponent() {
 
       const responseData = await response.json();
       console.log(responseData);
-      navigate({ to: "/" });
+      setToken(token);
+      navigate({ to: "/profile" });
     } catch (error) {
       console.error("Error during verification:", error);
     }

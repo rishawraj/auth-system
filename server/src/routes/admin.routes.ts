@@ -75,15 +75,5 @@ export default async (req: IncomingMessage, res: ServerResponse) => {
     return true; // Add this line to indicate the route was handled
   }
 
-  // get a user by id
-  // if (req.method === "GET" && pathname === "/admin/users/:id") {
-  //   send(res, 200, {
-  //     status: "OK",
-  //     message: "User fetched successfully",
-  //     data: { id: 1, name: "John Doe", email: "r" },
-  //   });
-  //   return true; // Add this line to indicate the route was handled
-  // }
-
   return false; // Add this line to indicate no routes matched
 };

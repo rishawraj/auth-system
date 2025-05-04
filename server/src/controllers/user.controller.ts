@@ -15,6 +15,8 @@ import jwt from "jsonwebtoken";
 import "dotenv/config";
 import { User } from "../models/user.model.ts";
 import { OAuth2Client, TokenPayload } from "google-auth-library";
+import { UAParser } from "ua-parser-js";
+import crypto from "crypto";
 
 const SECRET = process.env.SECRET;
 const FRONTEND_URL = process.env.FRONTEND_URL;
@@ -58,6 +60,18 @@ export async function handleRegister(
       [email]
     );
 
+    const existingOauthUserResult = await pool.query(
+      "SELECT id FROM users where email = $1 and oauth_provider is not null",
+      [email]
+    );
+
+    if (existingOauthUserResult.rows.length > 0) {
+      return send(res, 400, {
+        error:
+          "This account was created with Google. Please use Google login instead.",
+      });
+    }
+
     if (existingUserResult.rows.length > 0) {
       return send(res, 400, { error: "User with this email already exists" });
     }
@@ -67,16 +81,62 @@ export async function handleRegister(
     const verificationCode = CodeWithExpiry.code;
     const verification_code_expiry_time = CodeWithExpiry.expiresAt;
 
+    //  ---- extract user agent from request headers ----
+    const ua = new UAParser(req.headers["user-agent"] || "");
+    const ip =
+      req.headers["x-forwarded-for"]?.toString().split(",")[0] ||
+      req.socket.remoteAddress ||
+      null;
+    const browser = ua.getBrowser().name || null;
+    const os = ua.getOS().name || null;
+    const device = ua.getDevice().model || "unknown";
+
+    // todo Replace with actual geo data from ip
+    const last_location = null;
+    const last_country = null;
+    const last_city = null;
+    const last_login = new Date();
+
+    // todo generate a profile picture
+    const hashedEmail = crypto
+      .createHash("sha256")
+      .update(email.toLowerCase().trim())
+      .digest("hex");
+    const profile_pic = `https://api.dicebear.com/7.x/adventurer/png?seed=${hashedEmail}`;
+
+    // const newUserResult = await pool.query(
+    //   "INSERT INTO users (name, email, password, verification_code, verification_code_expiry_time) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, is_active, registration_date",
+    //   [
+    //     name,
+    //     email,
+    //     hashedPassword,
+    //     verificationCode,
+    //     verification_code_expiry_time,
+    //   ]
+    // );
+
     const newUserResult = await pool.query(
-      "INSERT INTO users (name, email, password, verification_code, verification_code_expiry_time) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, is_active, registration_date",
+      `INSERT INTO users (
+    name, email, password, verification_code, verification_code_expiry_time,
+    last_login, last_ip, last_browser, last_os, last_device,
+    profile_pic
+  ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+   RETURNING id, name, email, is_active, registration_date`,
       [
         name,
         email,
         hashedPassword,
         verificationCode,
         verification_code_expiry_time,
+        last_login,
+        ip,
+        browser,
+        os,
+        device,
+        profile_pic,
       ]
     );
+
     const newUser = newUserResult.rows[0];
 
     const token = jwt.sign({ email: newUser.email }, SECRET, {
@@ -261,7 +321,9 @@ export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
     `;
 
     await pool.query(updateQuery, [user.id]);
+
     // Send success response
+
     send(res, 200, {
       message: "Account verified successfully",
       email: email,

@@ -6,6 +6,7 @@ import { User } from "../models/user.model.ts";
 import { OAuth2Client, TokenPayload } from "google-auth-library";
 import "dotenv/config";
 import { config } from "../types/config.ts";
+import { UAParser } from "ua-parser-js";
 
 const FRONTEND_URL = process.env.FRONTEND_URL;
 
@@ -45,8 +46,6 @@ export async function handleGoogleCallback(
   res: ServerResponse
 ): Promise<void> {
   try {
-    // console.log("Handling Google callback james bond");
-
     // parse url to get the code
     const url = new URL(req.url || "", `http://${req.headers.host}`);
     const code = url.searchParams.get("code");
@@ -74,7 +73,20 @@ export async function handleGoogleCallback(
 
     const { email, name } = payload;
 
-    // console.log({ email, name });
+    //  ---- extract user agent from request headers ----
+    const ua = new UAParser(req.headers["user-agent"] || "");
+    const ip =
+      req.headers["x-forwarded-for"]?.toString().split(",")[0] ||
+      req.socket.remoteAddress ||
+      null;
+    const browser = ua.getBrowser().name || null;
+    const os = ua.getOS().name || null;
+    const device = ua.getDevice().model || "unknown";
+
+    // todo Replace with actual geo data from ip
+    const last_location = null;
+    const last_country = null;
+    const last_city = null;
 
     let user: User;
     let token: string;
@@ -120,30 +132,78 @@ export async function handleGoogleCallback(
 
     if (existingGoogleUserResult.rows.length === 0) {
       // create a new user
+
+      // const newUserResult = await pool.query<User>(
+      //   `INSERT INTO users (
+      //     name,
+      //     email,
+      //     password,
+      //     is_active,
+      //     oauth_provider,
+      //     oauth_id,
+      //     oauth_access_token,
+      //     oauth_refresh_token,
+      //     oauth_token_expires_at
+      //   )
+      //   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      //   RETURNING *`,
+      //   [
+      //     payload.name || "Google User",
+      //     payload.email,
+      //     "", // Empty password for OAuth users
+      //     true, // Auto-verify OAuth users
+      //     "google",
+      //     payload.sub,
+      //     tokens.access_token,
+      //     tokens.refresh_token || null,
+      //     tokens.expiry_date ? new Date(tokens.expiry_date) : null,
+      //   ]
+      // );
+
       const newUserResult = await pool.query<User>(
         `INSERT INTO users (
-          name, 
-          email, 
-          password, 
-          is_active, 
-          oauth_provider, 
-          oauth_id, 
-          oauth_access_token, 
-          oauth_refresh_token, 
-          oauth_token_expires_at
-        ) 
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
-        RETURNING *`,
+          name,
+          email,
+          password,
+          is_active,
+          oauth_provider,
+          oauth_id,
+          oauth_access_token,
+          oauth_refresh_token,
+          oauth_token_expires_at,
+          last_login,
+          last_login_method,
+          last_ip,
+          last_browser,
+          last_os,
+          last_device,
+          last_location,
+          last_country,
+          last_city,
+          profile_pic
+        ) VALUES (
+          $1, $2, '', $3, $4, $5, $6, $7, $8,
+          $9, $10, $11, $12, $13, $14, $15, $16, $17, $18
+        ) RETURNING *`,
         [
-          payload.name || "Google User",
-          payload.email,
-          "", // Empty password for OAuth users
-          true, // Auto-verify OAuth users
+          name || "Google User",
+          email,
+          true,
           "google",
           payload.sub,
           tokens.access_token,
           tokens.refresh_token || null,
           tokens.expiry_date ? new Date(tokens.expiry_date) : null,
+          new Date(),
+          "google",
+          ip,
+          browser,
+          os,
+          device,
+          last_location,
+          last_country,
+          last_city,
+          payload.picture || null,
         ]
       );
 

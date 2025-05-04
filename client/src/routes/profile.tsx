@@ -45,9 +45,27 @@ export const Route = createFileRoute("/profile")({
 
 function RouteComponent() {
   const profile = useLoaderData({ from: "/profile" });
+  console.log(profile.message.profile_pic);
+
+  const img_url = profile.message.profile_pic || "";
 
   return (
     <div>
+      <h1
+        className="text-2xl
+        font-bold
+        text-gray-900
+        mb-4"
+      >
+        Profile
+      </h1>
+
+      {/* profile pic */}
+      <img
+        src={img_url}
+        alt="Profile"
+        className="w-32 h-32 rounded-full mb-4"
+      />
       <LogoutButton />
       <pre>{JSON.stringify(profile, null, 2)}</pre>
     </div>

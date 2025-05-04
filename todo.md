@@ -1,13 +1,17 @@
 - [ ] centralize jwt expiry time
 
-## roles
+## implement all field in email login as they are in google login
 
-- add a admin role to managae user
-- [x] alter db to isSuperUser === admin ??
-- [x] function of admin
-- [x] create more tables
-  - [ ] blocked no!
-  - [x] use short lived jwts
+- [ ] profile pic
+  - [ ] generate a svg store in db or
+  - [ ] use aws s3 (setup) | uploadthing.com ??
+- [ ] ip, browser, os, device, location , country
+
+## deploy
+
+- [ ] client to gh-pages (domain)
+- [ ] vercel / render /
+- [ ] db (neon)
 
 ## 2fa
 
@@ -17,50 +21,22 @@
 
 ## tests
 
-- test all code
+- [ ] test all code
 
 ## db
 
-- [ ] add a profile pic field
-  - file uploads
-  - s3 bucket?
-- [ ] last_login_method VARCHAR(20),
-- [ ] is_two_factor_enabled BOOLEAN DEFAULT FALSE,
-- [ ] two_factor_secret VARCHAR(255),
-- [ ] is_deleted
-
-{user.last_login}
-{user.last_ip}
-{user.last_browser}
-{user.last_os}
-{user.last_device}
-{user.last_location}
-{user.last_country}
-{user.last_city}
-{user.last_latitude}
-{user.last_longitude}
-{user.last_timezone}
-{user.last_language}
-{user.last_currency}
+- [ ] uuid
 
 ## frontend
 
 - [ ] use react query
 
-## clean up
+### aws services
 
-- [ ] extract basic functions
-  - [ ] getToken setToken
-  - [ ]
-  - [ ]
-  - [ ]
-  - [ ]
-  - [ ]
-  - [ ]
-  - [ ]
-  - [ ]
+- [ ] aws ses email
 
-## notification
+## profile pic
 
-- [ ] install package
-- [ ] implement
+```ts
+const avatarUrl = `https://api.dicebear.com/7.x/adventurer/png?seed=${uuidv4()}`;
+```
