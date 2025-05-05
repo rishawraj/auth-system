@@ -1,5 +1,6 @@
 // config.ts
 import { z } from "zod";
+import { User } from "../models/user.model.ts";
 
 // Step 1: Define the schema
 const envSchema = z.object({
@@ -23,3 +24,5 @@ export const config = {
   jwtSecret: env.SECRET,
   jwtExpiration: env.JWT_EXPIRATION,
 };
+
+export type { User };
