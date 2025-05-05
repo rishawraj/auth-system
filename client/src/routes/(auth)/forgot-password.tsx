@@ -9,13 +9,14 @@ function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const API_URL = import.meta.env.VITE_API_BASE_URL;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
     try {
       setError("");
-      const res = await fetch("http://localhost:3000/forgot-password", {
+      const res = await fetch(`${API_URL}/forgot-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

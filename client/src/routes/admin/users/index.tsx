@@ -18,11 +18,12 @@ export const Route = createFileRoute("/admin/users/")({
 
   loader: async () => {
     const token = Cookies.get("token");
+    const API_URL = import.meta.env.VITE_API_BASE_URL;
     console.log({ token });
     if (!token) {
       throw new Error("Authentication token not found.");
     }
-    const response = await fetch("http://localhost:3000/admin/users", {
+    const response = await fetch(`${API_URL}/admin/users`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,

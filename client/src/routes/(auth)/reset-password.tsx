@@ -28,6 +28,7 @@ function RouteComponent() {
   const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
+  const API_URL = import.meta.env.VITE_API_BASE_URL;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -50,7 +51,7 @@ function RouteComponent() {
         return;
       }
 
-      const res = await fetch("http://localhost:3000/reset-password", {
+      const res = await fetch(`${API_URL}/reset-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -16,11 +16,17 @@ export const Route = createFileRoute("/profile")({
   },
 
   loader: async () => {
+    const API_URL = import.meta.env.VITE_API_BASE_URL;
+    console.log({ API_URL });
+    if (!API_URL) {
+      throw new Error("API_URL is not defined");
+    }
+    // Fetch the profile data from the server
     const token = Cookies.get("token");
     if (!token) {
       throw new Error("Authentication token not found.");
     }
-    const response = await fetch("http://localhost:3000/profile", {
+    const response = await fetch(`${API_URL}/profile`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },

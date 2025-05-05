@@ -4,6 +4,7 @@ import { getToken } from "../../../utils/authToken";
 export const Route = createFileRoute("/admin/users/$postId")({
   loader: async ({ params }) => {
     const token = getToken();
+    const API_URL = import.meta.env.VITE_API_BASE_URL;
     if (!token) {
       throw new Error("You must be logged in to view this page");
     }
@@ -12,16 +13,13 @@ export const Route = createFileRoute("/admin/users/$postId")({
     console.log("Loading data for user ID:", postId);
 
     try {
-      const response = await fetch(
-        `http://localhost:3000/admin/users/${postId}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await fetch(`${API_URL}/admin/users/${postId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       console.log("Response status:", response.status);
 

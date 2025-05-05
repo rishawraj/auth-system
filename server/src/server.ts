@@ -1,7 +1,7 @@
 import http from "node:http";
 import handleRoutes from "./routes/index.routes.ts";
 
-const server = http.createServer(async (req, res) => {
+const handler: http.RequestListener = async (req, res) => {
   // log incoming request
   console.log(`\x1b[32m\x1b[44m${req.method} ${req.url}.\x1b[0m`);
 
@@ -16,13 +16,19 @@ const server = http.createServer(async (req, res) => {
   res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader("Access-Control-Max-Age", 2592000); // 30 days (in seconds) for preflight cache
 
-  if (!handleRoutes(req, res)) {
+  const handled = await handleRoutes(req, res);
+
+  if (!handled) {
     res.statusCode = 404;
     res.setHeader("Content-Type", "text/plain");
     res.end("Not Found\n");
   }
-});
+};
+
+const server = http.createServer(handler);
 
 server.listen(3000, () => {
   console.log("server is running on http://localhost:3000");
 });
+
+export { handler };

@@ -3,11 +3,12 @@ import Cookies from "js-cookie";
 
 export function LogoutButton() {
   const navigate = useNavigate();
+  const API_URL = import.meta.env.VITE_API_BASE_URL;
 
   const handleLogout = async () => {
     try {
       // Call the server-side logout endpoint
-      await fetch("http://localhost:3000/logout", {
+      await fetch(`${API_URL}/logout`, {
         method: "POST",
         credentials: "include", // Include cookies in the request
       });

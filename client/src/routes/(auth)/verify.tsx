@@ -12,6 +12,8 @@ export const Route = createFileRoute("/(auth)/verify")({
 
 function VerifyComponent() {
   const navigate = useNavigate({ from: "/verify" });
+  const API_URL = import.meta.env.VITE_API_BASE_URL;
+
   const search = useSearch({ from: "/(auth)/verify" }) as { token?: string }; // Let useSearch infer the correct type
 
   console.log(search);
@@ -55,7 +57,7 @@ function VerifyComponent() {
   const handleSubmit = async () => {
     const code = verificationCode.join("");
     try {
-      const response = await fetch("http://localhost:3000/verify", {
+      const response = await fetch(`${API_URL}/verify`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

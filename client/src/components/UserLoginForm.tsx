@@ -44,6 +44,7 @@ export default function UserLoginForm() {
   const [errorMessage, setErrorMessage] = useState("");
 
   const navigate = useNavigate({ from: "/login" });
+  const API_URL = import.meta.env.VITE_API_BASE_URL;
 
   const validateForm = (): boolean => {
     const result = formSchema.safeParse(formData);
@@ -83,7 +84,7 @@ export default function UserLoginForm() {
     setErrorMessage("");
 
     try {
-      const response = await fetch("http://localhost:3000/login", {
+      const response = await fetch(`${API_URL}/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -119,7 +120,7 @@ export default function UserLoginForm() {
         error.message.includes("Failed to fetch")
       ) {
         setErrorMessage(
-          "Unable to connect to the server. Please check if the server is running at http://localhost:3000"
+          `Unable to connect to the server. Please check if the server is running at ${API_URL}`
         );
       } else {
         setErrorMessage(
@@ -141,7 +142,7 @@ export default function UserLoginForm() {
       setErrorMessage("");
       setLoading(true);
 
-      await fetch("http://localhost:3000/health", {
+      await fetch(`${API_URL}/health`, {
         method: "GET",
         signal: controller.signal,
       });
