@@ -1,9 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { redirect } from "@tanstack/react-router";
-import { getUserFromToken } from "../../utils/authToken";
+import { getUserFromToken } from "../../../../utils/authToken";
 import { toast } from "react-toastify";
 
-export const Route = createFileRoute("/admin/")({
+export const Route = createFileRoute("/_auth/_isAdmin/admin/")({
   beforeLoad: async () => {
     const user = getUserFromToken();
     console.log("User from token:", user);
@@ -31,7 +31,7 @@ function RouteComponent() {
       <p>This is the admin page.</p>
 
       <button
-        className="p-2 bg-green-400 rounded-md m-2 cursor-pointer"
+        className="m-2 cursor-pointer rounded-md bg-green-400 p-2"
         onClick={() => navigate({ to: "/admin/users" })}
       >
         manage users

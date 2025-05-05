@@ -11,31 +11,35 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
-import { Route as ProfileImport } from './routes/profile'
 import { Route as AboutImport } from './routes/about'
+import { Route as AuthImport } from './routes/_auth'
 import { Route as IndexImport } from './routes/index'
-import { Route as AdminIndexImport } from './routes/admin/index'
+import { Route as AuthIsAdminImport } from './routes/_auth/_isAdmin'
 import { Route as authVerifyImport } from './routes/(auth)/verify'
 import { Route as authResetPasswordImport } from './routes/(auth)/reset-password'
 import { Route as authRegisterImport } from './routes/(auth)/register'
 import { Route as authLogoutImport } from './routes/(auth)/logout'
 import { Route as authLoginImport } from './routes/(auth)/login'
 import { Route as authForgotPasswordImport } from './routes/(auth)/forgot-password'
-import { Route as AdminUsersIndexImport } from './routes/admin/users/index'
-import { Route as AdminUsersPostIdImport } from './routes/admin/users/$postId'
+import { Route as AuthProfileIndexImport } from './routes/_auth/profile/index'
+import { Route as AuthProfileSettingsImport } from './routes/_auth/profile/settings'
+import { Route as AuthProfileEditImport } from './routes/_auth/profile/edit'
+import { Route as AuthIsAdminAdminIndexImport } from './routes/_auth/_isAdmin/admin/index'
+import { Route as AuthIsAdminAdminSettingsImport } from './routes/_auth/_isAdmin/admin/settings'
 import { Route as authAuthGoogleCallbackImport } from './routes/(auth)/auth.google.callback'
+import { Route as AuthIsAdminAdminUsersIndexImport } from './routes/_auth/_isAdmin/admin/users/index'
+import { Route as AuthIsAdminAdminUsersPostIdImport } from './routes/_auth/_isAdmin/admin/users/$postId'
 
 // Create/Update Routes
-
-const ProfileRoute = ProfileImport.update({
-  id: '/profile',
-  path: '/profile',
-  getParentRoute: () => rootRoute,
-} as any)
 
 const AboutRoute = AboutImport.update({
   id: '/about',
   path: '/about',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const AuthRoute = AuthImport.update({
+  id: '/_auth',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -45,10 +49,9 @@ const IndexRoute = IndexImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const AdminIndexRoute = AdminIndexImport.update({
-  id: '/admin/',
-  path: '/admin/',
-  getParentRoute: () => rootRoute,
+const AuthIsAdminRoute = AuthIsAdminImport.update({
+  id: '/_isAdmin',
+  getParentRoute: () => AuthRoute,
 } as any)
 
 const authVerifyRoute = authVerifyImport.update({
@@ -87,16 +90,34 @@ const authForgotPasswordRoute = authForgotPasswordImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const AdminUsersIndexRoute = AdminUsersIndexImport.update({
-  id: '/admin/users/',
-  path: '/admin/users/',
-  getParentRoute: () => rootRoute,
+const AuthProfileIndexRoute = AuthProfileIndexImport.update({
+  id: '/profile/',
+  path: '/profile/',
+  getParentRoute: () => AuthRoute,
 } as any)
 
-const AdminUsersPostIdRoute = AdminUsersPostIdImport.update({
-  id: '/admin/users/$postId',
-  path: '/admin/users/$postId',
-  getParentRoute: () => rootRoute,
+const AuthProfileSettingsRoute = AuthProfileSettingsImport.update({
+  id: '/profile/settings',
+  path: '/profile/settings',
+  getParentRoute: () => AuthRoute,
+} as any)
+
+const AuthProfileEditRoute = AuthProfileEditImport.update({
+  id: '/profile/edit',
+  path: '/profile/edit',
+  getParentRoute: () => AuthRoute,
+} as any)
+
+const AuthIsAdminAdminIndexRoute = AuthIsAdminAdminIndexImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => AuthIsAdminRoute,
+} as any)
+
+const AuthIsAdminAdminSettingsRoute = AuthIsAdminAdminSettingsImport.update({
+  id: '/admin/settings',
+  path: '/admin/settings',
+  getParentRoute: () => AuthIsAdminRoute,
 } as any)
 
 const authAuthGoogleCallbackRoute = authAuthGoogleCallbackImport.update({
@@ -104,6 +125,21 @@ const authAuthGoogleCallbackRoute = authAuthGoogleCallbackImport.update({
   path: '/auth/google/callback',
   getParentRoute: () => rootRoute,
 } as any)
+
+const AuthIsAdminAdminUsersIndexRoute = AuthIsAdminAdminUsersIndexImport.update(
+  {
+    id: '/admin/users/',
+    path: '/admin/users/',
+    getParentRoute: () => AuthIsAdminRoute,
+  } as any,
+)
+
+const AuthIsAdminAdminUsersPostIdRoute =
+  AuthIsAdminAdminUsersPostIdImport.update({
+    id: '/admin/users/$postId',
+    path: '/admin/users/$postId',
+    getParentRoute: () => AuthIsAdminRoute,
+  } as any)
 
 // Populate the FileRoutesByPath interface
 
@@ -116,18 +152,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexImport
       parentRoute: typeof rootRoute
     }
+    '/_auth': {
+      id: '/_auth'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof AuthImport
+      parentRoute: typeof rootRoute
+    }
     '/about': {
       id: '/about'
       path: '/about'
       fullPath: '/about'
       preLoaderRoute: typeof AboutImport
-      parentRoute: typeof rootRoute
-    }
-    '/profile': {
-      id: '/profile'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof ProfileImport
       parentRoute: typeof rootRoute
     }
     '/(auth)/forgot-password': {
@@ -172,26 +208,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authVerifyImport
       parentRoute: typeof rootRoute
     }
-    '/admin/': {
-      id: '/admin/'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminIndexImport
-      parentRoute: typeof rootRoute
+    '/_auth/_isAdmin': {
+      id: '/_auth/_isAdmin'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof AuthIsAdminImport
+      parentRoute: typeof AuthImport
     }
-    '/admin/users/$postId': {
-      id: '/admin/users/$postId'
-      path: '/admin/users/$postId'
-      fullPath: '/admin/users/$postId'
-      preLoaderRoute: typeof AdminUsersPostIdImport
-      parentRoute: typeof rootRoute
+    '/_auth/profile/edit': {
+      id: '/_auth/profile/edit'
+      path: '/profile/edit'
+      fullPath: '/profile/edit'
+      preLoaderRoute: typeof AuthProfileEditImport
+      parentRoute: typeof AuthImport
     }
-    '/admin/users/': {
-      id: '/admin/users/'
-      path: '/admin/users'
-      fullPath: '/admin/users'
-      preLoaderRoute: typeof AdminUsersIndexImport
-      parentRoute: typeof rootRoute
+    '/_auth/profile/settings': {
+      id: '/_auth/profile/settings'
+      path: '/profile/settings'
+      fullPath: '/profile/settings'
+      preLoaderRoute: typeof AuthProfileSettingsImport
+      parentRoute: typeof AuthImport
+    }
+    '/_auth/profile/': {
+      id: '/_auth/profile/'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AuthProfileIndexImport
+      parentRoute: typeof AuthImport
     }
     '/(auth)/auth/google/callback': {
       id: '/(auth)/auth/google/callback'
@@ -200,138 +243,220 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authAuthGoogleCallbackImport
       parentRoute: typeof rootRoute
     }
+    '/_auth/_isAdmin/admin/settings': {
+      id: '/_auth/_isAdmin/admin/settings'
+      path: '/admin/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AuthIsAdminAdminSettingsImport
+      parentRoute: typeof AuthIsAdminImport
+    }
+    '/_auth/_isAdmin/admin/': {
+      id: '/_auth/_isAdmin/admin/'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthIsAdminAdminIndexImport
+      parentRoute: typeof AuthIsAdminImport
+    }
+    '/_auth/_isAdmin/admin/users/$postId': {
+      id: '/_auth/_isAdmin/admin/users/$postId'
+      path: '/admin/users/$postId'
+      fullPath: '/admin/users/$postId'
+      preLoaderRoute: typeof AuthIsAdminAdminUsersPostIdImport
+      parentRoute: typeof AuthIsAdminImport
+    }
+    '/_auth/_isAdmin/admin/users/': {
+      id: '/_auth/_isAdmin/admin/users/'
+      path: '/admin/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AuthIsAdminAdminUsersIndexImport
+      parentRoute: typeof AuthIsAdminImport
+    }
   }
 }
 
 // Create and export the route tree
 
+interface AuthIsAdminRouteChildren {
+  AuthIsAdminAdminSettingsRoute: typeof AuthIsAdminAdminSettingsRoute
+  AuthIsAdminAdminIndexRoute: typeof AuthIsAdminAdminIndexRoute
+  AuthIsAdminAdminUsersPostIdRoute: typeof AuthIsAdminAdminUsersPostIdRoute
+  AuthIsAdminAdminUsersIndexRoute: typeof AuthIsAdminAdminUsersIndexRoute
+}
+
+const AuthIsAdminRouteChildren: AuthIsAdminRouteChildren = {
+  AuthIsAdminAdminSettingsRoute: AuthIsAdminAdminSettingsRoute,
+  AuthIsAdminAdminIndexRoute: AuthIsAdminAdminIndexRoute,
+  AuthIsAdminAdminUsersPostIdRoute: AuthIsAdminAdminUsersPostIdRoute,
+  AuthIsAdminAdminUsersIndexRoute: AuthIsAdminAdminUsersIndexRoute,
+}
+
+const AuthIsAdminRouteWithChildren = AuthIsAdminRoute._addFileChildren(
+  AuthIsAdminRouteChildren,
+)
+
+interface AuthRouteChildren {
+  AuthIsAdminRoute: typeof AuthIsAdminRouteWithChildren
+  AuthProfileEditRoute: typeof AuthProfileEditRoute
+  AuthProfileSettingsRoute: typeof AuthProfileSettingsRoute
+  AuthProfileIndexRoute: typeof AuthProfileIndexRoute
+}
+
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthIsAdminRoute: AuthIsAdminRouteWithChildren,
+  AuthProfileEditRoute: AuthProfileEditRoute,
+  AuthProfileSettingsRoute: AuthProfileSettingsRoute,
+  AuthProfileIndexRoute: AuthProfileIndexRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
+
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '': typeof AuthIsAdminRouteWithChildren
   '/about': typeof AboutRoute
-  '/profile': typeof ProfileRoute
   '/forgot-password': typeof authForgotPasswordRoute
   '/login': typeof authLoginRoute
   '/logout': typeof authLogoutRoute
   '/register': typeof authRegisterRoute
   '/reset-password': typeof authResetPasswordRoute
   '/verify': typeof authVerifyRoute
-  '/admin': typeof AdminIndexRoute
-  '/admin/users/$postId': typeof AdminUsersPostIdRoute
-  '/admin/users': typeof AdminUsersIndexRoute
+  '/profile/edit': typeof AuthProfileEditRoute
+  '/profile/settings': typeof AuthProfileSettingsRoute
+  '/profile': typeof AuthProfileIndexRoute
   '/auth/google/callback': typeof authAuthGoogleCallbackRoute
+  '/admin/settings': typeof AuthIsAdminAdminSettingsRoute
+  '/admin': typeof AuthIsAdminAdminIndexRoute
+  '/admin/users/$postId': typeof AuthIsAdminAdminUsersPostIdRoute
+  '/admin/users': typeof AuthIsAdminAdminUsersIndexRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '': typeof AuthIsAdminRouteWithChildren
   '/about': typeof AboutRoute
-  '/profile': typeof ProfileRoute
   '/forgot-password': typeof authForgotPasswordRoute
   '/login': typeof authLoginRoute
   '/logout': typeof authLogoutRoute
   '/register': typeof authRegisterRoute
   '/reset-password': typeof authResetPasswordRoute
   '/verify': typeof authVerifyRoute
-  '/admin': typeof AdminIndexRoute
-  '/admin/users/$postId': typeof AdminUsersPostIdRoute
-  '/admin/users': typeof AdminUsersIndexRoute
+  '/profile/edit': typeof AuthProfileEditRoute
+  '/profile/settings': typeof AuthProfileSettingsRoute
+  '/profile': typeof AuthProfileIndexRoute
   '/auth/google/callback': typeof authAuthGoogleCallbackRoute
+  '/admin/settings': typeof AuthIsAdminAdminSettingsRoute
+  '/admin': typeof AuthIsAdminAdminIndexRoute
+  '/admin/users/$postId': typeof AuthIsAdminAdminUsersPostIdRoute
+  '/admin/users': typeof AuthIsAdminAdminUsersIndexRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
+  '/_auth': typeof AuthRouteWithChildren
   '/about': typeof AboutRoute
-  '/profile': typeof ProfileRoute
   '/(auth)/forgot-password': typeof authForgotPasswordRoute
   '/(auth)/login': typeof authLoginRoute
   '/(auth)/logout': typeof authLogoutRoute
   '/(auth)/register': typeof authRegisterRoute
   '/(auth)/reset-password': typeof authResetPasswordRoute
   '/(auth)/verify': typeof authVerifyRoute
-  '/admin/': typeof AdminIndexRoute
-  '/admin/users/$postId': typeof AdminUsersPostIdRoute
-  '/admin/users/': typeof AdminUsersIndexRoute
+  '/_auth/_isAdmin': typeof AuthIsAdminRouteWithChildren
+  '/_auth/profile/edit': typeof AuthProfileEditRoute
+  '/_auth/profile/settings': typeof AuthProfileSettingsRoute
+  '/_auth/profile/': typeof AuthProfileIndexRoute
   '/(auth)/auth/google/callback': typeof authAuthGoogleCallbackRoute
+  '/_auth/_isAdmin/admin/settings': typeof AuthIsAdminAdminSettingsRoute
+  '/_auth/_isAdmin/admin/': typeof AuthIsAdminAdminIndexRoute
+  '/_auth/_isAdmin/admin/users/$postId': typeof AuthIsAdminAdminUsersPostIdRoute
+  '/_auth/_isAdmin/admin/users/': typeof AuthIsAdminAdminUsersIndexRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | ''
     | '/about'
-    | '/profile'
     | '/forgot-password'
     | '/login'
     | '/logout'
     | '/register'
     | '/reset-password'
     | '/verify'
+    | '/profile/edit'
+    | '/profile/settings'
+    | '/profile'
+    | '/auth/google/callback'
+    | '/admin/settings'
     | '/admin'
     | '/admin/users/$postId'
     | '/admin/users'
-    | '/auth/google/callback'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | ''
     | '/about'
-    | '/profile'
     | '/forgot-password'
     | '/login'
     | '/logout'
     | '/register'
     | '/reset-password'
     | '/verify'
+    | '/profile/edit'
+    | '/profile/settings'
+    | '/profile'
+    | '/auth/google/callback'
+    | '/admin/settings'
     | '/admin'
     | '/admin/users/$postId'
     | '/admin/users'
-    | '/auth/google/callback'
   id:
     | '__root__'
     | '/'
+    | '/_auth'
     | '/about'
-    | '/profile'
     | '/(auth)/forgot-password'
     | '/(auth)/login'
     | '/(auth)/logout'
     | '/(auth)/register'
     | '/(auth)/reset-password'
     | '/(auth)/verify'
-    | '/admin/'
-    | '/admin/users/$postId'
-    | '/admin/users/'
+    | '/_auth/_isAdmin'
+    | '/_auth/profile/edit'
+    | '/_auth/profile/settings'
+    | '/_auth/profile/'
     | '/(auth)/auth/google/callback'
+    | '/_auth/_isAdmin/admin/settings'
+    | '/_auth/_isAdmin/admin/'
+    | '/_auth/_isAdmin/admin/users/$postId'
+    | '/_auth/_isAdmin/admin/users/'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRouteWithChildren
   AboutRoute: typeof AboutRoute
-  ProfileRoute: typeof ProfileRoute
   authForgotPasswordRoute: typeof authForgotPasswordRoute
   authLoginRoute: typeof authLoginRoute
   authLogoutRoute: typeof authLogoutRoute
   authRegisterRoute: typeof authRegisterRoute
   authResetPasswordRoute: typeof authResetPasswordRoute
   authVerifyRoute: typeof authVerifyRoute
-  AdminIndexRoute: typeof AdminIndexRoute
-  AdminUsersPostIdRoute: typeof AdminUsersPostIdRoute
-  AdminUsersIndexRoute: typeof AdminUsersIndexRoute
   authAuthGoogleCallbackRoute: typeof authAuthGoogleCallbackRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthRoute: AuthRouteWithChildren,
   AboutRoute: AboutRoute,
-  ProfileRoute: ProfileRoute,
   authForgotPasswordRoute: authForgotPasswordRoute,
   authLoginRoute: authLoginRoute,
   authLogoutRoute: authLogoutRoute,
   authRegisterRoute: authRegisterRoute,
   authResetPasswordRoute: authResetPasswordRoute,
   authVerifyRoute: authVerifyRoute,
-  AdminIndexRoute: AdminIndexRoute,
-  AdminUsersPostIdRoute: AdminUsersPostIdRoute,
-  AdminUsersIndexRoute: AdminUsersIndexRoute,
   authAuthGoogleCallbackRoute: authAuthGoogleCallbackRoute,
 }
 
@@ -346,28 +471,31 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/",
+        "/_auth",
         "/about",
-        "/profile",
         "/(auth)/forgot-password",
         "/(auth)/login",
         "/(auth)/logout",
         "/(auth)/register",
         "/(auth)/reset-password",
         "/(auth)/verify",
-        "/admin/",
-        "/admin/users/$postId",
-        "/admin/users/",
         "/(auth)/auth/google/callback"
       ]
     },
     "/": {
       "filePath": "index.tsx"
     },
+    "/_auth": {
+      "filePath": "_auth.tsx",
+      "children": [
+        "/_auth/_isAdmin",
+        "/_auth/profile/edit",
+        "/_auth/profile/settings",
+        "/_auth/profile/"
+      ]
+    },
     "/about": {
       "filePath": "about.tsx"
-    },
-    "/profile": {
-      "filePath": "profile.tsx"
     },
     "/(auth)/forgot-password": {
       "filePath": "(auth)/forgot-password.tsx"
@@ -387,17 +515,46 @@ export const routeTree = rootRoute
     "/(auth)/verify": {
       "filePath": "(auth)/verify.tsx"
     },
-    "/admin/": {
-      "filePath": "admin/index.tsx"
+    "/_auth/_isAdmin": {
+      "filePath": "_auth/_isAdmin.tsx",
+      "parent": "/_auth",
+      "children": [
+        "/_auth/_isAdmin/admin/settings",
+        "/_auth/_isAdmin/admin/",
+        "/_auth/_isAdmin/admin/users/$postId",
+        "/_auth/_isAdmin/admin/users/"
+      ]
     },
-    "/admin/users/$postId": {
-      "filePath": "admin/users/$postId.tsx"
+    "/_auth/profile/edit": {
+      "filePath": "_auth/profile/edit.tsx",
+      "parent": "/_auth"
     },
-    "/admin/users/": {
-      "filePath": "admin/users/index.tsx"
+    "/_auth/profile/settings": {
+      "filePath": "_auth/profile/settings.tsx",
+      "parent": "/_auth"
+    },
+    "/_auth/profile/": {
+      "filePath": "_auth/profile/index.tsx",
+      "parent": "/_auth"
     },
     "/(auth)/auth/google/callback": {
       "filePath": "(auth)/auth.google.callback.tsx"
+    },
+    "/_auth/_isAdmin/admin/settings": {
+      "filePath": "_auth/_isAdmin/admin/settings.tsx",
+      "parent": "/_auth/_isAdmin"
+    },
+    "/_auth/_isAdmin/admin/": {
+      "filePath": "_auth/_isAdmin/admin/index.tsx",
+      "parent": "/_auth/_isAdmin"
+    },
+    "/_auth/_isAdmin/admin/users/$postId": {
+      "filePath": "_auth/_isAdmin/admin/users/$postId.tsx",
+      "parent": "/_auth/_isAdmin"
+    },
+    "/_auth/_isAdmin/admin/users/": {
+      "filePath": "_auth/_isAdmin/admin/users/index.tsx",
+      "parent": "/_auth/_isAdmin"
     }
   }
 }

@@ -4,9 +4,9 @@ import {
   useLoaderData,
 } from "@tanstack/react-router";
 import Cookies from "js-cookie";
-import { LogoutButton } from "../components/LogoutButton";
+import { LogoutButton } from "../../../components/LogoutButton";
 
-export const Route = createFileRoute("/profile")({
+export const Route = createFileRoute("/_auth/profile/")({
   beforeLoad: async () => {
     const token = Cookies.get("token");
     console.log({ token });
@@ -50,28 +50,29 @@ export const Route = createFileRoute("/profile")({
 });
 
 function RouteComponent() {
-  const profile = useLoaderData({ from: "/profile" });
+  const profile = useLoaderData({ from: "/_auth/profile/" });
   console.log(profile.message.profile_pic);
 
   const img_url = profile.message.profile_pic || "";
 
   return (
     <div>
-      <h1
-        className="text-2xl
-        font-bold
-        text-gray-900
-        mb-4"
-      >
-        Profile
-      </h1>
+      <h1 className="mb-4 text-2xl font-bold text-gray-900">Profile</h1>
 
       {/* profile pic */}
       <img
         src={img_url}
         alt="Profile"
-        className="w-32 h-32 rounded-full mb-4"
+        className="mb-4 h-32 w-32 rounded-full"
       />
+      <button
+        className="rounded bg-blue-500 px-4 py-2 text-white transition duration-200 ease-in-out hover:bg-blue-600"
+        onClick={() => {
+          window.location.href = "/profile/edit";
+        }}
+      >
+        edit
+      </button>
       <LogoutButton />
       <pre>{JSON.stringify(profile, null, 2)}</pre>
     </div>

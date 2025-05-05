@@ -451,32 +451,3 @@ export async function handleResetPassword(
     send(res, 500, { error: "Internal server error during password reset" });
   }
 }
-
-// export async function verifyJWT(
-//   req: IncomingMessage
-// ): Promise<{ userId: number; email: string } | null> {
-//   try {
-//     const authHeader = req.headers.authorization;
-//     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-//       return null;
-//     }
-
-//     const token = authHeader.substring(7); // Remove 'Bearer ' prefix
-//     const decoded = jwt.verify(token, SECRET) as { email: string; id: number };
-
-//     // Check if user exists and is active
-//     const userResult = await pool.query<User>(
-//       "SELECT id FROM users WHERE id = $1 AND is_active = true",
-//       [decoded.id]
-//     );
-
-//     if (userResult.rows.length === 0) {
-//       return null;
-//     }
-
-//     return { userId: decoded.id, email: decoded.email };
-//   } catch (error) {
-//     console.error("JWT verification error:", error);
-//     return null;
-//   }
-// }

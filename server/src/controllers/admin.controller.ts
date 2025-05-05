@@ -12,6 +12,7 @@ export async function getAllUsers() {
  * @returns The user object or null if not found
  * @throws Error if database query fails
  */
+
 export async function getUserById(id: number): Promise<User | null> {
   try {
     // Validate input

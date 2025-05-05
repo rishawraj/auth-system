@@ -1,7 +1,7 @@
 import { createFileRoute, useLoaderData } from "@tanstack/react-router";
-import { getToken } from "../../../utils/authToken";
+import { getToken } from "../../../../../utils/authToken";
 
-export const Route = createFileRoute("/admin/users/$postId")({
+export const Route = createFileRoute("/_auth/_isAdmin/admin/users/$postId")({
   loader: async ({ params }) => {
     const token = getToken();
     const API_URL = import.meta.env.VITE_API_BASE_URL;
@@ -59,7 +59,7 @@ export const Route = createFileRoute("/admin/users/$postId")({
 });
 
 function RouteComponent() {
-  const data = useLoaderData({ from: "/admin/users/$postId" });
+  const data = useLoaderData({ from: "/_auth/_isAdmin/admin/users/$postId" });
 
   if (data.error) {
     return (

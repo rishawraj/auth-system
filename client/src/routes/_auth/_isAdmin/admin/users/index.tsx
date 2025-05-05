@@ -3,11 +3,11 @@ import {
   createFileRoute,
   useNavigate,
 } from "@tanstack/react-router";
-import { User } from "../../../types/auth";
+import { User } from "../../../../../types/auth";
 import Cookies from "js-cookie";
 import { redirect } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/admin/users/")({
+export const Route = createFileRoute("/_auth/_isAdmin/admin/users/")({
   beforeLoad: async () => {
     const token = Cookies.get("token");
     console.log({ token });
@@ -45,11 +45,11 @@ export const Route = createFileRoute("/admin/users/")({
 });
 
 function RouteComponent() {
-  const data = useLoaderData({ from: "/admin/users/" });
+  const data = useLoaderData({ from: "/_auth/_isAdmin/admin/users/" });
   console.log("Admin Health Data:", data.data.rows);
   const navigate = useNavigate();
 
-  const handleUserClick = (userId: number) => {
+  const handleUserClick = (userId: string) => {
     console.log("User ID:", userId);
     // Navigate to the user details page
     // You can use the router's navigate function or any other method to navigate
@@ -66,12 +66,12 @@ function RouteComponent() {
         {data.data.rows.length > 0 ? (
           <ul>
             {data.data.rows.map((user: User) => (
-              <li className="bg-amber-500 m-2 flex gap-2 p-2" key={user.id}>
+              <li className="m-2 flex gap-2 bg-amber-500 p-2" key={user.id}>
                 <p>{user.id}</p>
                 <p>{user.name}</p>
                 <p>{user.email}</p>
                 <button
-                  className="border-2 border-black bg-green-400 rounded-md m-2 cursor-pointer p-2"
+                  className="m-2 cursor-pointer rounded-md border-2 border-black bg-green-400 p-2"
                   onClick={() => handleUserClick(user.id)}
                 >
                   go to user
