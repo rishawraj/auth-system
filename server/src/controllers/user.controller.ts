@@ -3,17 +3,17 @@ import {
   generateSixDigitCodeWithExpiry,
   readBody,
   send,
-} from "../utils/helpers.ts";
+} from "../utils/helpers.js";
 import { z } from "zod";
-import { pool } from "../config/db.config.ts";
+import { pool } from "../config/db.config.js";
 import {
   sendResetPasswordEmailWorker,
   sendVerificationEmailWorker,
-} from "../workers/sendEmail.Worker.ts";
+} from "../workers/sendEmail.Worker.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import "dotenv/config";
-import { User } from "../models/user.model.ts";
+import { User } from "../models/user.model.js";
 import { OAuth2Client, TokenPayload } from "google-auth-library";
 import { UAParser } from "ua-parser-js";
 import crypto from "crypto";

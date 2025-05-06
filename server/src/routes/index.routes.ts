@@ -1,7 +1,7 @@
 import { IncomingMessage, ServerResponse } from "http";
-import userRoutes from "./users.routes.ts";
-import adminRoutes from "./admin.routes.ts";
-import { checkSuperUser } from "../middleware/checkSuperUser.ts";
+import userRoutes from "./users.routes.js";
+import adminRoutes from "./admin.routes.js";
+import { checkSuperUser } from "../middleware/checkSuperUser.js";
 
 export default async (req: IncomingMessage, res: ServerResponse) => {
   const parsedUrl = new URL(req.url || "", `http://${req.headers.host}`);

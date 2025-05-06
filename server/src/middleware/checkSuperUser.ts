@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { pool } from "../config/db.config.ts";
+import { pool } from "../config/db.config.js";
 import "dotenv/config";
 import { IncomingMessage, ServerResponse } from "node:http";
 

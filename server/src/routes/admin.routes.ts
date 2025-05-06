@@ -1,7 +1,7 @@
 import { IncomingMessage, ServerResponse } from "http";
-import { send } from "../utils/helpers.ts";
-import { getAllUsers, getUserById } from "../controllers/admin.controller.ts";
-import { checkSuperUser } from "../middleware/checkSuperUser.ts";
+import { send } from "../utils/helpers.js";
+import { getAllUsers, getUserById } from "../controllers/admin.controller.js";
+import { checkSuperUser } from "../middleware/checkSuperUser.js";
 
 export default async (req: IncomingMessage, res: ServerResponse) => {
   // parse url

@@ -1,6 +1,5 @@
-// config.ts
 import { z } from "zod";
-import { User } from "../models/user.model.ts";
+import { User } from "../models/user.model.js";
 
 // Step 1: Define the schema
 const envSchema = z.object({

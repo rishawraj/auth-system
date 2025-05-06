@@ -7,9 +7,9 @@ import {
   handleLogut,
   handleForgotPassword,
   handleResetPassword,
-} from "../controllers/user.controller.ts";
-import { send } from "../utils/helpers.ts";
-import { handleGoogleAuth, handleGoogleCallback } from "../auth/google-auth.ts";
+} from "../controllers/user.controller.js";
+import { send } from "../utils/helpers.js";
+import { handleGoogleAuth, handleGoogleCallback } from "../auth/google-auth.js";
 
 export default async (req: IncomingMessage, res: ServerResponse) => {
   // parse url

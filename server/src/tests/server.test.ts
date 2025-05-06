@@ -1,8 +1,7 @@
-// test/server.test.ts
 import { describe, test, expect, afterAll, beforeAll } from "vitest";
 import request from "supertest";
 import http from "http";
-import { handler } from "../server.ts";
+import { handler } from "../server.js";
 
 const server = http.createServer(handler);
 

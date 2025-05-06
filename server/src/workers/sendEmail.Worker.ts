@@ -1,5 +1,5 @@
-import { sendResetPasswordEmail } from "../utils/sendResetPassowrd.email.ts";
-import { sendVerificationEmail } from "../utils/sendVerification.email.ts";
+import { sendResetPasswordEmail } from "../utils/sendResetPassowrd.email.js";
+import { sendVerificationEmail } from "../utils/sendVerification.email.js";
 
 export async function sendVerificationEmailWorker(email: string, code: string) {
   try {

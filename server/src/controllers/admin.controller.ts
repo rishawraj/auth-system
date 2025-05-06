@@ -1,5 +1,5 @@
-import { pool } from "../config/db.config.ts";
-import { User } from "../models/user.model.ts";
+import { pool } from "../config/db.config.js";
+import { User } from "../models/user.model.js";
 
 export async function getAllUsers() {
   const users = await pool.query("SELECT * FROM users;");

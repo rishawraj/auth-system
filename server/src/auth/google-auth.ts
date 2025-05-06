@@ -1,11 +1,11 @@
 import { IncomingMessage, ServerResponse } from "http";
-import { send } from "../utils/helpers.ts";
-import { pool } from "../config/db.config.ts";
+import { send } from "../utils/helpers.js";
+import { pool } from "../config/db.config.js";
 import jwt from "jsonwebtoken";
-import { User } from "../models/user.model.ts";
+import { User } from "../models/user.model.js";
 import { OAuth2Client, TokenPayload } from "google-auth-library";
 import "dotenv/config";
-import { config } from "../types/config.ts";
+import { config } from "../types/config.js";
 import { UAParser } from "ua-parser-js";
 
 const FRONTEND_URL = process.env.FRONTEND_URL;
