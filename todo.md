@@ -1,6 +1,10 @@
-- [ ] use .env var for client and server url
+## todo
 
+- [x] use .env var for client and server url
 - [ ] centralize jwt expiry time
+- [ ] husky
+- [ ] eslint
+- [ ]
 
 ## implement all field in email login as they are in google login
 
