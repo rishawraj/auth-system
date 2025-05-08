@@ -1,6 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import UserLoginForm from "../../components/UserLoginForm";
 import Cookies from "js-cookie";
+
+import UserLoginForm from "../../components/UserLoginForm";
 
 export const Route = createFileRoute("/(auth)/login")({
   beforeLoad: async () => {

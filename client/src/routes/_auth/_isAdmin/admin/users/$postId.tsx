@@ -1,4 +1,5 @@
 import { createFileRoute, useLoaderData } from "@tanstack/react-router";
+
 import { getToken } from "../../../../../utils/authToken";
 
 export const Route = createFileRoute("/_auth/_isAdmin/admin/users/$postId")({

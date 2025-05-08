@@ -4,6 +4,7 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import React, { useState, ChangeEvent, KeyboardEvent } from "react";
+
 import { setToken } from "../../utils/authToken";
 
 export const Route = createFileRoute("/(auth)/verify")({
@@ -22,7 +23,7 @@ function VerifyComponent() {
   console.log(token);
 
   const [verificationCode, setVerificationCode] = useState<string[]>(
-    Array(6).fill("")
+    Array(6).fill(""),
   );
   const inputRefs = Array(6)
     .fill(0)
@@ -30,7 +31,7 @@ function VerifyComponent() {
 
   const handleChange = (
     index: number,
-    event: ChangeEvent<HTMLInputElement>
+    event: ChangeEvent<HTMLInputElement>,
   ) => {
     const value = event.target.value;
     if (isNaN(Number(value))) return;
@@ -47,7 +48,7 @@ function VerifyComponent() {
 
   const handleKeyDown = (
     index: number,
-    event: KeyboardEvent<HTMLInputElement>
+    event: KeyboardEvent<HTMLInputElement>,
   ) => {
     if (event.key === "Backspace" && !verificationCode[index] && index > 0) {
       inputRefs[index - 1].current?.focus();
@@ -69,7 +70,7 @@ function VerifyComponent() {
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
         throw new Error(
-          errorData?.message || `Server error: ${response.status}`
+          errorData?.message || `Server error: ${response.status}`,
         );
       }
 
@@ -83,16 +84,16 @@ function VerifyComponent() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-      <div className="p-8 bg-white rounded-lg shadow-md">
-        <h1 className="text-2xl font-bold mb-6 text-center">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-100">
+      <div className="rounded-lg bg-white p-8 shadow-md">
+        <h1 className="mb-6 text-center text-2xl font-bold">
           Verify your email
         </h1>
-        <p className="text-gray-600 mb-6 text-center">
+        <p className="mb-6 text-center text-gray-600">
           Please enter the 6-digit code sent to your email
         </p>
 
-        <div className="flex gap-2 mb-6">
+        <div className="mb-6 flex gap-2">
           {verificationCode.map((digit, index) => (
             <input
               key={index}
@@ -102,14 +103,14 @@ function VerifyComponent() {
               ref={inputRefs[index]}
               onChange={(e) => handleChange(index, e)}
               onKeyDown={(e) => handleKeyDown(index, e)}
-              className="w-12 h-12 text-center text-xl font-bold border rounded-md focus:outline-none focus:border-blue-500"
+              className="h-12 w-12 rounded-md border text-center text-xl font-bold focus:border-blue-500 focus:outline-none"
             />
           ))}
         </div>
 
         <button
           onClick={handleSubmit}
-          className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition-colors"
+          className="w-full rounded-md bg-blue-500 px-4 py-2 text-white transition-colors hover:bg-blue-600"
         >
           Verify
         </button>

@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { getUserFromToken } from "../../utils/authToken";
 import { toast } from "react-toastify";
+
+import { getUserFromToken } from "../../utils/authToken";
 
 export const Route = createFileRoute("/_auth/_isAdmin")({
   beforeLoad: async () => {

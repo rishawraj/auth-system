@@ -10,277 +10,277 @@
 
 // Import Routes
 
-import { Route as rootRoute } from './routes/__root'
-import { Route as AboutImport } from './routes/about'
-import { Route as AuthImport } from './routes/_auth'
-import { Route as IndexImport } from './routes/index'
-import { Route as AuthIsAdminImport } from './routes/_auth/_isAdmin'
-import { Route as authVerifyImport } from './routes/(auth)/verify'
-import { Route as authResetPasswordImport } from './routes/(auth)/reset-password'
-import { Route as authRegisterImport } from './routes/(auth)/register'
-import { Route as authLogoutImport } from './routes/(auth)/logout'
-import { Route as authLoginImport } from './routes/(auth)/login'
-import { Route as authForgotPasswordImport } from './routes/(auth)/forgot-password'
-import { Route as AuthProfileIndexImport } from './routes/_auth/profile/index'
-import { Route as AuthProfileSettingsImport } from './routes/_auth/profile/settings'
-import { Route as AuthProfileEditImport } from './routes/_auth/profile/edit'
-import { Route as AuthIsAdminAdminIndexImport } from './routes/_auth/_isAdmin/admin/index'
-import { Route as AuthIsAdminAdminSettingsImport } from './routes/_auth/_isAdmin/admin/settings'
-import { Route as authAuthGoogleCallbackImport } from './routes/(auth)/auth.google.callback'
-import { Route as AuthIsAdminAdminUsersIndexImport } from './routes/_auth/_isAdmin/admin/users/index'
-import { Route as AuthIsAdminAdminUsersPostIdImport } from './routes/_auth/_isAdmin/admin/users/$postId'
+import { Route as rootRoute } from "./routes/__root";
+import { Route as AboutImport } from "./routes/about";
+import { Route as AuthImport } from "./routes/_auth";
+import { Route as IndexImport } from "./routes/index";
+import { Route as AuthIsAdminImport } from "./routes/_auth/_isAdmin";
+import { Route as authVerifyImport } from "./routes/(auth)/verify";
+import { Route as authResetPasswordImport } from "./routes/(auth)/reset-password";
+import { Route as authRegisterImport } from "./routes/(auth)/register";
+import { Route as authLogoutImport } from "./routes/(auth)/logout";
+import { Route as authLoginImport } from "./routes/(auth)/login";
+import { Route as authForgotPasswordImport } from "./routes/(auth)/forgot-password";
+import { Route as AuthProfileIndexImport } from "./routes/_auth/profile/index";
+import { Route as AuthProfileSettingsImport } from "./routes/_auth/profile/settings";
+import { Route as AuthProfileEditImport } from "./routes/_auth/profile/edit";
+import { Route as AuthIsAdminAdminIndexImport } from "./routes/_auth/_isAdmin/admin/index";
+import { Route as AuthIsAdminAdminSettingsImport } from "./routes/_auth/_isAdmin/admin/settings";
+import { Route as authAuthGoogleCallbackImport } from "./routes/(auth)/auth.google.callback";
+import { Route as AuthIsAdminAdminUsersIndexImport } from "./routes/_auth/_isAdmin/admin/users/index";
+import { Route as AuthIsAdminAdminUsersPostIdImport } from "./routes/_auth/_isAdmin/admin/users/$postId";
 
 // Create/Update Routes
 
 const AboutRoute = AboutImport.update({
-  id: '/about',
-  path: '/about',
+  id: "/about",
+  path: "/about",
   getParentRoute: () => rootRoute,
-} as any)
+} as any);
 
 const AuthRoute = AuthImport.update({
-  id: '/_auth',
+  id: "/_auth",
   getParentRoute: () => rootRoute,
-} as any)
+} as any);
 
 const IndexRoute = IndexImport.update({
-  id: '/',
-  path: '/',
+  id: "/",
+  path: "/",
   getParentRoute: () => rootRoute,
-} as any)
+} as any);
 
 const AuthIsAdminRoute = AuthIsAdminImport.update({
-  id: '/_isAdmin',
+  id: "/_isAdmin",
   getParentRoute: () => AuthRoute,
-} as any)
+} as any);
 
 const authVerifyRoute = authVerifyImport.update({
-  id: '/(auth)/verify',
-  path: '/verify',
+  id: "/(auth)/verify",
+  path: "/verify",
   getParentRoute: () => rootRoute,
-} as any)
+} as any);
 
 const authResetPasswordRoute = authResetPasswordImport.update({
-  id: '/(auth)/reset-password',
-  path: '/reset-password',
+  id: "/(auth)/reset-password",
+  path: "/reset-password",
   getParentRoute: () => rootRoute,
-} as any)
+} as any);
 
 const authRegisterRoute = authRegisterImport.update({
-  id: '/(auth)/register',
-  path: '/register',
+  id: "/(auth)/register",
+  path: "/register",
   getParentRoute: () => rootRoute,
-} as any)
+} as any);
 
 const authLogoutRoute = authLogoutImport.update({
-  id: '/(auth)/logout',
-  path: '/logout',
+  id: "/(auth)/logout",
+  path: "/logout",
   getParentRoute: () => rootRoute,
-} as any)
+} as any);
 
 const authLoginRoute = authLoginImport.update({
-  id: '/(auth)/login',
-  path: '/login',
+  id: "/(auth)/login",
+  path: "/login",
   getParentRoute: () => rootRoute,
-} as any)
+} as any);
 
 const authForgotPasswordRoute = authForgotPasswordImport.update({
-  id: '/(auth)/forgot-password',
-  path: '/forgot-password',
+  id: "/(auth)/forgot-password",
+  path: "/forgot-password",
   getParentRoute: () => rootRoute,
-} as any)
+} as any);
 
 const AuthProfileIndexRoute = AuthProfileIndexImport.update({
-  id: '/profile/',
-  path: '/profile/',
+  id: "/profile/",
+  path: "/profile/",
   getParentRoute: () => AuthRoute,
-} as any)
+} as any);
 
 const AuthProfileSettingsRoute = AuthProfileSettingsImport.update({
-  id: '/profile/settings',
-  path: '/profile/settings',
+  id: "/profile/settings",
+  path: "/profile/settings",
   getParentRoute: () => AuthRoute,
-} as any)
+} as any);
 
 const AuthProfileEditRoute = AuthProfileEditImport.update({
-  id: '/profile/edit',
-  path: '/profile/edit',
+  id: "/profile/edit",
+  path: "/profile/edit",
   getParentRoute: () => AuthRoute,
-} as any)
+} as any);
 
 const AuthIsAdminAdminIndexRoute = AuthIsAdminAdminIndexImport.update({
-  id: '/admin/',
-  path: '/admin/',
+  id: "/admin/",
+  path: "/admin/",
   getParentRoute: () => AuthIsAdminRoute,
-} as any)
+} as any);
 
 const AuthIsAdminAdminSettingsRoute = AuthIsAdminAdminSettingsImport.update({
-  id: '/admin/settings',
-  path: '/admin/settings',
+  id: "/admin/settings",
+  path: "/admin/settings",
   getParentRoute: () => AuthIsAdminRoute,
-} as any)
+} as any);
 
 const authAuthGoogleCallbackRoute = authAuthGoogleCallbackImport.update({
-  id: '/(auth)/auth/google/callback',
-  path: '/auth/google/callback',
+  id: "/(auth)/auth/google/callback",
+  path: "/auth/google/callback",
   getParentRoute: () => rootRoute,
-} as any)
+} as any);
 
 const AuthIsAdminAdminUsersIndexRoute = AuthIsAdminAdminUsersIndexImport.update(
   {
-    id: '/admin/users/',
-    path: '/admin/users/',
+    id: "/admin/users/",
+    path: "/admin/users/",
     getParentRoute: () => AuthIsAdminRoute,
   } as any,
-)
+);
 
 const AuthIsAdminAdminUsersPostIdRoute =
   AuthIsAdminAdminUsersPostIdImport.update({
-    id: '/admin/users/$postId',
-    path: '/admin/users/$postId',
+    id: "/admin/users/$postId",
+    path: "/admin/users/$postId",
     getParentRoute: () => AuthIsAdminRoute,
-  } as any)
+  } as any);
 
 // Populate the FileRoutesByPath interface
 
-declare module '@tanstack/react-router' {
+declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexImport
-      parentRoute: typeof rootRoute
-    }
-    '/_auth': {
-      id: '/_auth'
-      path: ''
-      fullPath: ''
-      preLoaderRoute: typeof AuthImport
-      parentRoute: typeof rootRoute
-    }
-    '/about': {
-      id: '/about'
-      path: '/about'
-      fullPath: '/about'
-      preLoaderRoute: typeof AboutImport
-      parentRoute: typeof rootRoute
-    }
-    '/(auth)/forgot-password': {
-      id: '/(auth)/forgot-password'
-      path: '/forgot-password'
-      fullPath: '/forgot-password'
-      preLoaderRoute: typeof authForgotPasswordImport
-      parentRoute: typeof rootRoute
-    }
-    '/(auth)/login': {
-      id: '/(auth)/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof authLoginImport
-      parentRoute: typeof rootRoute
-    }
-    '/(auth)/logout': {
-      id: '/(auth)/logout'
-      path: '/logout'
-      fullPath: '/logout'
-      preLoaderRoute: typeof authLogoutImport
-      parentRoute: typeof rootRoute
-    }
-    '/(auth)/register': {
-      id: '/(auth)/register'
-      path: '/register'
-      fullPath: '/register'
-      preLoaderRoute: typeof authRegisterImport
-      parentRoute: typeof rootRoute
-    }
-    '/(auth)/reset-password': {
-      id: '/(auth)/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof authResetPasswordImport
-      parentRoute: typeof rootRoute
-    }
-    '/(auth)/verify': {
-      id: '/(auth)/verify'
-      path: '/verify'
-      fullPath: '/verify'
-      preLoaderRoute: typeof authVerifyImport
-      parentRoute: typeof rootRoute
-    }
-    '/_auth/_isAdmin': {
-      id: '/_auth/_isAdmin'
-      path: ''
-      fullPath: ''
-      preLoaderRoute: typeof AuthIsAdminImport
-      parentRoute: typeof AuthImport
-    }
-    '/_auth/profile/edit': {
-      id: '/_auth/profile/edit'
-      path: '/profile/edit'
-      fullPath: '/profile/edit'
-      preLoaderRoute: typeof AuthProfileEditImport
-      parentRoute: typeof AuthImport
-    }
-    '/_auth/profile/settings': {
-      id: '/_auth/profile/settings'
-      path: '/profile/settings'
-      fullPath: '/profile/settings'
-      preLoaderRoute: typeof AuthProfileSettingsImport
-      parentRoute: typeof AuthImport
-    }
-    '/_auth/profile/': {
-      id: '/_auth/profile/'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof AuthProfileIndexImport
-      parentRoute: typeof AuthImport
-    }
-    '/(auth)/auth/google/callback': {
-      id: '/(auth)/auth/google/callback'
-      path: '/auth/google/callback'
-      fullPath: '/auth/google/callback'
-      preLoaderRoute: typeof authAuthGoogleCallbackImport
-      parentRoute: typeof rootRoute
-    }
-    '/_auth/_isAdmin/admin/settings': {
-      id: '/_auth/_isAdmin/admin/settings'
-      path: '/admin/settings'
-      fullPath: '/admin/settings'
-      preLoaderRoute: typeof AuthIsAdminAdminSettingsImport
-      parentRoute: typeof AuthIsAdminImport
-    }
-    '/_auth/_isAdmin/admin/': {
-      id: '/_auth/_isAdmin/admin/'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AuthIsAdminAdminIndexImport
-      parentRoute: typeof AuthIsAdminImport
-    }
-    '/_auth/_isAdmin/admin/users/$postId': {
-      id: '/_auth/_isAdmin/admin/users/$postId'
-      path: '/admin/users/$postId'
-      fullPath: '/admin/users/$postId'
-      preLoaderRoute: typeof AuthIsAdminAdminUsersPostIdImport
-      parentRoute: typeof AuthIsAdminImport
-    }
-    '/_auth/_isAdmin/admin/users/': {
-      id: '/_auth/_isAdmin/admin/users/'
-      path: '/admin/users'
-      fullPath: '/admin/users'
-      preLoaderRoute: typeof AuthIsAdminAdminUsersIndexImport
-      parentRoute: typeof AuthIsAdminImport
-    }
+    "/": {
+      id: "/";
+      path: "/";
+      fullPath: "/";
+      preLoaderRoute: typeof IndexImport;
+      parentRoute: typeof rootRoute;
+    };
+    "/_auth": {
+      id: "/_auth";
+      path: "";
+      fullPath: "";
+      preLoaderRoute: typeof AuthImport;
+      parentRoute: typeof rootRoute;
+    };
+    "/about": {
+      id: "/about";
+      path: "/about";
+      fullPath: "/about";
+      preLoaderRoute: typeof AboutImport;
+      parentRoute: typeof rootRoute;
+    };
+    "/(auth)/forgot-password": {
+      id: "/(auth)/forgot-password";
+      path: "/forgot-password";
+      fullPath: "/forgot-password";
+      preLoaderRoute: typeof authForgotPasswordImport;
+      parentRoute: typeof rootRoute;
+    };
+    "/(auth)/login": {
+      id: "/(auth)/login";
+      path: "/login";
+      fullPath: "/login";
+      preLoaderRoute: typeof authLoginImport;
+      parentRoute: typeof rootRoute;
+    };
+    "/(auth)/logout": {
+      id: "/(auth)/logout";
+      path: "/logout";
+      fullPath: "/logout";
+      preLoaderRoute: typeof authLogoutImport;
+      parentRoute: typeof rootRoute;
+    };
+    "/(auth)/register": {
+      id: "/(auth)/register";
+      path: "/register";
+      fullPath: "/register";
+      preLoaderRoute: typeof authRegisterImport;
+      parentRoute: typeof rootRoute;
+    };
+    "/(auth)/reset-password": {
+      id: "/(auth)/reset-password";
+      path: "/reset-password";
+      fullPath: "/reset-password";
+      preLoaderRoute: typeof authResetPasswordImport;
+      parentRoute: typeof rootRoute;
+    };
+    "/(auth)/verify": {
+      id: "/(auth)/verify";
+      path: "/verify";
+      fullPath: "/verify";
+      preLoaderRoute: typeof authVerifyImport;
+      parentRoute: typeof rootRoute;
+    };
+    "/_auth/_isAdmin": {
+      id: "/_auth/_isAdmin";
+      path: "";
+      fullPath: "";
+      preLoaderRoute: typeof AuthIsAdminImport;
+      parentRoute: typeof AuthImport;
+    };
+    "/_auth/profile/edit": {
+      id: "/_auth/profile/edit";
+      path: "/profile/edit";
+      fullPath: "/profile/edit";
+      preLoaderRoute: typeof AuthProfileEditImport;
+      parentRoute: typeof AuthImport;
+    };
+    "/_auth/profile/settings": {
+      id: "/_auth/profile/settings";
+      path: "/profile/settings";
+      fullPath: "/profile/settings";
+      preLoaderRoute: typeof AuthProfileSettingsImport;
+      parentRoute: typeof AuthImport;
+    };
+    "/_auth/profile/": {
+      id: "/_auth/profile/";
+      path: "/profile";
+      fullPath: "/profile";
+      preLoaderRoute: typeof AuthProfileIndexImport;
+      parentRoute: typeof AuthImport;
+    };
+    "/(auth)/auth/google/callback": {
+      id: "/(auth)/auth/google/callback";
+      path: "/auth/google/callback";
+      fullPath: "/auth/google/callback";
+      preLoaderRoute: typeof authAuthGoogleCallbackImport;
+      parentRoute: typeof rootRoute;
+    };
+    "/_auth/_isAdmin/admin/settings": {
+      id: "/_auth/_isAdmin/admin/settings";
+      path: "/admin/settings";
+      fullPath: "/admin/settings";
+      preLoaderRoute: typeof AuthIsAdminAdminSettingsImport;
+      parentRoute: typeof AuthIsAdminImport;
+    };
+    "/_auth/_isAdmin/admin/": {
+      id: "/_auth/_isAdmin/admin/";
+      path: "/admin";
+      fullPath: "/admin";
+      preLoaderRoute: typeof AuthIsAdminAdminIndexImport;
+      parentRoute: typeof AuthIsAdminImport;
+    };
+    "/_auth/_isAdmin/admin/users/$postId": {
+      id: "/_auth/_isAdmin/admin/users/$postId";
+      path: "/admin/users/$postId";
+      fullPath: "/admin/users/$postId";
+      preLoaderRoute: typeof AuthIsAdminAdminUsersPostIdImport;
+      parentRoute: typeof AuthIsAdminImport;
+    };
+    "/_auth/_isAdmin/admin/users/": {
+      id: "/_auth/_isAdmin/admin/users/";
+      path: "/admin/users";
+      fullPath: "/admin/users";
+      preLoaderRoute: typeof AuthIsAdminAdminUsersIndexImport;
+      parentRoute: typeof AuthIsAdminImport;
+    };
   }
 }
 
 // Create and export the route tree
 
 interface AuthIsAdminRouteChildren {
-  AuthIsAdminAdminSettingsRoute: typeof AuthIsAdminAdminSettingsRoute
-  AuthIsAdminAdminIndexRoute: typeof AuthIsAdminAdminIndexRoute
-  AuthIsAdminAdminUsersPostIdRoute: typeof AuthIsAdminAdminUsersPostIdRoute
-  AuthIsAdminAdminUsersIndexRoute: typeof AuthIsAdminAdminUsersIndexRoute
+  AuthIsAdminAdminSettingsRoute: typeof AuthIsAdminAdminSettingsRoute;
+  AuthIsAdminAdminIndexRoute: typeof AuthIsAdminAdminIndexRoute;
+  AuthIsAdminAdminUsersPostIdRoute: typeof AuthIsAdminAdminUsersPostIdRoute;
+  AuthIsAdminAdminUsersIndexRoute: typeof AuthIsAdminAdminUsersIndexRoute;
 }
 
 const AuthIsAdminRouteChildren: AuthIsAdminRouteChildren = {
@@ -288,17 +288,17 @@ const AuthIsAdminRouteChildren: AuthIsAdminRouteChildren = {
   AuthIsAdminAdminIndexRoute: AuthIsAdminAdminIndexRoute,
   AuthIsAdminAdminUsersPostIdRoute: AuthIsAdminAdminUsersPostIdRoute,
   AuthIsAdminAdminUsersIndexRoute: AuthIsAdminAdminUsersIndexRoute,
-}
+};
 
 const AuthIsAdminRouteWithChildren = AuthIsAdminRoute._addFileChildren(
   AuthIsAdminRouteChildren,
-)
+);
 
 interface AuthRouteChildren {
-  AuthIsAdminRoute: typeof AuthIsAdminRouteWithChildren
-  AuthProfileEditRoute: typeof AuthProfileEditRoute
-  AuthProfileSettingsRoute: typeof AuthProfileSettingsRoute
-  AuthProfileIndexRoute: typeof AuthProfileIndexRoute
+  AuthIsAdminRoute: typeof AuthIsAdminRouteWithChildren;
+  AuthProfileEditRoute: typeof AuthProfileEditRoute;
+  AuthProfileSettingsRoute: typeof AuthProfileSettingsRoute;
+  AuthProfileIndexRoute: typeof AuthProfileIndexRoute;
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
@@ -306,145 +306,145 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthProfileEditRoute: AuthProfileEditRoute,
   AuthProfileSettingsRoute: AuthProfileSettingsRoute,
   AuthProfileIndexRoute: AuthProfileIndexRoute,
-}
+};
 
-const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren);
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '': typeof AuthIsAdminRouteWithChildren
-  '/about': typeof AboutRoute
-  '/forgot-password': typeof authForgotPasswordRoute
-  '/login': typeof authLoginRoute
-  '/logout': typeof authLogoutRoute
-  '/register': typeof authRegisterRoute
-  '/reset-password': typeof authResetPasswordRoute
-  '/verify': typeof authVerifyRoute
-  '/profile/edit': typeof AuthProfileEditRoute
-  '/profile/settings': typeof AuthProfileSettingsRoute
-  '/profile': typeof AuthProfileIndexRoute
-  '/auth/google/callback': typeof authAuthGoogleCallbackRoute
-  '/admin/settings': typeof AuthIsAdminAdminSettingsRoute
-  '/admin': typeof AuthIsAdminAdminIndexRoute
-  '/admin/users/$postId': typeof AuthIsAdminAdminUsersPostIdRoute
-  '/admin/users': typeof AuthIsAdminAdminUsersIndexRoute
+  "/": typeof IndexRoute;
+  "": typeof AuthIsAdminRouteWithChildren;
+  "/about": typeof AboutRoute;
+  "/forgot-password": typeof authForgotPasswordRoute;
+  "/login": typeof authLoginRoute;
+  "/logout": typeof authLogoutRoute;
+  "/register": typeof authRegisterRoute;
+  "/reset-password": typeof authResetPasswordRoute;
+  "/verify": typeof authVerifyRoute;
+  "/profile/edit": typeof AuthProfileEditRoute;
+  "/profile/settings": typeof AuthProfileSettingsRoute;
+  "/profile": typeof AuthProfileIndexRoute;
+  "/auth/google/callback": typeof authAuthGoogleCallbackRoute;
+  "/admin/settings": typeof AuthIsAdminAdminSettingsRoute;
+  "/admin": typeof AuthIsAdminAdminIndexRoute;
+  "/admin/users/$postId": typeof AuthIsAdminAdminUsersPostIdRoute;
+  "/admin/users": typeof AuthIsAdminAdminUsersIndexRoute;
 }
 
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '': typeof AuthIsAdminRouteWithChildren
-  '/about': typeof AboutRoute
-  '/forgot-password': typeof authForgotPasswordRoute
-  '/login': typeof authLoginRoute
-  '/logout': typeof authLogoutRoute
-  '/register': typeof authRegisterRoute
-  '/reset-password': typeof authResetPasswordRoute
-  '/verify': typeof authVerifyRoute
-  '/profile/edit': typeof AuthProfileEditRoute
-  '/profile/settings': typeof AuthProfileSettingsRoute
-  '/profile': typeof AuthProfileIndexRoute
-  '/auth/google/callback': typeof authAuthGoogleCallbackRoute
-  '/admin/settings': typeof AuthIsAdminAdminSettingsRoute
-  '/admin': typeof AuthIsAdminAdminIndexRoute
-  '/admin/users/$postId': typeof AuthIsAdminAdminUsersPostIdRoute
-  '/admin/users': typeof AuthIsAdminAdminUsersIndexRoute
+  "/": typeof IndexRoute;
+  "": typeof AuthIsAdminRouteWithChildren;
+  "/about": typeof AboutRoute;
+  "/forgot-password": typeof authForgotPasswordRoute;
+  "/login": typeof authLoginRoute;
+  "/logout": typeof authLogoutRoute;
+  "/register": typeof authRegisterRoute;
+  "/reset-password": typeof authResetPasswordRoute;
+  "/verify": typeof authVerifyRoute;
+  "/profile/edit": typeof AuthProfileEditRoute;
+  "/profile/settings": typeof AuthProfileSettingsRoute;
+  "/profile": typeof AuthProfileIndexRoute;
+  "/auth/google/callback": typeof authAuthGoogleCallbackRoute;
+  "/admin/settings": typeof AuthIsAdminAdminSettingsRoute;
+  "/admin": typeof AuthIsAdminAdminIndexRoute;
+  "/admin/users/$postId": typeof AuthIsAdminAdminUsersPostIdRoute;
+  "/admin/users": typeof AuthIsAdminAdminUsersIndexRoute;
 }
 
 export interface FileRoutesById {
-  __root__: typeof rootRoute
-  '/': typeof IndexRoute
-  '/_auth': typeof AuthRouteWithChildren
-  '/about': typeof AboutRoute
-  '/(auth)/forgot-password': typeof authForgotPasswordRoute
-  '/(auth)/login': typeof authLoginRoute
-  '/(auth)/logout': typeof authLogoutRoute
-  '/(auth)/register': typeof authRegisterRoute
-  '/(auth)/reset-password': typeof authResetPasswordRoute
-  '/(auth)/verify': typeof authVerifyRoute
-  '/_auth/_isAdmin': typeof AuthIsAdminRouteWithChildren
-  '/_auth/profile/edit': typeof AuthProfileEditRoute
-  '/_auth/profile/settings': typeof AuthProfileSettingsRoute
-  '/_auth/profile/': typeof AuthProfileIndexRoute
-  '/(auth)/auth/google/callback': typeof authAuthGoogleCallbackRoute
-  '/_auth/_isAdmin/admin/settings': typeof AuthIsAdminAdminSettingsRoute
-  '/_auth/_isAdmin/admin/': typeof AuthIsAdminAdminIndexRoute
-  '/_auth/_isAdmin/admin/users/$postId': typeof AuthIsAdminAdminUsersPostIdRoute
-  '/_auth/_isAdmin/admin/users/': typeof AuthIsAdminAdminUsersIndexRoute
+  __root__: typeof rootRoute;
+  "/": typeof IndexRoute;
+  "/_auth": typeof AuthRouteWithChildren;
+  "/about": typeof AboutRoute;
+  "/(auth)/forgot-password": typeof authForgotPasswordRoute;
+  "/(auth)/login": typeof authLoginRoute;
+  "/(auth)/logout": typeof authLogoutRoute;
+  "/(auth)/register": typeof authRegisterRoute;
+  "/(auth)/reset-password": typeof authResetPasswordRoute;
+  "/(auth)/verify": typeof authVerifyRoute;
+  "/_auth/_isAdmin": typeof AuthIsAdminRouteWithChildren;
+  "/_auth/profile/edit": typeof AuthProfileEditRoute;
+  "/_auth/profile/settings": typeof AuthProfileSettingsRoute;
+  "/_auth/profile/": typeof AuthProfileIndexRoute;
+  "/(auth)/auth/google/callback": typeof authAuthGoogleCallbackRoute;
+  "/_auth/_isAdmin/admin/settings": typeof AuthIsAdminAdminSettingsRoute;
+  "/_auth/_isAdmin/admin/": typeof AuthIsAdminAdminIndexRoute;
+  "/_auth/_isAdmin/admin/users/$postId": typeof AuthIsAdminAdminUsersPostIdRoute;
+  "/_auth/_isAdmin/admin/users/": typeof AuthIsAdminAdminUsersIndexRoute;
 }
 
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath
+  fileRoutesByFullPath: FileRoutesByFullPath;
   fullPaths:
-    | '/'
-    | ''
-    | '/about'
-    | '/forgot-password'
-    | '/login'
-    | '/logout'
-    | '/register'
-    | '/reset-password'
-    | '/verify'
-    | '/profile/edit'
-    | '/profile/settings'
-    | '/profile'
-    | '/auth/google/callback'
-    | '/admin/settings'
-    | '/admin'
-    | '/admin/users/$postId'
-    | '/admin/users'
-  fileRoutesByTo: FileRoutesByTo
+    | "/"
+    | ""
+    | "/about"
+    | "/forgot-password"
+    | "/login"
+    | "/logout"
+    | "/register"
+    | "/reset-password"
+    | "/verify"
+    | "/profile/edit"
+    | "/profile/settings"
+    | "/profile"
+    | "/auth/google/callback"
+    | "/admin/settings"
+    | "/admin"
+    | "/admin/users/$postId"
+    | "/admin/users";
+  fileRoutesByTo: FileRoutesByTo;
   to:
-    | '/'
-    | ''
-    | '/about'
-    | '/forgot-password'
-    | '/login'
-    | '/logout'
-    | '/register'
-    | '/reset-password'
-    | '/verify'
-    | '/profile/edit'
-    | '/profile/settings'
-    | '/profile'
-    | '/auth/google/callback'
-    | '/admin/settings'
-    | '/admin'
-    | '/admin/users/$postId'
-    | '/admin/users'
+    | "/"
+    | ""
+    | "/about"
+    | "/forgot-password"
+    | "/login"
+    | "/logout"
+    | "/register"
+    | "/reset-password"
+    | "/verify"
+    | "/profile/edit"
+    | "/profile/settings"
+    | "/profile"
+    | "/auth/google/callback"
+    | "/admin/settings"
+    | "/admin"
+    | "/admin/users/$postId"
+    | "/admin/users";
   id:
-    | '__root__'
-    | '/'
-    | '/_auth'
-    | '/about'
-    | '/(auth)/forgot-password'
-    | '/(auth)/login'
-    | '/(auth)/logout'
-    | '/(auth)/register'
-    | '/(auth)/reset-password'
-    | '/(auth)/verify'
-    | '/_auth/_isAdmin'
-    | '/_auth/profile/edit'
-    | '/_auth/profile/settings'
-    | '/_auth/profile/'
-    | '/(auth)/auth/google/callback'
-    | '/_auth/_isAdmin/admin/settings'
-    | '/_auth/_isAdmin/admin/'
-    | '/_auth/_isAdmin/admin/users/$postId'
-    | '/_auth/_isAdmin/admin/users/'
-  fileRoutesById: FileRoutesById
+    | "__root__"
+    | "/"
+    | "/_auth"
+    | "/about"
+    | "/(auth)/forgot-password"
+    | "/(auth)/login"
+    | "/(auth)/logout"
+    | "/(auth)/register"
+    | "/(auth)/reset-password"
+    | "/(auth)/verify"
+    | "/_auth/_isAdmin"
+    | "/_auth/profile/edit"
+    | "/_auth/profile/settings"
+    | "/_auth/profile/"
+    | "/(auth)/auth/google/callback"
+    | "/_auth/_isAdmin/admin/settings"
+    | "/_auth/_isAdmin/admin/"
+    | "/_auth/_isAdmin/admin/users/$postId"
+    | "/_auth/_isAdmin/admin/users/";
+  fileRoutesById: FileRoutesById;
 }
 
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  AuthRoute: typeof AuthRouteWithChildren
-  AboutRoute: typeof AboutRoute
-  authForgotPasswordRoute: typeof authForgotPasswordRoute
-  authLoginRoute: typeof authLoginRoute
-  authLogoutRoute: typeof authLogoutRoute
-  authRegisterRoute: typeof authRegisterRoute
-  authResetPasswordRoute: typeof authResetPasswordRoute
-  authVerifyRoute: typeof authVerifyRoute
-  authAuthGoogleCallbackRoute: typeof authAuthGoogleCallbackRoute
+  IndexRoute: typeof IndexRoute;
+  AuthRoute: typeof AuthRouteWithChildren;
+  AboutRoute: typeof AboutRoute;
+  authForgotPasswordRoute: typeof authForgotPasswordRoute;
+  authLoginRoute: typeof authLoginRoute;
+  authLogoutRoute: typeof authLogoutRoute;
+  authRegisterRoute: typeof authRegisterRoute;
+  authResetPasswordRoute: typeof authResetPasswordRoute;
+  authVerifyRoute: typeof authVerifyRoute;
+  authAuthGoogleCallbackRoute: typeof authAuthGoogleCallbackRoute;
 }
 
 const rootRouteChildren: RootRouteChildren = {
@@ -458,11 +458,11 @@ const rootRouteChildren: RootRouteChildren = {
   authResetPasswordRoute: authResetPasswordRoute,
   authVerifyRoute: authVerifyRoute,
   authAuthGoogleCallbackRoute: authAuthGoogleCallbackRoute,
-}
+};
 
 export const routeTree = rootRoute
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>()
+  ._addFileTypes<FileRouteTypes>();
 
 /* ROUTE_MANIFEST_START
 {

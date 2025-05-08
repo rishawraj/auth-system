@@ -4,6 +4,7 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import { useState } from "react";
+import { z } from "zod"; // Import a validation library like zod
 
 // Define the expected shape and validation for your search parameters
 const resetPasswordSearchSchema = z.object({
@@ -14,8 +15,6 @@ export const Route = createFileRoute("/(auth)/reset-password")({
   component: RouteComponent,
   validateSearch: resetPasswordSearchSchema, // Validate the search parameters using zod
 });
-
-import { z } from "zod"; // Import a validation library like zod
 
 function RouteComponent() {
   const search = useSearch({ from: "/(auth)/reset-password" }); // Use the search schema to validate the search parameters
@@ -81,11 +80,11 @@ function RouteComponent() {
     }
   }
   return (
-    <div className="max-w-md mx-auto mt-10 p-4 border rounded shadow">
-      <h1 className="text-2xl mb-4">Reset Password</h1>
+    <div className="mx-auto mt-10 max-w-md rounded border p-4 shadow">
+      <h1 className="mb-4 text-2xl">Reset Password</h1>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <input
-          className="border p-2 rounded"
+          className="rounded border p-2"
           type="password"
           placeholder="Enter new password"
           value={password}
@@ -93,7 +92,7 @@ function RouteComponent() {
           required
         />
         <input
-          className="border p-2 rounded"
+          className="rounded border p-2"
           type="password"
           placeholder="Confirm new password"
           value={confirmPassword}
@@ -101,15 +100,15 @@ function RouteComponent() {
           required
         />
         <button
-          className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+          className="rounded bg-blue-500 p-2 text-white hover:bg-blue-600"
           type="submit"
           disabled={isLoading}
         >
           {isLoading ? "Resetting..." : "Reset Password"}
         </button>
       </form>
-      {message && <p className="text-green-600 mt-4">{message}</p>}
-      {error && <p className="text-red-600 mt-4">{error}</p>}
+      {message && <p className="mt-4 text-green-600">{message}</p>}
+      {error && <p className="mt-4 text-red-600">{error}</p>}
     </div>
   );
 }

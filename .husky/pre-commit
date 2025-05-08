@@ -1,0 +1,19 @@
+#!/bin/sh
+
+. "$(dirname "$0")/_/husky.sh"
+
+echo "Running Format, test and lint checks in client/"
+cd client || exit 1
+npm run lint
+npm run format
+npm run test
+cd ..
+
+
+echo "Running tests in server/"
+cd server || exit 1
+npm run test
+cd ..
+
+echo "Running commitlint"
+npx --no -- commitlint --edit "$1"

@@ -4,6 +4,7 @@ import {
   useLoaderData,
 } from "@tanstack/react-router";
 import Cookies from "js-cookie";
+
 import { LogoutButton } from "../../../components/LogoutButton";
 
 export const Route = createFileRoute("/_auth/profile/")({

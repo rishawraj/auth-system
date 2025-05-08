@@ -1,4 +1,5 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+
 import { getToken } from "../utils/authToken";
 
 export const Route = createFileRoute("/_auth")({

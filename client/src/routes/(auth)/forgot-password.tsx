@@ -41,11 +41,11 @@ function ForgotPasswordPage() {
   }
 
   return (
-    <div className="max-w-md mx-auto mt-10 p-4 border rounded shadow">
-      <h1 className="text-2xl mb-4">Forgot Password</h1>
+    <div className="mx-auto mt-10 max-w-md rounded border p-4 shadow">
+      <h1 className="mb-4 text-2xl">Forgot Password</h1>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <input
-          className="border p-2 rounded"
+          className="rounded border p-2"
           type="email"
           placeholder="Enter your email"
           value={email}
@@ -53,15 +53,15 @@ function ForgotPasswordPage() {
           required
         />
         <button
-          className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+          className="rounded bg-blue-500 p-2 text-white hover:bg-blue-600"
           type="submit"
         >
           Send Reset Email
         </button>
       </form>
 
-      {message && <p className="text-green-600 mt-4">{message}</p>}
-      {error && <p className="text-red-600 mt-4">{error}</p>}
+      {message && <p className="mt-4 text-green-600">{message}</p>}
+      {error && <p className="mt-4 text-red-600">{error}</p>}
     </div>
   );
 }

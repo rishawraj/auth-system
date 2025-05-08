@@ -25,7 +25,7 @@ export function LogoutButton() {
 
   return (
     <button
-      className="p-2 bg-red-300 text-white cursor-pointer"
+      className="cursor-pointer bg-red-300 p-2 text-white"
       onClick={handleLogout}
     >
       Logout

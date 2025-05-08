@@ -1,5 +1,5 @@
-import React, { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import React, { useState } from "react";
 // import Cookies from "js-cookie";
 
 interface FormData {
@@ -83,7 +83,7 @@ export default function UserRegistrationForm() {
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
         throw new Error(
-          errorData?.message || `Server error: ${response.status}`
+          errorData?.message || `Server error: ${response.status}`,
         );
       }
 
@@ -100,13 +100,13 @@ export default function UserRegistrationForm() {
         error.message.includes("Failed to fetch")
       ) {
         setErrorMessage(
-          `Unable to connect to the server. Please check if the server is running at ${API_URL}`
+          `Unable to connect to the server. Please check if the server is running at ${API_URL}`,
         );
       } else {
         setErrorMessage(
           error instanceof Error
             ? error.message
-            : "An unexpected error occurred"
+            : "An unexpected error occurred",
         );
       }
     } finally {
@@ -138,7 +138,7 @@ export default function UserRegistrationForm() {
         setErrorMessage("⏱️ Request timed out. Please try again.");
       } else {
         setErrorMessage(
-          "❌ Failed to connect to server. Please make sure it's running."
+          "❌ Failed to connect to server. Please make sure it's running.",
         );
       }
     } finally {
@@ -148,7 +148,7 @@ export default function UserRegistrationForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="flex min-h-screen flex-col justify-center bg-gray-100 py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
           Create your account
@@ -156,7 +156,7 @@ export default function UserRegistrationForm() {
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+        <div className="bg-white px-4 py-8 shadow sm:rounded-lg sm:px-10">
           {success ? (
             <div className="space-y-6">
               <div className="rounded-md bg-green-50 p-4">
@@ -183,7 +183,7 @@ export default function UserRegistrationForm() {
               </div>
               <button
                 onClick={tryAgain}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                className="flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none"
               >
                 Register another account
               </button>
@@ -205,7 +205,7 @@ export default function UserRegistrationForm() {
                     autoComplete="name"
                     value={formData.name}
                     onChange={handleChange}
-                    className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm ${errors.name ? "border-red-300" : "border-gray-300"}`}
+                    className={`block w-full appearance-none rounded-md border px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm ${errors.name ? "border-red-300" : "border-gray-300"}`}
                   />
                 </div>
                 {errors.name && (
@@ -228,7 +228,7 @@ export default function UserRegistrationForm() {
                     autoComplete="email"
                     value={formData.email}
                     onChange={handleChange}
-                    className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm ${errors.email ? "border-red-300" : "border-gray-300"}`}
+                    className={`block w-full appearance-none rounded-md border px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm ${errors.email ? "border-red-300" : "border-gray-300"}`}
                   />
                 </div>
                 {errors.email && (
@@ -243,7 +243,7 @@ export default function UserRegistrationForm() {
                 >
                   Password
                 </label>
-                <div className="mt-1 relative">
+                <div className="relative mt-1">
                   <input
                     id="password"
                     name="password"
@@ -251,7 +251,7 @@ export default function UserRegistrationForm() {
                     autoComplete="new-password"
                     value={formData.password}
                     onChange={handleChange}
-                    className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm ${errors.password ? "border-red-300" : "border-gray-300"}`}
+                    className={`block w-full appearance-none rounded-md border px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm ${errors.password ? "border-red-300" : "border-gray-300"}`}
                   />
                 </div>
                 {errors.password && (
@@ -288,12 +288,12 @@ export default function UserRegistrationForm() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${loading ? "opacity-75 cursor-not-allowed" : ""}`}
+                  className={`flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none ${loading ? "cursor-not-allowed opacity-75" : ""}`}
                 >
                   {loading ? (
                     <div className="flex items-center">
                       <svg
-                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                        className="mr-3 -ml-1 h-5 w-5 animate-spin text-white"
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
                         viewBox="0 0 24 24"
@@ -326,13 +326,13 @@ export default function UserRegistrationForm() {
             <button
               type="button"
               onClick={testConnection}
-              className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="flex w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none"
               disabled={loading}
             >
               {loading ? "Checking..." : "Test Server Connection"}
             </button>
             {errorMessage && (
-              <p className="mt-2 text-sm text-center text-red-600">
+              <p className="mt-2 text-center text-sm text-red-600">
                 {errorMessage}
               </p>
             )}

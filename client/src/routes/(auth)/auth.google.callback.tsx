@@ -3,8 +3,8 @@ import {
   useNavigate,
   useSearch,
 } from "@tanstack/react-router";
-import { z } from "zod";
 import Cookies from "js-cookie";
+import { z } from "zod";
 
 const authTokenSchema = z.object({
   token: z.string().optional().default(""),

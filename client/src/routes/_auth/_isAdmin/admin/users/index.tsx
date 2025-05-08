@@ -2,10 +2,11 @@ import {
   useLoaderData,
   createFileRoute,
   useNavigate,
+  redirect,
 } from "@tanstack/react-router";
-import { User } from "../../../../../types/auth";
 import Cookies from "js-cookie";
-import { redirect } from "@tanstack/react-router";
+
+import { User } from "../../../../../types/auth";
 
 export const Route = createFileRoute("/_auth/_isAdmin/admin/users/")({
   beforeLoad: async () => {

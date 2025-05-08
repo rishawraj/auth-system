@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeAll, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { describe, it, expect, beforeAll, vi } from "vitest";
+
 import { LogoutButton } from "../components/LogoutButton";
 
 describe("LogoutButton", () => {
