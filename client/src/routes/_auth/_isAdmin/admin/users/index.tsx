@@ -7,10 +7,12 @@ import {
 import Cookies from "js-cookie";
 
 import { User } from "../../../../../types/auth";
+import { getToken } from "../../../../../utils/authToken";
 
 export const Route = createFileRoute("/_auth/_isAdmin/admin/users/")({
   beforeLoad: async () => {
-    const token = Cookies.get("token");
+    // const token = Cookies.get("token");
+    const token = getToken();
     console.log({ token });
     if (!token) {
       throw redirect({ to: "/login" });
@@ -18,7 +20,8 @@ export const Route = createFileRoute("/_auth/_isAdmin/admin/users/")({
   },
 
   loader: async () => {
-    const token = Cookies.get("token");
+    // const token = Cookies.get("token");
+    const token = getToken();
     const API_URL = import.meta.env.VITE_API_BASE_URL;
     console.log({ token });
     if (!token) {

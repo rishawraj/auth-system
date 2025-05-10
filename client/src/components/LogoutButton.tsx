@@ -1,5 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import Cookies from "js-cookie";
+import { removeToken } from "../utils/authToken";
 
 export function LogoutButton() {
   const navigate = useNavigate();
@@ -14,7 +15,8 @@ export function LogoutButton() {
       });
 
       // Remove the token from cookies on the client side
-      Cookies.remove("token");
+      // Cookies.remove("token");
+      removeToken();
 
       // Redirect to the login page
       navigate({ to: "/login" });

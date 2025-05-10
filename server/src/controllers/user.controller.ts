@@ -1,5 +1,7 @@
 import { IncomingMessage, ServerResponse } from "http";
 import {
+  generateAccessToken,
+  generateRefreshToken,
   generateSixDigitCodeWithExpiry,
   readBody,
   send,
@@ -17,6 +19,9 @@ import { User } from "../models/user.model.js";
 import { OAuth2Client, TokenPayload } from "google-auth-library";
 import { UAParser } from "ua-parser-js";
 import crypto from "crypto";
+import path from "path";
+
+import { RegisterResponse } from "../../../shared/src/types/auth.js";
 
 const SECRET = process.env.SECRET;
 const FRONTEND_URL = process.env.FRONTEND_URL;
@@ -81,7 +86,6 @@ export async function handleRegister(
     const verificationCode = CodeWithExpiry.code;
     const verification_code_expiry_time = CodeWithExpiry.expiresAt;
 
-    //  ---- extract user agent from request headers ----
     const ua = new UAParser(req.headers["user-agent"] || "");
     const ip =
       req.headers["x-forwarded-for"]?.toString().split(",")[0] ||
@@ -91,29 +95,16 @@ export async function handleRegister(
     const os = ua.getOS().name || null;
     const device = ua.getDevice().model || "unknown";
 
-    // todo Replace with actual geo data from ip
     const last_location = null;
     const last_country = null;
     const last_city = null;
     const last_login = new Date();
 
-    // todo generate a profile picture
     const hashedEmail = crypto
       .createHash("sha256")
       .update(email.toLowerCase().trim())
       .digest("hex");
     const profile_pic = `https://api.dicebear.com/7.x/adventurer/png?seed=${hashedEmail}`;
-
-    // const newUserResult = await pool.query(
-    //   "INSERT INTO users (name, email, password, verification_code, verification_code_expiry_time) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, is_active, registration_date",
-    //   [
-    //     name,
-    //     email,
-    //     hashedPassword,
-    //     verificationCode,
-    //     verification_code_expiry_time,
-    //   ]
-    // );
 
     const newUserResult = await pool.query(
       `INSERT INTO users (
@@ -139,18 +130,20 @@ export async function handleRegister(
 
     const newUser = newUserResult.rows[0];
 
-    const token = jwt.sign({ email: newUser.email }, SECRET, {
-      expiresIn: "1d",
+    const accessToken = generateAccessToken({
+      email: newUser.email,
+      is_super_user: newUser.is_super_user,
     });
 
-    // fire and forget
     setImmediate(() => sendVerificationEmailWorker(email, verificationCode));
 
-    send(res, 201, {
+    const response: RegisterResponse = {
       message: "User registered successfully",
       user: newUser,
-      token: token,
-    });
+      accessToken,
+    };
+
+    send(res, 201, response);
   } catch (error) {
     console.error("Registration error:", error);
     send(res, 500, { error: "Internal server error" });
@@ -207,6 +200,11 @@ export async function handleLogin(
         expiresIn: "1d",
       }
     );
+    const accessToken = generateAccessToken({
+      email: user.email,
+      is_super_user: user.is_super_user,
+    });
+    const refreshToken = generateRefreshToken({ email: user.email });
 
     // update last login time
     await pool.query("UPDATE users SET last_login = $1 WHERE email = $2", [
@@ -214,7 +212,7 @@ export async function handleLogin(
       email,
     ]);
 
-    send(res, 200, { message: "Login successful", token });
+    send(res, 200, { message: "Login successful", accessToken, refreshToken });
   } catch (error) {
     console.error("Login error:", error);
     send(res, 500, { error: "Internal server error" });
@@ -261,6 +259,7 @@ export async function handleProfile(
 }
 
 export async function handleLogut(req: IncomingMessage, res: ServerResponse) {
+  //todo invalidate refresh token
   res.setHeader("Set-Cookie", "token=; httpOnly; Path=/;Max-Age=0");
   res.writeHead(200, { "content-type": "application/json" });
   res.end(JSON.stringify({ message: "Logged out successfully" }));
@@ -275,6 +274,11 @@ export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
 
     if (!token || !code) {
       return send(res, 400, { error: "Missing token or verification code" });
+    }
+
+    interface DecodedToken {
+      email: string;
+      [key: string]: any; // for any additional JWT claims
     }
 
     let decodedToken;
@@ -322,11 +326,56 @@ export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
 
     await pool.query(updateQuery, [user.id]);
 
-    // Send success response
+    // Update the last login time
+    await pool.query("UPDATE users SET last_login = $1 WHERE email = $2", [
+      new Date(),
+      email,
+    ]);
+
+    // Generate a new access token
+    const accessToken = generateAccessToken({
+      email: user.email,
+      is_super_user: user.is_super_user,
+    });
+    const refreshToken = generateRefreshToken({ email: user.email });
+
+    // Set the refresh token in the database
+    // hash the refresh token
+    const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+    // todo
+
+    if (!process.env.REFRESH_TOKEN_EXPIRY) {
+      throw new Error("REFRESH_TOKEN_EXPIRY environment variable is required");
+    }
+
+    const refreshTokenExpiry = parseInt(process.env.REFRESH_TOKEN_EXPIRY, 10);
+    if (isNaN(refreshTokenExpiry)) {
+      throw new Error("REFRESH_TOKEN_EXPIRY must be a valid number");
+    }
+
+    const expiryTime = new Date(
+      Date.now() + parseInt(process.env.REFRESH_TOKEN_EXPIRY || "86400000", 10)
+    );
+
+    const RefreshTokenResult = await pool.query(
+      "INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3) ON CONFLICT (user_id) DO UPDATE SET token_hash = $2, expires_at = $3 returning *",
+      [user.id, hashedRefreshToken, expiryTime]
+    );
+
+    console.log(RefreshTokenResult.rows[0]);
+
+    // set the refresh token in the cookie
+    res.setHeader("Set-Cookie", [
+      `refreshToken=${refreshToken}; HttpOnly; Path=/; Max-Age=${refreshTokenExpiry}; SameSite=None; Secure=false; Domain=${
+        process.env.DOMAIN || "localhost"
+      }`,
+    ]);
 
     send(res, 200, {
       message: "Account verified successfully",
       email: email,
+      accessToken,
+      // refreshToken,
     });
   } catch (error) {
     console.error("Verification error: ", error);
@@ -449,5 +498,51 @@ export async function handleResetPassword(
   } catch (error) {
     console.error("Reset password error:", error);
     send(res, 500, { error: "Internal server error during password reset" });
+  }
+}
+
+export async function handleTokenRefresh(
+  req: IncomingMessage,
+  res: ServerResponse
+): Promise<void> {
+  try {
+    const body = await readBody<{ refreshToken: string }>(req);
+    const { refreshToken } = body;
+
+    if (!refreshToken) {
+      return send(res, 400, { error: "Refresh token is required" });
+    }
+
+    // todo
+    const tokenInDB = await pool.query(
+      "SELECT * FROM users WHERE refresh_token = $1",
+      [refreshToken]
+    );
+    if (tokenInDB.rows.length === 0) {
+      return send(res, 401, { error: "Invalid refresh token" });
+    }
+    const user = tokenInDB.rows[0];
+
+    jwt.verify(
+      refreshToken,
+      process.env.REFRESH_TOKEN_SECRET!,
+      (err, decoded) => {
+        if (err) {
+          console.error("Refresh token verification failed:", err);
+          return send(res, 403, { error: "Invalid refresh token" });
+        }
+        const newAccessToken = generateAccessToken({
+          email: user.email,
+          is_super_user: user.is_super_user,
+        });
+        send(res, 200, {
+          message: "Access token refreshed successfully",
+          accessToken: newAccessToken,
+        });
+      }
+    );
+  } catch (error) {
+    console.error("Token refresh error:", error);
+    send(res, 500, { error: "Internal server error during token refresh" });
   }
 }

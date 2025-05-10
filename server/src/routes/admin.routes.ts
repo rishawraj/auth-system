@@ -42,7 +42,7 @@ export default async (req: IncomingMessage, res: ServerResponse) => {
     const userId = getUserByIdMatch[1];
     console.log("userId", userId);
     try {
-      const user = await getUserById(+userId);
+      const user = await getUserById(userId);
       if (user) {
         send(res, 200, {
           status: "OK",
@@ -62,6 +62,7 @@ export default async (req: IncomingMessage, res: ServerResponse) => {
         message: "Error fetching user data",
       });
     }
+    return true; // Add this line to indicate the route was handled
   }
 
   if (req.method === "GET" && pathname === "/admin/users") {

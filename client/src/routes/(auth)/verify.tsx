@@ -75,8 +75,13 @@ function VerifyComponent() {
       }
 
       const responseData = await response.json();
-      console.log(responseData);
+      console.log("Verification response:", responseData);
+      console.log(responseData.refreshToken);
+
+      // todo
+
       setToken(token);
+
       navigate({ to: "/profile" });
     } catch (error) {
       console.error("Error during verification:", error);

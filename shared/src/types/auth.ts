@@ -47,3 +47,15 @@ export interface LoginCredentials {
 export interface RegisterCredentials extends LoginCredentials {
   name: string;
 }
+
+export interface RegisterResponse {
+  message: string;
+  user: {
+    id: number;
+    name: string;
+    email: string;
+    is_active: boolean;
+    registration_date: string;
+  };
+  accessToken: string;
+}

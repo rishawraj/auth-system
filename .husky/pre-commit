@@ -4,14 +4,18 @@
 
 echo "Running Format, test and lint checks in client/"
 cd client || exit 1
+echo "Running lint"
 npm run lint
+echo "Running format"
 npm run format
+echo "Running test"
 npm run test
 cd ..
 
 
 echo "Running tests in server/"
 cd server || exit 1
+echo "Running test"
 npm run test
 cd ..
 

@@ -1,9 +1,23 @@
 ## todo
 
+- in /verify
+  set http cookies
+  and in client
+  handle it.
+- then implement client side refreshtoken logic.
+
 - [x] use .env var for client and server url
 - [ ] centralize jwt expiry time
-- [ ] husky
-- [ ] eslint
+- [x] husky
+- [x] eslint
+- [ ] req to server for admin status ?? => no.
+
+---
+
+##
+
+- [ ] refresh tokens
+- [ ] limited access after registration if done by email.
 - [ ]
 
 ## implement all field in email login as they are in google login

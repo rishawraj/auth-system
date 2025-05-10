@@ -6,10 +6,12 @@ import {
 import Cookies from "js-cookie";
 
 import { LogoutButton } from "../../../components/LogoutButton";
+import { getToken } from "../../../utils/authToken";
 
 export const Route = createFileRoute("/_auth/profile/")({
   beforeLoad: async () => {
-    const token = Cookies.get("token");
+    // const token = Cookies.get("token");
+    const token = getToken();
     console.log({ token });
     if (!token) {
       throw redirect({ to: "/login" });
@@ -23,7 +25,8 @@ export const Route = createFileRoute("/_auth/profile/")({
       throw new Error("API_URL is not defined");
     }
     // Fetch the profile data from the server
-    const token = Cookies.get("token");
+    // const token = Cookies.get("token");
+    const token = getToken();
     if (!token) {
       throw new Error("Authentication token not found.");
     }

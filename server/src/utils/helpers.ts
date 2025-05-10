@@ -1,4 +1,5 @@
 import { IncomingMessage, ServerResponse } from "http";
+import jwt from "jsonwebtoken";
 
 type CodeWithExpiry = {
   code: string;
@@ -39,4 +40,24 @@ export function send(
 ): void {
   res.writeHead(statusCode, { "Content-type": "application/json" });
   res.end(JSON.stringify(data));
+}
+
+export function generateAccessToken(payload: object) {
+  const secret = process.env.ACCESS_TOKEN_SECRET;
+  if (!secret) throw new Error("ACCESS_TOKEN_SECRET is not defined");
+  if (!process.env.ACCESS_TOKEN_EXPIRY)
+    throw new Error("ACCESS_TOKEN_EXPIRY is not defined");
+  return jwt.sign(payload, secret, {
+    expiresIn: parseInt(process.env.ACCESS_TOKEN_EXPIRY),
+  });
+}
+
+export function generateRefreshToken(payload: object) {
+  const secret = process.env.REFRESH_TOKEN_SECRET;
+  if (!secret) throw new Error("REFRESH_TOKEN_SECRET is not defined");
+  if (!process.env.REFRESH_TOKEN_EXPIRY)
+    throw new Error("REFRESH_TOKEN_EXPIRY is not defined");
+  return jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET!, {
+    expiresIn: parseInt(process.env.REFRESH_TOKEN_EXPIRY),
+  });
 }

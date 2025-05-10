@@ -13,11 +13,11 @@ export async function getAllUsers() {
  * @throws Error if database query fails
  */
 
-export async function getUserById(id: number): Promise<User | null> {
+export async function getUserById(id: string): Promise<User | null> {
   try {
     // Validate input
-    if (!id || isNaN(id)) {
-      throw new Error("Invalid user ID provided");
+    if (!id) {
+      throw new Error("User ID is required");
     }
 
     // Query database for user with specified fields only

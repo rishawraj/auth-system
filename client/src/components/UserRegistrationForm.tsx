@@ -1,6 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import React, { useState } from "react";
-// import Cookies from "js-cookie";
+
+import { RegisterResponse } from "../../../shared/src/types/auth";
 
 interface FormData {
   name: string;
@@ -87,12 +88,12 @@ export default function UserRegistrationForm() {
         );
       }
 
-      const responseData = await response.json();
-      // Cookies.set("token", responseData.token, { expires: 1 });
+      const responseData: RegisterResponse = await response.json();
+      console.log("Registration successful:", responseData);
 
       setSuccess(true);
       setFormData({ name: "", email: "", password: "" });
-      navigate({ to: "/verify", search: { token: responseData.token } });
+      navigate({ to: "/verify", search: { token: responseData.accessToken } });
     } catch (error) {
       console.error("Registration error:", error);
       if (

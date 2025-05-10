@@ -1,6 +1,5 @@
 import { createRootRoute, Link, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
-import React from "react";
 import { ToastContainer } from "react-toastify";
 export const Route = createRootRoute({
   component: () => (

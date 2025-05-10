@@ -7,9 +7,11 @@ export const Route = createFileRoute("/_auth/_isAdmin/admin/")({
   beforeLoad: async () => {
     const user = getUserFromToken();
     console.log("User from token:", user);
+
     if (!user) {
       throw redirect({ to: "/login" });
     }
+
     if (!user.is_super_user) {
       console.log("User is not super user");
       // alert("You are not authorized to access this page.");
