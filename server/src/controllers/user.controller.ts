@@ -3,6 +3,7 @@ import {
   generateAccessToken,
   generateRefreshToken,
   generateSixDigitCodeWithExpiry,
+  parseCookies,
   readBody,
   send,
 } from "../utils/helpers.js";
@@ -176,9 +177,12 @@ export async function handleLogin(
     );
 
     const user = userResult.rows[0];
-    console.log(user);
+    console.log({ user });
 
-    if (!user) return send(res, 401, { error: "Invalid credentials" });
+    if (!user) {
+      console.log("user not found");
+      return send(res, 401, { error: "Invalid credentials" });
+    }
 
     // Check if this is an OAuth user with no password
     if (user.oauth_provider && !user.password) {
@@ -193,17 +197,11 @@ export async function handleLogin(
 
     if (!match) return send(res, 401, { error: "Invalid credentials" });
 
-    const token = jwt.sign(
-      { email: user.email, is_super_user: user.is_super_user },
-      SECRET,
-      {
-        expiresIn: "1d",
-      }
-    );
     const accessToken = generateAccessToken({
       email: user.email,
       is_super_user: user.is_super_user,
     });
+
     const refreshToken = generateRefreshToken({ email: user.email });
 
     // update last login time
@@ -212,7 +210,35 @@ export async function handleLogin(
       email,
     ]);
 
-    send(res, 200, { message: "Login successful", accessToken, refreshToken });
+    const refreshTokenExpiry =
+      parseInt(process.env.REFRESH_TOKEN_EXPIRY, 10) || 604800;
+
+    // Set cookie with appropriate settings for development (HTTP)
+    const isProduction = process.env.NODE_ENV === "production";
+
+    let cookieOptions = [
+      `refreshToken=${refreshToken}`,
+      "HttpOnly",
+      "Path=/",
+      `Max-Age=${refreshTokenExpiry}`,
+    ];
+
+    // Add SameSite=Lax for development to allow cookies in most scenarios
+    // In production with HTTPS, you'd use SameSite=None and Secure
+    if (isProduction) {
+      cookieOptions.push("SameSite=None", "Secure");
+    } else {
+      cookieOptions.push("SameSite=Lax");
+    }
+
+    // Join all cookie options with semicolons
+    const cookieString = cookieOptions.join("; ");
+    res.setHeader("Set-Cookie", cookieString);
+
+    console.log(`set cookie ${refreshToken}`);
+    console.log(`cookie string: ${cookieString}`);
+
+    send(res, 200, { message: "Login successful", accessToken });
   } catch (error) {
     console.error("Login error:", error);
     send(res, 500, { error: "Internal server error" });
@@ -241,11 +267,13 @@ export async function handleProfile(
         decoded !== null &&
         "email" in decoded
       ) {
-        const user = await pool.query("SELECT * FROM users WHERE email = $1", [
-          decoded.email,
-        ]);
+        const userResult = await pool.query(
+          "SELECT * FROM users WHERE email = $1",
+          [decoded.email]
+        );
+        const user = userResult.rows[0];
 
-        send(res, 200, { message: user.rows[0] });
+        send(res, 200, { user });
       } else {
         send(res, 400, { error: "Invalid token payload" });
       }
@@ -337,10 +365,12 @@ export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
       email: user.email,
       is_super_user: user.is_super_user,
     });
+
     const refreshToken = generateRefreshToken({ email: user.email });
 
     // Set the refresh token in the database
     // hash the refresh token
+
     const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
     // todo
 
@@ -358,13 +388,14 @@ export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
     );
 
     const RefreshTokenResult = await pool.query(
-      "INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3) ON CONFLICT (user_id) DO UPDATE SET token_hash = $2, expires_at = $3 returning *",
+      "INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3) ON CONFLICT (user_id) DO UPDATE SET token_hash = $2, expires_at = $3 returning *;",
       [user.id, hashedRefreshToken, expiryTime]
     );
 
     console.log(RefreshTokenResult.rows[0]);
 
-    // set the refresh token in the cookie
+    // "last_login_method": null,
+
     res.setHeader("Set-Cookie", [
       `refreshToken=${refreshToken}; HttpOnly; Path=/; Max-Age=${refreshTokenExpiry}; SameSite=None; Secure=false; Domain=${
         process.env.DOMAIN || "localhost"
@@ -375,7 +406,6 @@ export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
       message: "Account verified successfully",
       email: email,
       accessToken,
-      // refreshToken,
     });
   } catch (error) {
     console.error("Verification error: ", error);
@@ -505,23 +535,41 @@ export async function handleTokenRefresh(
   req: IncomingMessage,
   res: ServerResponse
 ): Promise<void> {
+  console.log("refresh token in here.");
   try {
-    const body = await readBody<{ refreshToken: string }>(req);
-    const { refreshToken } = body;
+    const cookies = parseCookies(req);
+    console.log(cookies);
+    const refreshToken = cookies["refreshToken"];
+    console.log(refreshToken);
 
     if (!refreshToken) {
       return send(res, 400, { error: "Refresh token is required" });
     }
 
-    // todo
-    const tokenInDB = await pool.query(
-      "SELECT * FROM users WHERE refresh_token = $1",
-      [refreshToken]
-    );
-    if (tokenInDB.rows.length === 0) {
-      return send(res, 401, { error: "Invalid refresh token" });
+    // 1. Decode and verify token
+    let decoded: any;
+
+    try {
+      decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET!);
+    } catch (error) {
+      send(res, 401, { error: "Invalid or expired refresh token" });
+      return;
     }
-    const user = tokenInDB.rows[0];
+
+    console.log({ decoded });
+
+    const email = decoded.email;
+
+    console.log({ email });
+
+    const userResult = await pool.query<User>(
+      "SELECT * FROM users WHERE email = $1",
+      [email]
+    );
+
+    const user = userResult.rows[0];
+
+    console.log("user", user);
 
     jwt.verify(
       refreshToken,
@@ -531,10 +579,12 @@ export async function handleTokenRefresh(
           console.error("Refresh token verification failed:", err);
           return send(res, 403, { error: "Invalid refresh token" });
         }
+
         const newAccessToken = generateAccessToken({
           email: user.email,
           is_super_user: user.is_super_user,
         });
+
         send(res, 200, {
           message: "Access token refreshed successfully",
           accessToken: newAccessToken,

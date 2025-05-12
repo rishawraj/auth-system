@@ -1,52 +1,27 @@
-import {
-  createFileRoute,
-  redirect,
-  useLoaderData,
-} from "@tanstack/react-router";
-import Cookies from "js-cookie";
+import { createFileRoute, useLoaderData } from "@tanstack/react-router";
 
 import { LogoutButton } from "../../../components/LogoutButton";
-import { getToken } from "../../../utils/authToken";
+import { User } from "../../../types/auth";
+import { fetchWithAuth } from "../../../utils/api";
 
 export const Route = createFileRoute("/_auth/profile/")({
-  beforeLoad: async () => {
-    // const token = Cookies.get("token");
-    const token = getToken();
-    console.log({ token });
-    if (!token) {
-      throw redirect({ to: "/login" });
-    }
-  },
-
   loader: async () => {
-    const API_URL = import.meta.env.VITE_API_BASE_URL;
-    console.log({ API_URL });
-    if (!API_URL) {
-      throw new Error("API_URL is not defined");
-    }
-    // Fetch the profile data from the server
-    // const token = Cookies.get("token");
-    const token = getToken();
-    if (!token) {
-      throw new Error("Authentication token not found.");
-    }
-    const response = await fetch(`${API_URL}/profile`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    // fetchWithAuth will handle token refresh and errors automatically
+    // type data in console data = user:{user:{..}}
+    // const resonse = await fetch(`${import.meta.env.VITE_API_BASE_URL}//`)
 
-    if (!response.ok) {
-      if (response.status === 401) {
-        // Token expired or invalid
-        Cookies.remove("token");
-        throw redirect({ to: "/login" });
-      }
-      throw new Error("Failed to fetch profile data");
-    }
+    type ProfileResponse = {
+      user: User;
+    };
 
-    return response.json();
+    try {
+      const data = await fetchWithAuth<ProfileResponse>("/profile");
+      return data;
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+    }
   },
+
   pendingComponent: LoadingSpinner,
   pendingMs: 500, // Show loading after 500ms
   pendingMinMs: 300, // Ensure loading is shown for at least 300ms
@@ -55,9 +30,12 @@ export const Route = createFileRoute("/_auth/profile/")({
 
 function RouteComponent() {
   const profile = useLoaderData({ from: "/_auth/profile/" });
-  console.log(profile.message.profile_pic);
+  console.log(profile);
+  // if (!profile) {
+  //   return <div>Error loading profile</div>;
+  // }
 
-  const img_url = profile.message.profile_pic || "";
+  const img_url = (profile && profile.user.profile_pic) || "";
 
   return (
     <div>

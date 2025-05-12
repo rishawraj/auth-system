@@ -1,7 +1,8 @@
 import { useNavigate } from "@tanstack/react-router";
-import Cookies from "js-cookie";
 import { useState } from "react";
 import { z } from "zod";
+
+import { setToken } from "../utils/authToken";
 
 type FormErrors = {
   name?: string;
@@ -90,6 +91,7 @@ export default function UserLoginForm() {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
+        credentials: "include",
         body: JSON.stringify(formData),
       });
 
@@ -102,13 +104,14 @@ export default function UserLoginForm() {
       // set the cookie with token
 
       const data = await response.json();
-      const token = data.token;
+      const token = data.accessToken;
 
       if (!token) {
         throw new Error("Token not received from server");
       }
 
-      Cookies.set("token", token, { expires: 7 });
+      // Cookies.set("token", token, { expires: 7 });
+      setToken(token);
 
       setSuccess(true);
       setFormData({ name: "", email: "", password: "" });

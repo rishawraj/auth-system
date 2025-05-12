@@ -8,18 +8,6 @@ export default async (req: IncomingMessage, res: ServerResponse) => {
   const parsedUrl = new URL(req.url || "", `http://${req.headers.host}`);
   const pathname = parsedUrl.pathname;
 
-  // Handle CORS preflight requests first, before authentication
-  if (req.method === "OPTIONS") {
-    console.log(`OPTIONS ${pathname}`);
-    res.writeHead(204, {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    });
-    res.end();
-    return true;
-  }
-
   if (req.method === "GET" && pathname === "/admin/health") {
     send(res, 200, { status: "OK", message: "Server is healthy" });
     return true; // indicate router handled the request

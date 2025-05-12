@@ -61,3 +61,18 @@ export function generateRefreshToken(payload: object) {
     expiresIn: parseInt(process.env.REFRESH_TOKEN_EXPIRY),
   });
 }
+
+// Helper function to parse cookies from request
+export function parseCookies(req: IncomingMessage): Record<string, string> {
+  const cookies: Record<string, string> = {};
+  const cookieHeader = req.headers.cookie;
+
+  if (cookieHeader) {
+    cookieHeader.split(";").forEach((cookie) => {
+      const [name, value] = cookie.trim().split("=");
+      cookies[name] = decodeURIComponent(value);
+    });
+  }
+
+  return cookies;
+}

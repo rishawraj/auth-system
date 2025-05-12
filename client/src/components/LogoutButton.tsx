@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import Cookies from "js-cookie";
+
 import { removeToken } from "../utils/authToken";
 
 export function LogoutButton() {

@@ -11,6 +11,7 @@
 // Import Routes
 
 import { Route as rootRoute } from "./routes/__root";
+import { Route as TestImport } from "./routes/test";
 import { Route as AboutImport } from "./routes/about";
 import { Route as AuthImport } from "./routes/_auth";
 import { Route as IndexImport } from "./routes/index";
@@ -31,6 +32,12 @@ import { Route as AuthIsAdminAdminUsersIndexImport } from "./routes/_auth/_isAdm
 import { Route as AuthIsAdminAdminUsersPostIdImport } from "./routes/_auth/_isAdmin/admin/users/$postId";
 
 // Create/Update Routes
+
+const TestRoute = TestImport.update({
+  id: "/test",
+  path: "/test",
+  getParentRoute: () => rootRoute,
+} as any);
 
 const AboutRoute = AboutImport.update({
   id: "/about",
@@ -164,6 +171,13 @@ declare module "@tanstack/react-router" {
       path: "/about";
       fullPath: "/about";
       preLoaderRoute: typeof AboutImport;
+      parentRoute: typeof rootRoute;
+    };
+    "/test": {
+      id: "/test";
+      path: "/test";
+      fullPath: "/test";
+      preLoaderRoute: typeof TestImport;
       parentRoute: typeof rootRoute;
     };
     "/(auth)/forgot-password": {
@@ -314,6 +328,7 @@ export interface FileRoutesByFullPath {
   "/": typeof IndexRoute;
   "": typeof AuthIsAdminRouteWithChildren;
   "/about": typeof AboutRoute;
+  "/test": typeof TestRoute;
   "/forgot-password": typeof authForgotPasswordRoute;
   "/login": typeof authLoginRoute;
   "/logout": typeof authLogoutRoute;
@@ -334,6 +349,7 @@ export interface FileRoutesByTo {
   "/": typeof IndexRoute;
   "": typeof AuthIsAdminRouteWithChildren;
   "/about": typeof AboutRoute;
+  "/test": typeof TestRoute;
   "/forgot-password": typeof authForgotPasswordRoute;
   "/login": typeof authLoginRoute;
   "/logout": typeof authLogoutRoute;
@@ -355,6 +371,7 @@ export interface FileRoutesById {
   "/": typeof IndexRoute;
   "/_auth": typeof AuthRouteWithChildren;
   "/about": typeof AboutRoute;
+  "/test": typeof TestRoute;
   "/(auth)/forgot-password": typeof authForgotPasswordRoute;
   "/(auth)/login": typeof authLoginRoute;
   "/(auth)/logout": typeof authLogoutRoute;
@@ -378,6 +395,7 @@ export interface FileRouteTypes {
     | "/"
     | ""
     | "/about"
+    | "/test"
     | "/forgot-password"
     | "/login"
     | "/logout"
@@ -397,6 +415,7 @@ export interface FileRouteTypes {
     | "/"
     | ""
     | "/about"
+    | "/test"
     | "/forgot-password"
     | "/login"
     | "/logout"
@@ -416,6 +435,7 @@ export interface FileRouteTypes {
     | "/"
     | "/_auth"
     | "/about"
+    | "/test"
     | "/(auth)/forgot-password"
     | "/(auth)/login"
     | "/(auth)/logout"
@@ -438,6 +458,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute;
   AuthRoute: typeof AuthRouteWithChildren;
   AboutRoute: typeof AboutRoute;
+  TestRoute: typeof TestRoute;
   authForgotPasswordRoute: typeof authForgotPasswordRoute;
   authLoginRoute: typeof authLoginRoute;
   authLogoutRoute: typeof authLogoutRoute;
@@ -451,6 +472,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRouteWithChildren,
   AboutRoute: AboutRoute,
+  TestRoute: TestRoute,
   authForgotPasswordRoute: authForgotPasswordRoute,
   authLoginRoute: authLoginRoute,
   authLogoutRoute: authLogoutRoute,
@@ -473,6 +495,7 @@ export const routeTree = rootRoute
         "/",
         "/_auth",
         "/about",
+        "/test",
         "/(auth)/forgot-password",
         "/(auth)/login",
         "/(auth)/logout",
@@ -496,6 +519,9 @@ export const routeTree = rootRoute
     },
     "/about": {
       "filePath": "about.tsx"
+    },
+    "/test": {
+      "filePath": "test.tsx"
     },
     "/(auth)/forgot-password": {
       "filePath": "(auth)/forgot-password.tsx"

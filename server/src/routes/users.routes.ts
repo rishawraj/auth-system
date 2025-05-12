@@ -7,6 +7,7 @@ import {
   handleLogut,
   handleForgotPassword,
   handleResetPassword,
+  handleTokenRefresh,
 } from "../controllers/user.controller.js";
 import { send } from "../utils/helpers.js";
 import { handleGoogleAuth, handleGoogleCallback } from "../auth/google-auth.js";
@@ -15,14 +16,6 @@ export default async (req: IncomingMessage, res: ServerResponse) => {
   // parse url
   const parsedUrl = new URL(req.url || "", `http://${req.headers.host}`);
   const pathname = parsedUrl.pathname;
-
-  // handle preflight requests
-  if (req.method === "OPTIONS") {
-    console.log("/options");
-    res.writeHead(204); // Respond with 204 No Content for successful preflight
-    res.end();
-    return true; // Stop further processing for OPTIONS requests
-  }
 
   if (req.method === "GET" && pathname === "/health") {
     send(res, 200, { status: "OK", message: "Server is healthy" });
@@ -65,6 +58,11 @@ export default async (req: IncomingMessage, res: ServerResponse) => {
   }
   if (req.method === "GET" && pathname === "/auth/google/callback") {
     handleGoogleCallback(req, res);
+    return true;
+  }
+
+  if (req.method === "GET" && pathname === "/refresh-token") {
+    handleTokenRefresh(req, res);
     return true;
   }
 
