@@ -3,6 +3,7 @@ import {
   generateAccessToken,
   generateRefreshToken,
   generateSixDigitCodeWithExpiry,
+  hashToken,
   parseCookies,
   readBody,
   send,
@@ -19,10 +20,11 @@ import "dotenv/config";
 import { User } from "../models/user.model.js";
 import { OAuth2Client, TokenPayload } from "google-auth-library";
 import { UAParser } from "ua-parser-js";
-import crypto from "crypto";
+import crypto, { randomUUID } from "crypto";
 import path from "path";
 
 import { RegisterResponse } from "../../../shared/src/types/auth.js";
+import { ref } from "process";
 
 const SECRET = process.env.SECRET;
 const FRONTEND_URL = process.env.FRONTEND_URL;
@@ -197,46 +199,55 @@ export async function handleLogin(
 
     if (!match) return send(res, 401, { error: "Invalid credentials" });
 
+    // ! ======
+
     const accessToken = generateAccessToken({
       email: user.email,
       is_super_user: user.is_super_user,
     });
 
-    const refreshToken = generateRefreshToken({ email: user.email });
+    const jti = randomUUID();
+    const refreshTokenPayload = {
+      email: user.email,
+      jti,
+    };
 
-    // update last login time
-    await pool.query("UPDATE users SET last_login = $1 WHERE email = $2", [
-      new Date(),
-      email,
-    ]);
+    const refreshToken = generateRefreshToken(refreshTokenPayload);
+    const refreshTokenHash = hashToken(refreshToken);
 
-    const refreshTokenExpiry =
-      parseInt(process.env.REFRESH_TOKEN_EXPIRY, 10) || 604800;
+    // Set the refresh token in the database
+    // hash the refresh token
 
-    // Set cookie with appropriate settings for development (HTTP)
-    const isProduction = process.env.NODE_ENV === "production";
-
-    let cookieOptions = [
-      `refreshToken=${refreshToken}`,
-      "HttpOnly",
-      "Path=/",
-      `Max-Age=${refreshTokenExpiry}`,
-    ];
-
-    // Add SameSite=Lax for development to allow cookies in most scenarios
-    // In production with HTTPS, you'd use SameSite=None and Secure
-    if (isProduction) {
-      cookieOptions.push("SameSite=None", "Secure");
-    } else {
-      cookieOptions.push("SameSite=Lax");
+    if (!process.env.REFRESH_TOKEN_EXPIRY) {
+      throw new Error("REFRESH_TOKEN_EXPIRY environment variable is required");
     }
 
-    // Join all cookie options with semicolons
-    const cookieString = cookieOptions.join("; ");
-    res.setHeader("Set-Cookie", cookieString);
+    const refreshTokenExpiry = parseInt(process.env.REFRESH_TOKEN_EXPIRY, 10);
+    if (isNaN(refreshTokenExpiry)) {
+      throw new Error("REFRESH_TOKEN_EXPIRY must be a valid number");
+    }
 
-    console.log(`set cookie ${refreshToken}`);
-    console.log(`cookie string: ${cookieString}`);
+    const expiryTime = new Date(
+      Date.now() + parseInt(process.env.REFRESH_TOKEN_EXPIRY || "86400000", 10)
+    );
+
+    try {
+      await pool.query(
+        "INSERT INTO refresh_tokens (user_id, token_hash, expires_at, jti) VALUES ($1, $2, $3, $4) ON CONFLICT (user_id) DO UPDATE SET token_hash = $2, expires_at = $3, jti = $4 returning *",
+        [user.id, refreshTokenHash, expiryTime, jti]
+      );
+    } catch (error) {
+      console.error("Error inserting refresh token:", error);
+      return send(res, 500, { error: "Internal server error" });
+    }
+
+    // "last_login_method": null,
+
+    res.setHeader("Set-Cookie", [
+      `refreshToken=${refreshToken}; HttpOnly; Path=/; Max-Age=${refreshTokenExpiry}; SameSite=None; Secure=false; Domain=${
+        process.env.DOMAIN || "localhost"
+      }`,
+    ]);
 
     send(res, 200, { message: "Login successful", accessToken });
   } catch (error) {
@@ -287,10 +298,47 @@ export async function handleProfile(
 }
 
 export async function handleLogut(req: IncomingMessage, res: ServerResponse) {
-  //todo invalidate refresh token
-  res.setHeader("Set-Cookie", "token=; httpOnly; Path=/;Max-Age=0");
-  res.writeHead(200, { "content-type": "application/json" });
-  res.end(JSON.stringify({ message: "Logged out successfully" }));
+  const cookies = parseCookies(req);
+  console.log({ "logout cookies": cookies });
+  const refreshToken = cookies["refreshToken"];
+  console.log({ refreshToken });
+
+  if (!refreshToken) {
+    return send(res, 204, { message: "no token to logout" });
+  }
+
+  let decoded: any;
+  try {
+    decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET!);
+  } catch (error) {
+    send(res, 401, { error: "Invalid or expired refresh token" });
+    return;
+  }
+
+  const { jti } = decoded;
+
+  if (!jti) {
+    send(res, 401, { error: "Invalid or expired refresh token" });
+    return;
+  }
+
+  try {
+    const result = await pool.query(
+      "DELETE FROM refresh_tokens WHERE jti = $1",
+      [jti]
+    );
+    if (result.rowCount === 0) {
+      console.log("refresh token not found");
+      return send(res, 401, { error: "Invalid or expired refresh token" });
+    }
+    // clear cookie on client
+    res.setHeader("Set-Cookie", "token=; httpOnly; Path=/;Max-Age=0");
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(JSON.stringify({ message: "Logged out successfully" }));
+  } catch (error) {
+    console.error("Logout error:", error);
+    send(res, 500, { error: "Internal server error" });
+  }
 }
 
 export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
@@ -317,6 +365,7 @@ export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
       console.error("Token verification failed:", error.message);
       return send(res, 401, { error: "Invalid or expired token" });
     }
+    console.log(decodedToken);
 
     const { email } = decodedToken;
 
@@ -366,13 +415,17 @@ export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
       is_super_user: user.is_super_user,
     });
 
-    const refreshToken = generateRefreshToken({ email: user.email });
+    const jti = randomUUID();
+    const refreshTokenPayload = {
+      email: user.email,
+      jti,
+    };
+
+    const refreshToken = generateRefreshToken(refreshTokenPayload);
+    const refreshTokenHash = hashToken(refreshToken);
 
     // Set the refresh token in the database
     // hash the refresh token
-
-    const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
-    // todo
 
     if (!process.env.REFRESH_TOKEN_EXPIRY) {
       throw new Error("REFRESH_TOKEN_EXPIRY environment variable is required");
@@ -387,12 +440,15 @@ export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
       Date.now() + parseInt(process.env.REFRESH_TOKEN_EXPIRY || "86400000", 10)
     );
 
-    const RefreshTokenResult = await pool.query(
-      "INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3) ON CONFLICT (user_id) DO UPDATE SET token_hash = $2, expires_at = $3 returning *;",
-      [user.id, hashedRefreshToken, expiryTime]
-    );
-
-    console.log(RefreshTokenResult.rows[0]);
+    try {
+      await pool.query(
+        "INSERT INTO refresh_tokens (user_id, token_hash, expires_at, jti) VALUES ($1, $2, $3, $4) ON CONFLICT (user_id) DO UPDATE SET token_hash = $2, expires_at = $3, jti = $4 returning *",
+        [user.id, refreshTokenHash, expiryTime, jti]
+      );
+    } catch (error) {
+      console.error("Error inserting refresh token:", error);
+      return send(res, 500, { error: "Internal server error" });
+    }
 
     // "last_login_method": null,
 
@@ -538,9 +594,9 @@ export async function handleTokenRefresh(
   console.log("refresh token in here.");
   try {
     const cookies = parseCookies(req);
-    console.log(cookies);
+    // console.log(cookies);
     const refreshToken = cookies["refreshToken"];
-    console.log(refreshToken);
+    // console.log(refreshToken);
 
     if (!refreshToken) {
       return send(res, 400, { error: "Refresh token is required" });
@@ -557,42 +613,67 @@ export async function handleTokenRefresh(
     }
 
     console.log({ decoded });
+    const { email, jti } = decoded;
 
-    const email = decoded.email;
+    try {
+      const incomingTokenHash = hashToken(refreshToken);
 
-    console.log({ email });
+      const tokenResult = await pool.query(
+        "SELECT * FROM refresh_tokens WHERE jti = $1 AND token_hash = $2",
+        [jti, incomingTokenHash]
+      );
+      console.log({ tokenResult });
 
-    const userResult = await pool.query<User>(
-      "SELECT * FROM users WHERE email = $1",
-      [email]
-    );
+      const storedToken = tokenResult.rows[0];
 
-    const user = userResult.rows[0];
-
-    console.log("user", user);
-
-    jwt.verify(
-      refreshToken,
-      process.env.REFRESH_TOKEN_SECRET!,
-      (err, decoded) => {
-        if (err) {
-          console.error("Refresh token verification failed:", err);
-          return send(res, 403, { error: "Invalid refresh token" });
-        }
-
-        const newAccessToken = generateAccessToken({
-          email: user.email,
-          is_super_user: user.is_super_user,
-        });
-
-        send(res, 200, {
-          message: "Access token refreshed successfully",
-          accessToken: newAccessToken,
-        });
+      if (!storedToken) {
+        return send(res, 401, { error: "Invalid or expired refresh token" });
       }
-    );
+
+      const userResult = await pool.query(
+        "SELECT * FROM users WHERE email = $1",
+        [email]
+      );
+
+      const user = userResult.rows[0];
+
+      if (!user || user.email !== email) {
+        console.log(`User mismatch for refresh token jti ${jti}`);
+        await pool.query("DELETE FROM tokens WHERE jti = $1", [jti]);
+        return send(res, 401, { error: "Invalid or expired refresh token" });
+      }
+
+      if (new Date() > new Date(storedToken.expires_at)) {
+        console.log("token expired");
+        await pool.query("DELETE FROM tokens WHERE jti = $1", [jti]);
+        return send(res, 401, { error: "Invalid or expired refresh token" });
+      }
+      const accessTokenPayload = {
+        email: user.email,
+        is_super_user: user.is_super_user,
+      };
+
+      const newAccessToken = generateAccessToken(accessTokenPayload);
+
+      // send(res, 200, { accessToken: newAccessToken });
+      send(res, 200, {
+        message: "Token refreshed successfully",
+        accessToken: newAccessToken,
+      });
+    } catch (error) {
+      console.error("Token verification failed:", error);
+      return send(res, 401, { error: "Invalid or expired refresh token" });
+    }
   } catch (error) {
     console.error("Token refresh error:", error);
     send(res, 500, { error: "Internal server error during token refresh" });
+  }
+}
+
+async function invalidateAllUserTokens(userId: string) {
+  try {
+    await pool.query("DELETE FROM tokens WHERE user_id = $1", [userId]);
+  } catch (error) {
+    console.error("Error invalidating user tokens:", error);
   }
 }

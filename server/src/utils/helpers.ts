@@ -1,5 +1,6 @@
 import { IncomingMessage, ServerResponse } from "http";
 import jwt from "jsonwebtoken";
+import crypto from "node:crypto";
 
 type CodeWithExpiry = {
   code: string;
@@ -75,4 +76,8 @@ export function parseCookies(req: IncomingMessage): Record<string, string> {
   }
 
   return cookies;
+}
+
+export function hashToken(token: string): string {
+  return crypto.createHash("sha256").update(token).digest("hex");
 }

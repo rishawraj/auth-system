@@ -1,5 +1,4 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import Cookies from "js-cookie";
 
 import UserRegistrationForm from "../../components/UserRegistrationForm";
 import { getToken } from "../../utils/authToken";

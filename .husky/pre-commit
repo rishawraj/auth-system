@@ -1,7 +1,5 @@
 #!/bin/sh
 
-. "$(dirname "$0")/_/husky.sh"
-
 echo "Running Format, test and lint checks in client/"
 cd client || exit 1
 echo "Running lint"
