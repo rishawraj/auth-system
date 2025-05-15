@@ -8,6 +8,7 @@ import {
   handleForgotPassword,
   handleResetPassword,
   handleTokenRefresh,
+  testRefreshToken,
 } from "../controllers/user.controller.js";
 import { send } from "../utils/helpers.js";
 import { handleGoogleAuth, handleGoogleCallback } from "../auth/google-auth.js";
@@ -63,6 +64,11 @@ export default async (req: IncomingMessage, res: ServerResponse) => {
 
   if (req.method === "GET" && pathname === "/refresh-token") {
     handleTokenRefresh(req, res);
+    return true;
+  }
+  if (req.method === "GET" && pathname === "/test-refresh-token") {
+    console.log("hol senor");
+    testRefreshToken(req, res);
     return true;
   }
 

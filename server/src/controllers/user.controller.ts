@@ -228,7 +228,8 @@ export async function handleLogin(
     }
 
     const expiryTime = new Date(
-      Date.now() + parseInt(process.env.REFRESH_TOKEN_EXPIRY || "86400000", 10)
+      // 1ms  * 1000 = 1s
+      Date.now() + parseInt(process.env.REFRESH_TOKEN_EXPIRY) * 1000
     );
 
     try {
@@ -437,7 +438,8 @@ export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
     }
 
     const expiryTime = new Date(
-      Date.now() + parseInt(process.env.REFRESH_TOKEN_EXPIRY || "86400000", 10)
+      // 1ms  * 1000 = 1s
+      Date.now() + parseInt(process.env.REFRESH_TOKEN_EXPIRY) * 1000
     );
 
     try {
@@ -622,9 +624,9 @@ export async function handleTokenRefresh(
         "SELECT * FROM refresh_tokens WHERE jti = $1 AND token_hash = $2",
         [jti, incomingTokenHash]
       );
-      console.log({ tokenResult });
 
       const storedToken = tokenResult.rows[0];
+      console.log(storedToken);
 
       if (!storedToken) {
         return send(res, 401, { error: "Invalid or expired refresh token" });
@@ -648,6 +650,7 @@ export async function handleTokenRefresh(
         await pool.query("DELETE FROM tokens WHERE jti = $1", [jti]);
         return send(res, 401, { error: "Invalid or expired refresh token" });
       }
+
       const accessTokenPayload = {
         email: user.email,
         is_super_user: user.is_super_user,
@@ -676,4 +679,15 @@ async function invalidateAllUserTokens(userId: string) {
   } catch (error) {
     console.error("Error invalidating user tokens:", error);
   }
+}
+
+export async function testRefreshToken(
+  req: IncomingMessage,
+  res: ServerResponse
+) {
+  console.log("test refresh token");
+  const cookies = parseCookies(req);
+  const refreshToken = cookies["refreshToken"];
+  console.log({ refreshToken });
+  send(res, 200, { message: "refresh token working" });
 }
