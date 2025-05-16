@@ -47,3 +47,12 @@ export function getUserFromToken(): {
     return null;
   }
 }
+
+export function setType(type: string) {
+  if (getType() !== null) localStorage.removeItem("type");
+  localStorage.setItem("type", type);
+}
+
+export function getType() {
+  return localStorage.getItem("type");
+}

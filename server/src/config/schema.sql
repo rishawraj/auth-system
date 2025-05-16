@@ -1,4 +1,11 @@
--- Database Schema for Authentication System
+CREATE TABLE public.refresh_tokens (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    jti character varying(36) NOT NULL,
+    token_hash text NOT NULL,
+    user_id uuid NOT NULL,
+    expires_at timestamp with time zone NOT NULL,
+    issued_at timestamp with time zone DEFAULT now()
+);
 
 CREATE TABLE public.users (
     id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
@@ -29,14 +36,5 @@ CREATE TABLE public.users (
     last_device text,
     last_location text,
     last_country text,
-    last_city tex
-)
-
--- Create indexes for performance
-ALTER TABLE ONLY users
-    ADD CONSTRAINT users_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY users
-    ADD CONSTRAINT users_email_key UNIQUE (email);
-
-CREATE UNIQUE INDEX oauth_user_idx ON public.users USING btree (oauth_provider, oauth_id) WHERE ((oauth_provider IS NOT NULL) AND (oauth_id IS NOT NULL));
+    last_city text
+);

@@ -18,15 +18,13 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import "dotenv/config";
 import { User } from "../models/user.model.js";
-import { OAuth2Client, TokenPayload } from "google-auth-library";
 import { UAParser } from "ua-parser-js";
 import crypto, { randomUUID } from "crypto";
-import path from "path";
 
 import { RegisterResponse } from "../../../shared/src/types/auth.js";
-import { ref } from "process";
+import { getGoogleAuthUrl } from "../auth/google-auth.js";
 
-const SECRET = process.env.SECRET;
+const SECRET = process.env.ACCESS_TOKEN_SECRET;
 const FRONTEND_URL = process.env.FRONTEND_URL;
 
 const registerSchema = z.object({
@@ -75,7 +73,7 @@ export async function handleRegister(
 
     if (existingOauthUserResult.rows.length > 0) {
       return send(res, 400, {
-        error:
+        message:
           "This account was created with Google. Please use Google login instead.",
       });
     }
@@ -250,7 +248,7 @@ export async function handleLogin(
       }`,
     ]);
 
-    send(res, 200, { message: "Login successful", accessToken });
+    send(res, 200, { message: "Login successful", accessToken, type: "email" });
   } catch (error) {
     console.error("Login error:", error);
     send(res, 500, { error: "Internal server error" });
@@ -263,6 +261,7 @@ export async function handleProfile(
 ): Promise<void> {
   try {
     const authHeader = req.headers.authorization;
+
     if (!authHeader) return send(res, 401, { error: "No token provided" });
 
     const token = authHeader.split(" ")[1];
@@ -283,6 +282,7 @@ export async function handleProfile(
           "SELECT * FROM users WHERE email = $1",
           [decoded.email]
         );
+
         const user = userResult.rows[0];
 
         send(res, 200, { user });
@@ -298,17 +298,30 @@ export async function handleProfile(
   }
 }
 
-export async function handleLogut(req: IncomingMessage, res: ServerResponse) {
+export async function handleLogout(req: IncomingMessage, res: ServerResponse) {
+  const body = await readBody(req);
+
+  const type = (body as any)?.type;
+
+  if (type === "email") {
+    return handleEmailLogout(req, res);
+  } else if (type === "google") {
+    return handleGoogleLogout(req, res);
+  } else {
+    return send(res, 400, { error: "Invalid logout type" });
+  }
+}
+
+async function handleEmailLogout(req: IncomingMessage, res: ServerResponse) {
   const cookies = parseCookies(req);
-  console.log({ "logout cookies": cookies });
   const refreshToken = cookies["refreshToken"];
-  console.log({ refreshToken });
 
   if (!refreshToken) {
     return send(res, 204, { message: "no token to logout" });
   }
 
   let decoded: any;
+
   try {
     decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET!);
   } catch (error) {
@@ -328,13 +341,16 @@ export async function handleLogut(req: IncomingMessage, res: ServerResponse) {
       "DELETE FROM refresh_tokens WHERE jti = $1",
       [jti]
     );
+
     if (result.rowCount === 0) {
       console.log("refresh token not found");
       return send(res, 401, { error: "Invalid or expired refresh token" });
     }
+
     // clear cookie on client
-    res.setHeader("Set-Cookie", "token=; httpOnly; Path=/;Max-Age=0");
+    res.setHeader("Set-Cookie", "refreshToken=; httpOnly; Path=/;Max-Age=0");
     res.writeHead(200, { "content-type": "application/json" });
+
     res.end(JSON.stringify({ message: "Logged out successfully" }));
   } catch (error) {
     console.error("Logout error:", error);
@@ -342,6 +358,133 @@ export async function handleLogut(req: IncomingMessage, res: ServerResponse) {
   }
 }
 
+// async function handleGoogleLogout(req: IncomingMessage, res: ServerResponse) {
+//   console.log("handleGoogleLogout");
+//   try {
+//     const cookies = parseCookies(req);
+//     const refreshToken = cookies["refreshToken"];
+
+//     if (!refreshToken) {
+//       return send(res, 204, { message: "No token to logout" });
+//     }
+
+//     let decoded: any;
+//     try {
+//       decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET!);
+//     } catch (error) {
+//       // Clear the invalid token anyway
+//       res.setHeader("Set-Cookie", [
+//         "refreshToken=; HttpOnly; Path=/; Max-Age=0",
+//         "token=; HttpOnly; Path=/; Max-Age=0",
+//       ]);
+//       return send(res, 401, { error: "Invalid or expired refresh token" });
+//     }
+
+//     console.log(decoded);
+//     const { email } = decoded;
+
+//     try {
+//       const result = await pool.query(
+//         `UPDATE users
+//         SET oauth_access_token = NULL,
+//         oauth_refresh_token = NULL,
+//         oauth_token_expires_at = NULL
+//         WHERE email = $1`,
+//         [email]
+//       );
+
+//       // Check if any rows were actually updated
+//       if (result.rowCount === 0) {
+//         console.log(`No user found with email: ${email}`);
+//         // Still clear cookies but inform that no user was found
+//         res.setHeader("Set-Cookie", [
+//           "refreshToken=; HttpOnly; Path=/; Max-Age=0",
+//           "token=; HttpOnly; Path=/; Max-Age=0",
+//         ]);
+//         return send(res, 404, { message: "User not found" });
+//       }
+
+//       console.log(`User ${email} logged out successfully`);
+//     } catch (error) {
+//       console.error("Logout error:", error);
+//       return send(res, 500, { error: "Internal server error" });
+//     }
+
+//     // Clear both cookies
+//     res.setHeader("Set-Cookie", "refreshToken=; HttpOnly; Path=/; Max-Age=0");
+
+//     res.writeHead(200, { "content-type": "application/json" });
+//     res.end(JSON.stringify({ message: "Logged out successfully" }));
+//   } catch (error) {
+//     console.error("Logout error:", error);
+//     send(res, 500, { error: "Internal server error" });
+//   }
+// }
+
+async function handleGoogleLogout(req: IncomingMessage, res: ServerResponse) {
+  console.log("handleGoogleLogout");
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader) return send(res, 401, { error: "No token provided" });
+
+    const token = authHeader.split(" ")[1];
+
+    console.log(token);
+
+    // Extract email from token regardless of validity
+    let email: string | null = null;
+
+    try {
+      const decoded: any = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+      email = decoded.email;
+      console.log("Decoded token:", decoded);
+    } catch (error) {
+      console.log(
+        "Invalid or expired token, clearing cookies and sending 401 error"
+      );
+      res.setHeader("Set-Cookie", [
+        "refreshToken=; HttpOnly; Path=/; Max-Age=0",
+        "token=; HttpOnly; Path=/; Max-Age=0",
+      ]);
+      return send(res, 401, { error: "Invalid or expired token" });
+    }
+
+    // Attempt to clear tokens in database if we have an email
+    if (email) {
+      try {
+        const result = await pool.query(
+          `UPDATE users SET oauth_access_token = NULL WHERE id = $1`[email]
+        );
+
+        if (result.rowCount === 0) {
+          console.log(`No user found with email: ${email}`);
+        } else {
+          console.log(`User ${email} logged out successfully, tokens cleared`);
+        }
+      } catch (error) {
+        console.error("Database update error:", error);
+        // Continue to cookie clearing despite DB error
+      }
+    } else {
+      console.log("No email available, skipping database update");
+    }
+
+    // Always clear cookies, regardless of token validity or database update
+    res.setHeader("Set-Cookie", [
+      "refreshToken=; HttpOnly; Path=/; Max-Age=0",
+      "token=; HttpOnly; Path=/; Max-Age=0",
+    ]);
+
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(JSON.stringify({ message: "Logged out successfully" }));
+  } catch (error) {
+    console.error("Logout error:", error);
+    // Still try to clear cookies even on general error
+    res.setHeader("Set-Cookie", "refreshToken=; HttpOnly; Path=/; Max-Age=0");
+    send(res, 500, { error: "Internal server error" });
+  }
+}
 export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
   try {
     const body = await readBody<{ token: string; code: string }>(req);
@@ -464,6 +607,7 @@ export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
       message: "Account verified successfully",
       email: email,
       accessToken,
+      type: "email",
     });
   } catch (error) {
     console.error("Verification error: ", error);
@@ -689,5 +833,13 @@ export async function testRefreshToken(
   const cookies = parseCookies(req);
   const refreshToken = cookies["refreshToken"];
   console.log({ refreshToken });
+
+  // get token from bearer token
+
+  const token = req.headers.authorization?.split(" ")[1];
+  console.log({ token });
+
+  // check expiration of token
+
   send(res, 200, { message: "refresh token working" });
 }

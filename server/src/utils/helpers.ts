@@ -45,9 +45,12 @@ export function send(
 
 export function generateAccessToken(payload: object) {
   const secret = process.env.ACCESS_TOKEN_SECRET;
+
   if (!secret) throw new Error("ACCESS_TOKEN_SECRET is not defined");
+
   if (!process.env.ACCESS_TOKEN_EXPIRY)
     throw new Error("ACCESS_TOKEN_EXPIRY is not defined");
+
   return jwt.sign(payload, secret, {
     expiresIn: parseInt(process.env.ACCESS_TOKEN_EXPIRY),
   });

@@ -8,8 +8,8 @@ const envSchema = z.object({
   GOOGLE_REDIRECT_URI: z
     .string()
     .url("GOOGLE_REDIRECT_URI must be a valid URL"),
-  SECRET: z.string().min(1, "SECRET is required"),
-  JWT_EXPIRATION: z.string().min(1, "JWT_EXPIRATION is required"), // e.g. "1d"
+  ACCESS_TOKEN_SECRET: z.string().min(1, "SECRET is required"),
+  ACCESS_TOKEN_EXPIRY: z.string().min(1, "JWT_EXPIRATION is required"), // e.g. "1d"
 });
 
 // Step 2: Parse and validate
@@ -20,8 +20,8 @@ export const config = {
   clientId: env.GOOGLE_CLIENT_ID,
   clientSecret: env.GOOGLE_CLIENT_SECRET,
   redirectUri: env.GOOGLE_REDIRECT_URI,
-  jwtSecret: env.SECRET,
-  jwtExpiration: env.JWT_EXPIRATION,
+  jwtSecret: env.ACCESS_TOKEN_SECRET,
+  jwtExpiration: env.ACCESS_TOKEN_EXPIRY,
 };
 
 export type { User };

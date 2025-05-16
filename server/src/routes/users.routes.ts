@@ -4,14 +4,18 @@ import {
   handleLogin,
   handleProfile,
   handleVerify,
-  handleLogut,
   handleForgotPassword,
   handleResetPassword,
   handleTokenRefresh,
   testRefreshToken,
+  handleLogout,
 } from "../controllers/user.controller.js";
 import { send } from "../utils/helpers.js";
-import { handleGoogleAuth, handleGoogleCallback } from "../auth/google-auth.js";
+import {
+  handleGoogleAuth,
+  handleGoogleCallback,
+  handleGoogleRefreshToken,
+} from "../auth/google-auth.js";
 
 export default async (req: IncomingMessage, res: ServerResponse) => {
   // parse url
@@ -37,28 +41,40 @@ export default async (req: IncomingMessage, res: ServerResponse) => {
     await handleProfile(req, res);
     return true;
   }
+
   if (req.method === "POST" && pathname === "/logout") {
-    handleLogut(req, res);
+    handleLogout(req, res);
     return true;
   }
+
   if (req.method === "POST" && pathname === "/verify") {
     handleVerify(req, res);
     return true;
   }
+
   if (req.method === "POST" && pathname === "/forgot-password") {
     handleForgotPassword(req, res);
     return true;
   }
+
   if (req.method === "POST" && pathname === "/reset-password") {
     handleResetPassword(req, res);
     return true;
   }
+
   if (req.method === "GET" && pathname === "/auth/google") {
     handleGoogleAuth(req, res);
     return true;
   }
+
   if (req.method === "GET" && pathname === "/auth/google/callback") {
     handleGoogleCallback(req, res);
+    return true;
+  }
+
+  if (req.method === "GET" && pathname === "/auth/google/refresh-token") {
+    console.log("google refresh token");
+    handleGoogleRefreshToken(req, res);
     return true;
   }
 
@@ -66,8 +82,8 @@ export default async (req: IncomingMessage, res: ServerResponse) => {
     handleTokenRefresh(req, res);
     return true;
   }
+
   if (req.method === "GET" && pathname === "/test-refresh-token") {
-    console.log("hol senor");
     testRefreshToken(req, res);
     return true;
   }

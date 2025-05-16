@@ -96,20 +96,23 @@ export default function UserRegistrationForm() {
       navigate({ to: "/verify", search: { token: responseData.accessToken } });
     } catch (error) {
       console.error("Registration error:", error);
-      if (
-        error instanceof TypeError &&
-        error.message.includes("Failed to fetch")
-      ) {
-        setErrorMessage(
-          `Unable to connect to the server. Please check if the server is running at ${API_URL}`,
-        );
-      } else {
-        setErrorMessage(
-          error instanceof Error
-            ? error.message
-            : "An unexpected error occurred",
-        );
-      }
+      setErrorMessage(
+        error instanceof Error ? error.message : "Registration failed",
+      );
+      // if (
+      //   error instanceof TypeError &&
+      //   error.message.includes("Failed to fetch")
+      // ) {
+      //   setErrorMessage(
+      //     `Unable to connect to the server. Please check if the server is running at ${API_URL}`,
+      //   );
+      // } else {
+      //   setErrorMessage(
+      //     error instanceof Error
+      //       ? error.message
+      //       : "An unexpected error occurred",
+      //   );
+      // }
     } finally {
       setLoading(false);
     }

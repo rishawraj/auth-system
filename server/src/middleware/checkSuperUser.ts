@@ -3,7 +3,7 @@ import { pool } from "../config/db.config.js";
 import "dotenv/config";
 import { IncomingMessage, ServerResponse } from "node:http";
 
-const SECRET = process.env.SECRET;
+const SECRET = process.env.ACCESS_TOKEN_SECRET;
 
 /**
  * Authentication middleware that checks if a user has super user privileges

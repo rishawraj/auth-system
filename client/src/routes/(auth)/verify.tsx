@@ -5,7 +5,7 @@ import {
 } from "@tanstack/react-router";
 import React, { useState, ChangeEvent, KeyboardEvent } from "react";
 
-import { setToken } from "../../utils/authToken";
+import { setToken, setType } from "../../utils/authToken";
 
 export const Route = createFileRoute("/(auth)/verify")({
   component: VerifyComponent,
@@ -81,6 +81,7 @@ function VerifyComponent() {
       // todo
 
       setToken(token);
+      setType("email");
 
       navigate({ to: "/profile" });
     } catch (error) {

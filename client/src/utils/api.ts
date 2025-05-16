@@ -1,6 +1,6 @@
 import { redirect } from "@tanstack/react-router";
 
-import { getToken, setToken } from "./authToken";
+import { getToken, getType, removeToken, setToken } from "./authToken";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -19,19 +19,47 @@ class ApiError extends Error {
 }
 
 async function refreshAccessToken(): Promise<string> {
-  console.log("refreshing token");
+  console.log("Refreshing token");
+  const type = getType();
+
+  if (type === "google") {
+    return await refreshGoogleToken();
+  } else if (type === "email") {
+    return await refreshEmailToken();
+  } else {
+    throw new Error("Invalid token type");
+  }
+}
+
+async function refreshGoogleToken(): Promise<string> {
+  const response = await fetch(`${API_URL}/auth/google/refresh-token`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    console.error("Failed to refresh token:", response.statusText);
+    throw new ApiError(response.status, "Failed to refresh token");
+  }
+
+  const data = await response.json();
+  console.log("Refreshed token");
+  return data.accessToken;
+}
+
+async function refreshEmailToken(): Promise<string> {
   const response = await fetch(`${API_URL}/refresh-token`, {
     method: "GET",
     credentials: "include",
   });
 
   if (!response.ok) {
-    console.error("Failed to refresh token lol:", response.statusText);
+    console.error("Failed to refresh token:", response.statusText);
     throw new ApiError(response.status, "Failed to refresh token");
   }
 
   const data = await response.json();
-  console.log("token refreshed");
+  console.log("Refreshed token");
   return data.accessToken;
 }
 
@@ -44,6 +72,7 @@ export async function fetchWithAuth<T>(
   }
 
   const { skipAuth = false, ...fetchOptions } = options;
+
   const token = getToken();
 
   if (!skipAuth && !token) {

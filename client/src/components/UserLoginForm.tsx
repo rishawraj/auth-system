@@ -2,7 +2,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { z } from "zod";
 
-import { setToken } from "../utils/authToken";
+import { setToken, setType } from "../utils/authToken";
 
 type FormErrors = {
   name?: string;
@@ -112,6 +112,7 @@ export default function UserLoginForm() {
 
       // Cookies.set("token", token, { expires: 7 });
       setToken(token);
+      setType("email");
 
       setSuccess(true);
       setFormData({ name: "", email: "", password: "" });

@@ -3,8 +3,9 @@ import {
   useNavigate,
   useSearch,
 } from "@tanstack/react-router";
-import Cookies from "js-cookie";
 import { z } from "zod";
+
+import { setToken, setType } from "../../utils/authToken";
 
 const authTokenSchema = z.object({
   token: z.string().optional().default(""),
@@ -22,7 +23,9 @@ function RouteComponent() {
   console.log("Token from search params:", token);
   // Here you can handle the token, e.g., store it in cookies or local storage
   if (token) {
-    Cookies.set("token", token, { expires: 7 });
+    // Cookies.set("token", token, { expires: 7 });
+    setToken(token);
+    setType("google");
     navigate({ to: "/profile" });
   }
 

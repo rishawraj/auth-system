@@ -1,5 +1,5 @@
 import { IncomingMessage, ServerResponse } from "http";
-import { send } from "../utils/helpers.js";
+import { generateAccessToken, parseCookies, send } from "../utils/helpers.js";
 import { pool } from "../config/db.config.js";
 import jwt from "jsonwebtoken";
 import { User } from "../models/user.model.js";
@@ -31,7 +31,6 @@ export async function handleGoogleAuth(
 ): Promise<void> {
   try {
     const authUrl = getGoogleAuthUrl();
-    // console.log("Redirecting to Google auth URL:", authUrl);
     res.writeHead(302, { Location: authUrl });
     res.end();
   } catch (error) {
@@ -131,35 +130,6 @@ export async function handleGoogleCallback(
     );
 
     if (existingGoogleUserResult.rows.length === 0) {
-      // create a new user
-
-      // const newUserResult = await pool.query<User>(
-      //   `INSERT INTO users (
-      //     name,
-      //     email,
-      //     password,
-      //     is_active,
-      //     oauth_provider,
-      //     oauth_id,
-      //     oauth_access_token,
-      //     oauth_refresh_token,
-      //     oauth_token_expires_at
-      //   )
-      //   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-      //   RETURNING *`,
-      //   [
-      //     payload.name || "Google User",
-      //     payload.email,
-      //     "", // Empty password for OAuth users
-      //     true, // Auto-verify OAuth users
-      //     "google",
-      //     payload.sub,
-      //     tokens.access_token,
-      //     tokens.refresh_token || null,
-      //     tokens.expiry_date ? new Date(tokens.expiry_date) : null,
-      //   ]
-      // );
-
       const newUserResult = await pool.query<User>(
         `INSERT INTO users (
           name,
@@ -241,9 +211,13 @@ export async function handleGoogleCallback(
       is_super_user: user.is_super_user,
     };
 
-    token = jwt.sign(jwtpayload, config.jwtSecret, {
-      expiresIn: "1d",
-    });
+    token = generateAccessToken(jwtpayload);
+
+    res.setHeader("Set-Cookie", [
+      `refreshToken=${tokens.refresh_token}; HttpOnly; Path=/; Max-Age=${tokens.expiry_date}; SameSite=None; Secure=false; Domain=${
+        process.env.DOMAIN || "localhost"
+      }`,
+    ]);
 
     //  redirect to frontend with token
     const redirectUrl = `${FRONTEND_URL}/auth/google/callback?token=${token}`;
@@ -252,5 +226,78 @@ export async function handleGoogleCallback(
   } catch (error) {
     console.error("Google callback error:", error);
     send(res, 500, { error: "Internal server error during Google callback" }); // respond with error
+  }
+}
+
+// Function to handle refreshing OAuth tokens
+export async function handleGoogleRefreshToken(
+  req: IncomingMessage,
+  res: ServerResponse
+): Promise<void> {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+    console.log({ token });
+
+    const cookies = parseCookies(req);
+    // console.log(cookies);
+    const refreshToken = cookies["refreshToken"];
+    console.log(refreshToken);
+
+    if (!refreshToken) {
+      return send(res, 400, { error: "Refresh token is required" });
+    }
+
+    // Find the user with this refresh token
+    const userResult = await pool.query<User>(
+      "SELECT * FROM users WHERE oauth_refresh_token = $1",
+      [refreshToken]
+    );
+
+    console.log(userResult.rows[0]);
+
+    if (userResult.rows.length === 0) {
+      return send(res, 401, { error: "Invalid refresh token" });
+    }
+
+    const user = userResult.rows[0];
+    console.log(user);
+
+    // Set the refresh token in the OAuth client
+    OAuthClient.setCredentials({
+      refresh_token: refreshToken,
+    });
+
+    // Get new tokens using the refresh token
+    const { credentials } = await OAuthClient.refreshAccessToken();
+
+    // Update user's tokens in the database
+    await pool.query(
+      `UPDATE users SET 
+        oauth_access_token = $1, 
+        oauth_token_expires_at = $2
+      WHERE id = $3`,
+      [
+        credentials.access_token,
+        credentials.expiry_date ? new Date(credentials.expiry_date) : null,
+        user.id,
+      ]
+    );
+
+    // Generate a new JWT token
+    const jwtPayload = {
+      email: user.email,
+      is_super_user: user.is_super_user,
+    };
+
+    const newAccessToken = generateAccessToken(jwtPayload);
+
+    // Send back the new access token
+    send(res, 200, {
+      accessToken: newAccessToken,
+      expiresIn: process.env.ACCESS_TOKEN_EXPIRY, // 1 hour in seconds
+    });
+  } catch (error) {
+    console.error("OAuth refresh token error:", error);
+    send(res, 500, { error: "Internal server error during token refresh" });
   }
 }
