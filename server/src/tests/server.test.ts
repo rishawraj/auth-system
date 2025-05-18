@@ -1,4 +1,4 @@
-import { describe, test, expect, afterAll, beforeAll } from "vitest";
+import { describe, test, expect, afterAll } from "vitest";
 import request from "supertest";
 import http from "http";
 import { handler } from "../server.js";

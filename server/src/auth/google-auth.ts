@@ -1,19 +1,23 @@
 import { IncomingMessage, ServerResponse } from "http";
 import { generateAccessToken, parseCookies, send } from "../utils/helpers.js";
 import { pool } from "../config/db.config.js";
-import jwt from "jsonwebtoken";
 import { User } from "../models/user.model.js";
 import { OAuth2Client, TokenPayload } from "google-auth-library";
 import "dotenv/config";
-import { config } from "../types/config.js";
+// import { config } from "../types/config.js";
 import { UAParser } from "ua-parser-js";
+import { env } from "../config/env.js";
 
-const FRONTEND_URL = process.env.FRONTEND_URL;
+const FRONTEND_URL = env.FRONTEND_URL;
 
 const OAuthClient = new OAuth2Client(
-  config.clientId,
-  config.clientSecret,
-  config.redirectUri
+  env.GOOGLE_CLIENT_ID,
+  env.GOOGLE_CLIENT_SECRET,
+  env.GOOGLE_REDIRECT_URI
+
+  // config.clientId,
+  // config.clientSecret,
+  // config.redirectUri
 );
 
 export function getGoogleAuthUrl() {
@@ -60,7 +64,8 @@ export async function handleGoogleCallback(
     // verify ID token
     const ticket = await OAuthClient.verifyIdToken({
       idToken: tokens.id_token || "",
-      audience: config.clientId,
+      // audience: config.clientId,
+      audience: env.GOOGLE_CLIENT_ID,
     });
 
     const payload = ticket.getPayload() as TokenPayload;
@@ -88,7 +93,7 @@ export async function handleGoogleCallback(
     const last_city = null;
 
     let user: User;
-    let token: string;
+    // const token: string;
 
     // check if email user exists in the database with no oauth provider
     const existingUserResult = await pool.query<User>(
@@ -181,7 +186,7 @@ export async function handleGoogleCallback(
     } else {
       // user exists, update access token and refresh token
       user = existingGoogleUserResult.rows[0];
-      const updateUserResult = await pool.query<User>(
+      await pool.query<User>(
         `UPDATE users SET 
           oauth_provider = $1, 
           oauth_id = $2, 
@@ -211,12 +216,10 @@ export async function handleGoogleCallback(
       is_super_user: user.is_super_user,
     };
 
-    token = generateAccessToken(jwtpayload);
+    const token = generateAccessToken(jwtpayload);
 
     res.setHeader("Set-Cookie", [
-      `refreshToken=${tokens.refresh_token}; HttpOnly; Path=/; Max-Age=${tokens.expiry_date}; SameSite=None; Secure=false; Domain=${
-        process.env.DOMAIN || "localhost"
-      }`,
+      `refreshToken=${tokens.refresh_token}; HttpOnly; Path=/; Max-Age=${tokens.expiry_date}; SameSite=None; Secure=false; Domain=${env.DOMAIN}`,
     ]);
 
     //  redirect to frontend with token
@@ -291,10 +294,12 @@ export async function handleGoogleRefreshToken(
 
     const newAccessToken = generateAccessToken(jwtPayload);
 
+    const expiresIn = env.ACCESS_TOKEN_EXPIRY;
+
     // Send back the new access token
     send(res, 200, {
       accessToken: newAccessToken,
-      expiresIn: process.env.ACCESS_TOKEN_EXPIRY, // 1 hour in seconds
+      expiresIn: expiresIn,
     });
   } catch (error) {
     console.error("OAuth refresh token error:", error);

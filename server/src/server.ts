@@ -1,11 +1,12 @@
 import http from "node:http";
 import handleRoutes from "./routes/index.routes.js";
+import { env } from "./config/env.js";
 
 const handler: http.RequestListener = async (req, res) => {
   // log incoming request
   console.log(`\x1b[32m\x1b[44m${req.method} ${req.url}.\x1b[0m`);
 
-  const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
+  const FRONTEND_URL = env.FRONTEND_URL;
 
   // Set default CORS headers that will be applied to all responses
   // Adjust to your frontend's origin in production

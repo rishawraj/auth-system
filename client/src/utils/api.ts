@@ -1,6 +1,6 @@
 import { redirect } from "@tanstack/react-router";
 
-import { getToken, getType, removeToken, setToken } from "./authToken";
+import { getToken, getType, setToken } from "./authToken";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 

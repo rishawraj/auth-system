@@ -22,10 +22,10 @@ import { UAParser } from "ua-parser-js";
 import crypto, { randomUUID } from "crypto";
 
 import { RegisterResponse } from "../../../shared/src/types/auth.js";
-import { getGoogleAuthUrl } from "../auth/google-auth.js";
+import { env } from "../config/env.js";
 
-const SECRET = process.env.ACCESS_TOKEN_SECRET;
-const FRONTEND_URL = process.env.FRONTEND_URL;
+const SECRET = env.ACCESS_TOKEN_SECRET;
+const FRONTEND_URL = env.FRONTEND_URL;
 
 const registerSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -36,10 +36,6 @@ const registerSchema = z.object({
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters long"),
-});
-
-const verifySchema = z.object({
-  code: z.string().length(6, "Code is a 6 digit number"),
 });
 
 export async function handleRegister(
@@ -96,9 +92,9 @@ export async function handleRegister(
     const os = ua.getOS().name || null;
     const device = ua.getDevice().model || "unknown";
 
-    const last_location = null;
-    const last_country = null;
-    const last_city = null;
+    // const last_location = null;
+    // const last_country = null;
+    // const last_city = null;
     const last_login = new Date();
 
     const hashedEmail = crypto
@@ -216,18 +212,14 @@ export async function handleLogin(
     // Set the refresh token in the database
     // hash the refresh token
 
-    if (!process.env.REFRESH_TOKEN_EXPIRY) {
-      throw new Error("REFRESH_TOKEN_EXPIRY environment variable is required");
-    }
-
-    const refreshTokenExpiry = parseInt(process.env.REFRESH_TOKEN_EXPIRY, 10);
+    const refreshTokenExpiry = env.REFRESH_TOKEN_EXPIRY;
     if (isNaN(refreshTokenExpiry)) {
       throw new Error("REFRESH_TOKEN_EXPIRY must be a valid number");
     }
 
     const expiryTime = new Date(
       // 1ms  * 1000 = 1s
-      Date.now() + parseInt(process.env.REFRESH_TOKEN_EXPIRY) * 1000
+      Date.now() + env.REFRESH_TOKEN_EXPIRY * 1000
     );
 
     try {
@@ -244,7 +236,7 @@ export async function handleLogin(
 
     res.setHeader("Set-Cookie", [
       `refreshToken=${refreshToken}; HttpOnly; Path=/; Max-Age=${refreshTokenExpiry}; SameSite=None; Secure=false; Domain=${
-        process.env.DOMAIN || "localhost"
+        env.DOMAIN
       }`,
     ]);
 
@@ -290,6 +282,7 @@ export async function handleProfile(
         send(res, 400, { error: "Invalid token payload" });
       }
     } catch (error) {
+      console.log(error);
       send(res, 401, { error: "Invalid token" });
     }
   } catch (error) {
@@ -299,9 +292,10 @@ export async function handleProfile(
 }
 
 export async function handleLogout(req: IncomingMessage, res: ServerResponse) {
-  const body = await readBody(req);
+  const body = await readBody<{ type: string }>(req);
 
-  const type = (body as any)?.type;
+  // const type = (body as any)?.type;
+  const type = body?.type;
 
   if (type === "email") {
     return handleEmailLogout(req, res);
@@ -320,11 +314,12 @@ async function handleEmailLogout(req: IncomingMessage, res: ServerResponse) {
     return send(res, 204, { message: "no token to logout" });
   }
 
-  let decoded: any;
-
+  let decoded;
   try {
-    decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET!);
+    decoded = jwt.verify(refreshToken, env.REFRESH_TOKEN_SECRET!);
   } catch (error) {
+    console.log(error);
+
     send(res, 401, { error: "Invalid or expired refresh token" });
     return;
   }
@@ -436,12 +431,21 @@ async function handleGoogleLogout(req: IncomingMessage, res: ServerResponse) {
     let email: string | null = null;
 
     try {
-      const decoded: any = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-      email = decoded.email;
+      const decoded = jwt.verify(token, env.ACCESS_TOKEN_SECRET);
+
+      if (
+        typeof decoded === "object" &&
+        decoded !== null &&
+        "email" in decoded
+      ) {
+        email = decoded.email;
+      }
+
       console.log("Decoded token:", decoded);
     } catch (error) {
       console.log(
-        "Invalid or expired token, clearing cookies and sending 401 error"
+        "Invalid or expired token, clearing cookies and sending 401 error",
+        error
       );
       res.setHeader("Set-Cookie", [
         "refreshToken=; HttpOnly; Path=/; Max-Age=0",
@@ -496,10 +500,10 @@ export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
       return send(res, 400, { error: "Missing token or verification code" });
     }
 
-    interface DecodedToken {
-      email: string;
-      [key: string]: any; // for any additional JWT claims
-    }
+    // interface DecodedToken {
+    //   email: string;
+    //   [key: string]: any; // for any additional JWT claims
+    // }
 
     let decodedToken;
 
@@ -571,18 +575,14 @@ export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
     // Set the refresh token in the database
     // hash the refresh token
 
-    if (!process.env.REFRESH_TOKEN_EXPIRY) {
-      throw new Error("REFRESH_TOKEN_EXPIRY environment variable is required");
-    }
-
-    const refreshTokenExpiry = parseInt(process.env.REFRESH_TOKEN_EXPIRY, 10);
+    const refreshTokenExpiry = env.REFRESH_TOKEN_EXPIRY;
     if (isNaN(refreshTokenExpiry)) {
       throw new Error("REFRESH_TOKEN_EXPIRY must be a valid number");
     }
 
     const expiryTime = new Date(
       // 1ms  * 1000 = 1s
-      Date.now() + parseInt(process.env.REFRESH_TOKEN_EXPIRY) * 1000
+      Date.now() + env.REFRESH_TOKEN_EXPIRY * 1000
     );
 
     try {
@@ -599,7 +599,7 @@ export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
 
     res.setHeader("Set-Cookie", [
       `refreshToken=${refreshToken}; HttpOnly; Path=/; Max-Age=${refreshTokenExpiry}; SameSite=None; Secure=false; Domain=${
-        process.env.DOMAIN || "localhost"
+        env.DOMAIN
       }`,
     ]);
 
@@ -749,11 +749,12 @@ export async function handleTokenRefresh(
     }
 
     // 1. Decode and verify token
-    let decoded: any;
+    let decoded;
 
     try {
-      decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET!);
+      decoded = jwt.verify(refreshToken, env.REFRESH_TOKEN_SECRET!);
     } catch (error) {
+      console.log(error);
       send(res, 401, { error: "Invalid or expired refresh token" });
       return;
     }
@@ -817,13 +818,13 @@ export async function handleTokenRefresh(
   }
 }
 
-async function invalidateAllUserTokens(userId: string) {
-  try {
-    await pool.query("DELETE FROM tokens WHERE user_id = $1", [userId]);
-  } catch (error) {
-    console.error("Error invalidating user tokens:", error);
-  }
-}
+// async function invalidateAllUserTokens(userId: string) {
+//   try {
+//     await pool.query("DELETE FROM tokens WHERE user_id = $1", [userId]);
+//   } catch (error) {
+//     console.error("Error invalidating user tokens:", error);
+//   }
+// }
 
 export async function testRefreshToken(
   req: IncomingMessage,

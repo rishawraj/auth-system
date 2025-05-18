@@ -1,6 +1,7 @@
 import { IncomingMessage, ServerResponse } from "http";
 import jwt from "jsonwebtoken";
 import crypto from "node:crypto";
+import { env } from "../config/env.js";
 
 type CodeWithExpiry = {
   code: string;
@@ -44,29 +45,19 @@ export function send(
 }
 
 export function generateAccessToken(payload: object) {
-  const secret = process.env.ACCESS_TOKEN_SECRET;
-
-  if (!secret) throw new Error("ACCESS_TOKEN_SECRET is not defined");
-
-  if (!process.env.ACCESS_TOKEN_EXPIRY)
-    throw new Error("ACCESS_TOKEN_EXPIRY is not defined");
+  const secret = env.ACCESS_TOKEN_SECRET;
 
   return jwt.sign(payload, secret, {
-    expiresIn: parseInt(process.env.ACCESS_TOKEN_EXPIRY),
+    expiresIn: env.ACCESS_TOKEN_EXPIRY,
   });
 }
 
 export function generateRefreshToken(payload: object) {
-  const secret = process.env.REFRESH_TOKEN_SECRET;
-  if (!secret) throw new Error("REFRESH_TOKEN_SECRET is not defined");
-  if (!process.env.REFRESH_TOKEN_EXPIRY)
-    throw new Error("REFRESH_TOKEN_EXPIRY is not defined");
-  return jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET!, {
-    expiresIn: parseInt(process.env.REFRESH_TOKEN_EXPIRY),
+  return jwt.sign(payload, env.REFRESH_TOKEN_SECRET!, {
+    expiresIn: env.REFRESH_TOKEN_EXPIRY,
   });
 }
 
-// Helper function to parse cookies from request
 export function parseCookies(req: IncomingMessage): Record<string, string> {
   const cookies: Record<string, string> = {};
   const cookieHeader = req.headers.cookie;

@@ -1,15 +1,26 @@
 import jwt from "jsonwebtoken";
 import { pool } from "../config/db.config.js";
 import "dotenv/config";
-import { IncomingMessage, ServerResponse } from "node:http";
+import { IncomingMessage } from "node:http";
+import { env } from "../config/env.js";
 
-const SECRET = process.env.ACCESS_TOKEN_SECRET;
+const SECRET = env.ACCESS_TOKEN_SECRET;
+
+type AuthenticatedUser = {
+  id: string;
+  email: string;
+  is_super_user: boolean;
+};
+
+interface AuthenticatedRequest extends IncomingMessage {
+  user?: AuthenticatedUser;
+}
 
 /**
  * Authentication middleware that checks if a user has super user privileges
  * Returns an object with authentication result and appropriate status codes
  */
-export async function checkSuperUser(req: IncomingMessage) {
+export async function checkSuperUser(req: AuthenticatedRequest) {
   console.log("Middleware checkSuperUser");
 
   const authHeader = req.headers.authorization;
@@ -73,7 +84,7 @@ export async function checkSuperUser(req: IncomingMessage) {
     }
 
     // Attach user info to request for later use
-    (req as any).user = {
+    req.user = {
       id: user.id,
       email: user.email,
       is_super_user: user.is_super_user,
