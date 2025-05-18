@@ -10,22 +10,15 @@ import {
   testRefreshToken,
   handleLogout,
 } from "../controllers/user.controller.js";
-import { send } from "../utils/helpers.js";
 import {
   handleGoogleAuth,
   handleGoogleCallback,
   handleGoogleRefreshToken,
-} from "../auth/google-auth.js";
+} from "../controllers/google-auth.controller.js";
 
 export default async (req: IncomingMessage, res: ServerResponse) => {
-  // parse url
   const parsedUrl = new URL(req.url || "", `http://${req.headers.host}`);
   const pathname = parsedUrl.pathname;
-
-  if (req.method === "GET" && pathname === "/health") {
-    send(res, 200, { status: "OK", message: "Server is healthy" });
-    return true; // indicate router handled the request
-  }
 
   if (req.method === "POST" && pathname === "/register") {
     await handleRegister(req, res);
