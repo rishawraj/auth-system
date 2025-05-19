@@ -14,7 +14,11 @@ export function LogoutButton() {
       await fetch(`${API_URL}/logout`, {
         method: "POST",
         credentials: "include", // Include cookies in the request
-        body: JSON.stringify({ type, token }),
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ type }),
       });
 
       // Remove the token from cookies on the client side

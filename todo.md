@@ -1,5 +1,18 @@
 ## todo
 
+- [ ] implement frontend
+
+  - look for inspiration copy something (dashboard?)
+  - admin
+
+- [ ] notification for login / logouts
+
+- [ ] logout remove access token in google oauth
+
+- [ ] rate limiting login register
+
+- [ ] account recovery
+
 - [x] in /verify
       set http cookies
       and in client
@@ -11,6 +24,7 @@
 - [x] husky
 - [x] eslint
 - [ ] req to server for admin status ?? => no.
+  - [ ] but request to server for admin resources.
 
 ---
 

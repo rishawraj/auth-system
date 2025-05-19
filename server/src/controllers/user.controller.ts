@@ -294,7 +294,6 @@ export async function handleProfile(
 export async function handleLogout(req: IncomingMessage, res: ServerResponse) {
   const body = await readBody<{ type: string }>(req);
 
-  // const type = (body as any)?.type;
   const type = body?.type;
 
   if (type === "email") {
@@ -353,142 +352,106 @@ async function handleEmailLogout(req: IncomingMessage, res: ServerResponse) {
   }
 }
 
-// async function handleGoogleLogout(req: IncomingMessage, res: ServerResponse) {
-//   console.log("handleGoogleLogout");
-//   try {
-//     const cookies = parseCookies(req);
-//     const refreshToken = cookies["refreshToken"];
+export async function handleGoogleLogout(
+  req: IncomingMessage,
+  res: ServerResponse
+): Promise<void> {
+  console.log("Starting Google logout process");
 
-//     if (!refreshToken) {
-//       return send(res, 204, { message: "No token to logout" });
-//     }
-
-//     let decoded: any;
-//     try {
-//       decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET!);
-//     } catch (error) {
-//       // Clear the invalid token anyway
-//       res.setHeader("Set-Cookie", [
-//         "refreshToken=; HttpOnly; Path=/; Max-Age=0",
-//         "token=; HttpOnly; Path=/; Max-Age=0",
-//       ]);
-//       return send(res, 401, { error: "Invalid or expired refresh token" });
-//     }
-
-//     console.log(decoded);
-//     const { email } = decoded;
-
-//     try {
-//       const result = await pool.query(
-//         `UPDATE users
-//         SET oauth_access_token = NULL,
-//         oauth_refresh_token = NULL,
-//         oauth_token_expires_at = NULL
-//         WHERE email = $1`,
-//         [email]
-//       );
-
-//       // Check if any rows were actually updated
-//       if (result.rowCount === 0) {
-//         console.log(`No user found with email: ${email}`);
-//         // Still clear cookies but inform that no user was found
-//         res.setHeader("Set-Cookie", [
-//           "refreshToken=; HttpOnly; Path=/; Max-Age=0",
-//           "token=; HttpOnly; Path=/; Max-Age=0",
-//         ]);
-//         return send(res, 404, { message: "User not found" });
-//       }
-
-//       console.log(`User ${email} logged out successfully`);
-//     } catch (error) {
-//       console.error("Logout error:", error);
-//       return send(res, 500, { error: "Internal server error" });
-//     }
-
-//     // Clear both cookies
-//     res.setHeader("Set-Cookie", "refreshToken=; HttpOnly; Path=/; Max-Age=0");
-
-//     res.writeHead(200, { "content-type": "application/json" });
-//     res.end(JSON.stringify({ message: "Logged out successfully" }));
-//   } catch (error) {
-//     console.error("Logout error:", error);
-//     send(res, 500, { error: "Internal server error" });
-//   }
-// }
-
-async function handleGoogleLogout(req: IncomingMessage, res: ServerResponse) {
-  console.log("handleGoogleLogout");
   try {
     const authHeader = req.headers.authorization;
-
-    if (!authHeader) return send(res, 401, { error: "No token provided" });
+    if (!authHeader) {
+      return send(res, 401, { error: "No token provided" });
+    }
 
     const token = authHeader.split(" ")[1];
+    if (!token) {
+      return send(res, 401, { error: "Invalid authorization format" });
+    }
 
-    console.log(token);
-
-    // Extract email from token regardless of validity
     let email: string | null = null;
+    let userId: string | null = null;
 
     try {
       const decoded = jwt.verify(token, env.ACCESS_TOKEN_SECRET);
-
       if (
         typeof decoded === "object" &&
         decoded !== null &&
         "email" in decoded
       ) {
-        email = decoded.email;
-      }
+        email = decoded.email as string;
 
-      console.log("Decoded token:", decoded);
+        // Get user ID for refresh token deletion
+        const userResult = await pool.query(
+          "SELECT id FROM users WHERE email = $1",
+          [email]
+        );
+
+        if (userResult.rows.length > 0) {
+          userId = userResult.rows[0].id;
+        }
+      }
     } catch (error) {
-      console.log(
-        "Invalid or expired token, clearing cookies and sending 401 error",
-        error
-      );
-      res.setHeader("Set-Cookie", [
-        "refreshToken=; HttpOnly; Path=/; Max-Age=0",
-        "token=; HttpOnly; Path=/; Max-Age=0",
-      ]);
+      console.error("Token verification failed:", error);
+      clearCookies(res);
       return send(res, 401, { error: "Invalid or expired token" });
     }
 
-    // Attempt to clear tokens in database if we have an email
-    if (email) {
-      try {
-        const result = await pool.query(
-          `UPDATE users SET oauth_access_token = NULL WHERE id = $1`[email]
-        );
-
-        if (result.rowCount === 0) {
-          console.log(`No user found with email: ${email}`);
-        } else {
-          console.log(`User ${email} logged out successfully, tokens cleared`);
-        }
-      } catch (error) {
-        console.error("Database update error:", error);
-        // Continue to cookie clearing despite DB error
-      }
-    } else {
-      console.log("No email available, skipping database update");
+    if (!email) {
+      return send(res, 400, { error: "Unable to extract email from token" });
     }
 
-    // Always clear cookies, regardless of token validity or database update
-    res.setHeader("Set-Cookie", [
-      "refreshToken=; HttpOnly; Path=/; Max-Age=0",
-      "token=; HttpOnly; Path=/; Max-Age=0",
-    ]);
+    try {
+      // Begin transaction
+      await pool.query("BEGIN");
 
-    res.writeHead(200, { "content-type": "application/json" });
-    res.end(JSON.stringify({ message: "Logged out successfully" }));
+      // Clear OAuth tokens
+      const updateResult = await pool.query(
+        `UPDATE users 
+         SET oauth_access_token = NULL, 
+             oauth_refresh_token = NULL, 
+             oauth_token_expires_at = NULL,
+             last_login_method = NULL
+         WHERE email = $1`,
+        [email]
+      );
+
+      console.log(updateResult);
+
+      // Delete refresh tokens if user exists
+      if (userId) {
+        await pool.query("DELETE FROM refresh_tokens WHERE user_id = $1", [
+          userId,
+        ]);
+      }
+
+      await pool.query("COMMIT");
+
+      console.log(`User ${email} logged out successfully, tokens cleared`);
+    } catch (error) {
+      await pool.query("ROLLBACK");
+      console.error("Database operation failed:", error);
+      // Continue to clear cookies even if DB update fails
+    }
+
+    clearCookies(res);
+    send(res, 200, { message: "Logged out successfully" });
   } catch (error) {
     console.error("Logout error:", error);
-    // Still try to clear cookies even on general error
-    res.setHeader("Set-Cookie", "refreshToken=; HttpOnly; Path=/; Max-Age=0");
-    send(res, 500, { error: "Internal server error" });
+    clearCookies(res);
+    send(res, 500, { error: "Internal server error during logout" });
   }
 }
+
+// Helper function to clear cookies
+function clearCookies(res: ServerResponse) {
+  res.setHeader("Set-Cookie", [
+    "refreshToken=; HttpOnly; Path=/; Max-Age=0",
+    "token=; HttpOnly; Path=/; Max-Age=0",
+    `accessToken=; HttpOnly; Path=/; Max-Age=0; Domain=${env.DOMAIN}`,
+  ]);
+}
+
 export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
   try {
     const body = await readBody<{ token: string; code: string }>(req);
@@ -817,14 +780,6 @@ export async function handleTokenRefresh(
     send(res, 500, { error: "Internal server error during token refresh" });
   }
 }
-
-// async function invalidateAllUserTokens(userId: string) {
-//   try {
-//     await pool.query("DELETE FROM tokens WHERE user_id = $1", [userId]);
-//   } catch (error) {
-//     console.error("Error invalidating user tokens:", error);
-//   }
-// }
 
 export async function testRefreshToken(
   req: IncomingMessage,

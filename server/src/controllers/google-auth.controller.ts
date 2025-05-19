@@ -59,6 +59,9 @@ export async function handleGoogleCallback(
 
     // exchange code for tokens
     const { tokens } = await OAuthClient.getToken(code);
+    console.log("======================================");
+    console.log({ tokens });
+    console.log("======================================");
     OAuthClient.setCredentials(tokens);
 
     // verify ID token
