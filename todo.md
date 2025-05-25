@@ -7,12 +7,13 @@
 
 - [ ] notification for login / logouts
 
-- [ ] logout remove access token in google oauth
-
 - [ ] rate limiting login register
 
 - [ ] account recovery
 
+- [ ] runtime validation?
+
+- [x] logout remove access token in google oauth
 - [x] in /verify
       set http cookies
       and in client
@@ -23,8 +24,8 @@
 - [x] centralize jwt expiry time
 - [x] husky
 - [x] eslint
-- [ ] req to server for admin status ?? => no.
-  - [ ] but request to server for admin resources.
+- [x] req to server for admin status ?? => no.
+  - [x] but request to server for admin resources.
 
 ---
 
@@ -32,6 +33,7 @@
 
 - [x] refresh tokens
 - [ ] limited access after registration if done by email.
+no
 
 ## implement all field in email login as they are in google login
 
@@ -47,7 +49,7 @@
 - [ ] vercel / render /
 - [ ] db (neon)
 
-## 2fa
+## 2fa vs mfa
 
     last_login_method VARCHAR(20),
     is_two_factor_enabled BOOLEAN DEFAULT FALSE,

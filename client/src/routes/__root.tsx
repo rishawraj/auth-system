@@ -1,32 +1,18 @@
-import { createRootRoute, Link, Outlet } from "@tanstack/react-router";
+import { createRootRoute, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { ToastContainer } from "react-toastify";
-export const Route = createRootRoute({
-  component: () => (
-    <>
-      <div className="flex gap-2 bg-gray-300 p-2">
-        <Link to="/" className="[&.active]:font-bold">
-          Home
-        </Link>{" "}
-        <Link to="/about" className="[&.active]:font-bold">
-          About
-        </Link>
-        <Link to="/login" className="[&.active]:font-bold">
-          Login
-        </Link>
-        <Link to="/register" className="[&.active]:font-bold">
-          Register
-        </Link>
-        <Link to="/profile" className="[&.active]:font-bold">
-          Profile
-        </Link>
-        <Link to="/admin" className="[&.active]:font-bold">
-          Admin
-        </Link>
-      </div>
-      <hr />
 
-      <main className="container scheme-dark">
+import { Navbar } from "../components/Navbar";
+import { ThemeProvider } from "../components/ThemeProvider";
+import { useTheme } from "../hooks/useTheme";
+
+const RootLayout = () => {
+  const { theme } = useTheme();
+
+  return (
+    <>
+      <div className="min-h-screen bg-white dark:bg-gray-900 dark:text-white">
+        <Navbar />
         <Outlet />
         <ToastContainer
           position="top-right"
@@ -38,10 +24,18 @@ export const Route = createRootRoute({
           pauseOnFocusLoss
           draggable
           pauseOnHover
-          theme="dark"
+          theme={theme === "system" ? "dark" : theme}
         />
-      </main>
+      </div>
       <TanStackRouterDevtools />
     </>
+  );
+};
+
+export const Route = createRootRoute({
+  component: () => (
+    <ThemeProvider defaultTheme="dark">
+      <RootLayout />
+    </ThemeProvider>
   ),
 });
