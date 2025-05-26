@@ -1,5 +1,7 @@
 -- Enable the pgcrypto extension for gen_random_uuid
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 
 -- USERS TABLE
 CREATE TABLE IF NOT EXISTS public.users (

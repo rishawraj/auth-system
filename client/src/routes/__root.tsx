@@ -3,8 +3,8 @@ import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { ToastContainer } from "react-toastify";
 
 import { Navbar } from "../components/Navbar";
-import { ThemeProvider } from "../components/ThemeProvider";
 import { useTheme } from "../hooks/useTheme";
+import { ThemeProvider } from "../Providers/ThemeProvider";
 
 const RootLayout = () => {
   const { theme } = useTheme();

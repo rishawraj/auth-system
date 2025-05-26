@@ -13,6 +13,8 @@
 
 - [ ] runtime validation?
 
+- [ ] sonarqube
+
 - [x] logout remove access token in google oauth
 - [x] in /verify
       set http cookies
@@ -33,7 +35,7 @@
 
 - [x] refresh tokens
 - [ ] limited access after registration if done by email.
-no
+      no
 
 ## implement all field in email login as they are in google login
 
