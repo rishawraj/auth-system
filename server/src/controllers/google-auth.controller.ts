@@ -1,5 +1,10 @@
 import { IncomingMessage, ServerResponse } from "http";
-import { generateAccessToken, parseCookies, send } from "../utils/helpers.js";
+import {
+  generateAccessToken,
+  parseCookies,
+  send,
+  setServerCookie,
+} from "../utils/helpers.js";
 import { pool } from "../config/db.config.js";
 import { User } from "../models/user.model.js";
 import { OAuth2Client, TokenPayload } from "google-auth-library";
@@ -221,9 +226,17 @@ export async function handleGoogleCallback(
 
     const token = generateAccessToken(jwtpayload);
 
-    res.setHeader("Set-Cookie", [
-      `refreshToken=${tokens.refresh_token}; HttpOnly; Path=/; Max-Age=${tokens.expiry_date}; SameSite=None; Secure=false; Domain=${env.DOMAIN}`,
-    ]);
+    // res.setHeader("Set-Cookie", [
+    //   `refreshToken=${tokens.refresh_token}; HttpOnly; Path=/; Max-Age=${tokens.expiry_date}; SameSite=None; Secure=false; Domain=${env.DOMAIN}`,
+    // ]);
+    setServerCookie({
+      name: "refreshToken",
+      value: tokens.refresh_token,
+      res,
+      maxAge: tokens.expiry_date,
+      path: "/",
+      isProduction: process.env.NODE_ENV === "production",
+    });
 
     //  redirect to frontend with token
     const redirectUrl = `${FRONTEND_URL}/auth/google/callback?token=${token}`;
@@ -245,9 +258,9 @@ export async function handleGoogleRefreshToken(
     console.log({ token });
 
     const cookies = parseCookies(req);
-    // console.log(cookies);
+    console.log(cookies);
     const refreshToken = cookies["refreshToken"];
-    console.log(refreshToken);
+    console.log({ refreshToken });
 
     if (!refreshToken) {
       return send(res, 400, { error: "Refresh token is required" });

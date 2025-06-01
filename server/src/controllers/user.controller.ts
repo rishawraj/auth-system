@@ -7,6 +7,7 @@ import {
   parseCookies,
   readBody,
   send,
+  setServerCookie,
 } from "../utils/helpers.js";
 import { z } from "zod";
 import { pool } from "../config/db.config.js";
@@ -21,7 +22,7 @@ import { User } from "../models/user.model.js";
 import { UAParser } from "ua-parser-js";
 import crypto, { randomUUID } from "crypto";
 
-import { RegisterResponse } from "../../../shared/src/types/auth.js";
+// import { RegisterResponse } from "../../../shared/src/types/auth.js";
 import { env } from "../config/env.js";
 
 const SECRET = env.ACCESS_TOKEN_SECRET;
@@ -134,7 +135,7 @@ export async function handleRegister(
 
     setImmediate(() => sendVerificationEmailWorker(email, verificationCode));
 
-    const response: RegisterResponse = {
+    const response = {
       message: "User registered successfully",
       user: newUser,
       accessToken,
@@ -234,11 +235,20 @@ export async function handleLogin(
 
     // "last_login_method": null,
 
-    res.setHeader("Set-Cookie", [
-      `refreshToken=${refreshToken}; HttpOnly; Path=/; Max-Age=${refreshTokenExpiry}; SameSite=None; Secure=false; Domain=${
-        env.DOMAIN
-      }`,
-    ]);
+    // res.setHeader("Set-Cookie", [
+    //   `refreshToken=${refreshToken}; HttpOnly; Path=/; Max-Age=${refreshTokenExpiry}; SameSite=None; Secure=false; Domain=${
+    //     env.DOMAIN
+    //   }`,
+    // ]);
+
+    setServerCookie({
+      name: "refreshToken",
+      value: refreshToken,
+      res,
+      maxAge: env.REFRESH_TOKEN_EXPIRY,
+      path: "/",
+      isProduction: process.env.NODE_ENV === "production",
+    });
 
     send(res, 200, { message: "Login successful", accessToken, type: "email" });
   } catch (error) {
@@ -342,7 +352,14 @@ async function handleEmailLogout(req: IncomingMessage, res: ServerResponse) {
     }
 
     // clear cookie on client
-    res.setHeader("Set-Cookie", "refreshToken=; httpOnly; Path=/;Max-Age=0");
+    // res.setHeader("Set-Cookie", "refreshToken=; httpOnly; Path=/;Max-Age=0");
+    setServerCookie({
+      name: "refreshToken",
+      value: "",
+      res,
+      maxAge: 0,
+      path: "/",
+    });
     res.writeHead(200, { "content-type": "application/json" });
 
     res.end(JSON.stringify({ message: "Logged out successfully" }));
@@ -560,11 +577,19 @@ export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
 
     // "last_login_method": null,
 
-    res.setHeader("Set-Cookie", [
-      `refreshToken=${refreshToken}; HttpOnly; Path=/; Max-Age=${refreshTokenExpiry}; SameSite=None; Secure=false; Domain=${
-        env.DOMAIN
-      }`,
-    ]);
+    // res.setHeader("Set-Cookie", [
+    //   `refreshToken=${refreshToken}; HttpOnly; Path=/; Max-Age=${refreshTokenExpiry}; SameSite=None; Secure=false; Domain=${
+    //     env.DOMAIN
+    //   }`,
+    // ]);
+    setServerCookie({
+      name: "refreshToken",
+      value: refreshToken,
+      res,
+      maxAge: env.REFRESH_TOKEN_EXPIRY,
+      path: "/",
+      isProduction: process.env.NODE_ENV === "production",
+    });
 
     send(res, 200, {
       message: "Account verified successfully",

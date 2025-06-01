@@ -75,3 +75,28 @@ export function parseCookies(req: IncomingMessage): Record<string, string> {
 export function hashToken(token: string): string {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
+
+type SetCookieOptions = {
+  name: string;
+  value: string;
+  res: ServerResponse;
+  maxAge?: number; // in seconds
+  path?: string;
+  isProduction?: boolean;
+};
+
+export function setServerCookie({
+  name,
+  value,
+  res,
+  maxAge = env.REFRESH_TOKEN_EXPIRY,
+  path = "/",
+  isProduction = process.env.NODE_ENV === "production",
+}: SetCookieOptions) {
+  const cookie = `${name}=${encodeURIComponent(value)}; Path=${path}; HttpOnly; SameSite=Strict; ${
+    isProduction ? "Secure;" : ""
+  } Max-Age=${maxAge}`;
+
+  // Append cookie
+  res.setHeader("Set-Cookie", cookie);
+}
