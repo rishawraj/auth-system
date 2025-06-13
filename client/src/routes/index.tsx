@@ -1,6 +1,7 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 
 import { Navbar } from "../components/Navbar";
+import ColorPaletteCard from "../components/ColorPalette";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -8,23 +9,13 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   return (
-    <div className="h-full bg-white p-2 dark:bg-gray-900">
+    <div className="h-full">
       <h3>Welcome Home!</h3>
       <h2>Go to Dashboard</h2>
       <button>
         <Link to="/admin"> Admin</Link>
       </button>
-      <ProfileCard />
+      <ColorPaletteCard />
     </div>
   );
 }
-
-const ProfileCard = () => {
-  return (
-    <div>
-      <div className="bg-mint-500 dark:bg-avacado-100 p-5 dark:text-black">
-        <p>hele</p>
-      </div>
-    </div>
-  );
-};

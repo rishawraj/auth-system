@@ -1,17 +1,40 @@
+/* @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-avacado-100: oklch(0.99 0 0);
+  --color-mint-500: oklch(0.72 0.11 178);
+
+  --color-text: oklch(95.63% 0.016 201.7);
+  --color-background: oklch(14.37% 0.017 195.46);
+  --color-primary: oklch(74.64% 0.122 202.36);
+  --color-secondary: oklch(50.98% 0.085 202.36);
+  --color-accent: oklch(71.91% 0.123 203.68);
+}
+
+.dark {
+  --color-text: oklch(95.63% 0.016 201.7);
+  --color-background: oklch(14.37% 0.017 195.46);
+  --color-primary: oklch(74.64% 0.122 202.36);
+  --color-secondary: oklch(50.98% 0.085 202.36);
+  --color-accent: oklch(71.91% 0.123 203.68);
+} */
+
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  /* fonts */
-  --font-sans:
-    ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
-    "Segoe UI Symbol", "Noto Color Emoji";
-  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-  --font-mono:
-    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
-    "Courier New", monospace;
+  --color-text: oklch(20.05% 0.021 201.16);
+  --color-background: oklch(98.44% 0.009 197);
+  --color-primary: oklch(79.03% 0.126 202.08);
+  --color-secondary: oklch(88.83% 0.099 201.91);
+  --color-accent: oklch(87.93% 0.14 202.29);
+}
 
-  /* colors */
-  --color-avacado-100: oklch(0.99 0 0);
-  --color-mint-500: oklch(0.72 0.11 178);
+.dark {
+  --color-text: oklch(95.63% 0.016 201.7);
+  --color-background: oklch(14.37% 0.017 195.46);
+  --color-primary: oklch(74.64% 0.122 202.36);
+  --color-secondary: oklch(50.98% 0.085 202.36);
+  --color-accent: oklch(71.91% 0.123 203.68);
 }
