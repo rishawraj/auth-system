@@ -1,16 +1,14 @@
-// import {
-//   User,
-//   AuthResponse,
-//   LoginCredentials,
-//   RegisterCredentials,
-// } from "../../../shared/src/types/auth";
-
-// export type { User, AuthResponse, LoginCredentials, RegisterCredentials };
-
-// export interface AuthState {
-//   isAuthenticated: boolean;
-//   user: User | null;
-//   token: string | null;
-//   loading: boolean;
-//   error: string | null;
-// }
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+  is_active: boolean;
+  verification_code?: string | null;
+  verification_code_expiry_time?: string | null;
+  registration_date: string;
+  last_login: string | null;
+  is_super_user: boolean;
+  oauth_provider?: string | null;
+  oauth_id?: string | null;
+  profile_pic?: string | null;
+}

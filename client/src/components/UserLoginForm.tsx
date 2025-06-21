@@ -1,17 +1,16 @@
 import { useNavigate } from "@tanstack/react-router";
+import { motion } from "framer-motion";
 import { useState } from "react";
 import { z } from "zod";
 
 import { setToken, setType } from "../utils/authToken";
 
 type FormErrors = {
-  name?: string;
   email?: string;
   password?: string;
 };
 
 interface FormData {
-  name: string;
   email: string;
   password: string;
 }
@@ -27,15 +26,13 @@ const formSchema = z.object({
     .min(1, "Password is required")
     .min(6, "Password must be at least 6 characters"),
 });
+
 const handleGoogleLogin = async () => {
-  // setIsLoading(true);
-  // Redirect to the backend Google auth endpoint
   window.location.href = `${import.meta.env.VITE_API_BASE_URL}/auth/google`;
 };
 
 export default function UserLoginForm() {
   const [formData, setFormData] = useState<FormData>({
-    name: "",
     email: "",
     password: "",
   });
@@ -49,19 +46,15 @@ export default function UserLoginForm() {
 
   const validateForm = (): boolean => {
     const result = formSchema.safeParse(formData);
-
     if (!result.success) {
       const fieldErrors: FormErrors = {};
-
       for (const issue of result.error.issues) {
         const fieldName = issue.path[0] as keyof FormErrors;
         fieldErrors[fieldName] = issue.message;
       }
-
       setErrors(fieldErrors);
       return false;
     }
-
     setErrors({});
     return true;
   };
@@ -76,10 +69,7 @@ export default function UserLoginForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setLoading(true);
     setErrorMessage("");
@@ -97,11 +87,9 @@ export default function UserLoginForm() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
-        console.log(errorData.error);
         setErrorMessage(errorData?.error || "Login failed");
         return;
       }
-      // set the cookie with token
 
       const data = await response.json();
       const token = data.accessToken;
@@ -110,12 +98,10 @@ export default function UserLoginForm() {
         throw new Error("Token not received from server");
       }
 
-      // Cookies.set("token", token, { expires: 7 });
       setToken(token);
       setType("email");
-
       setSuccess(true);
-      setFormData({ name: "", email: "", password: "" });
+      setFormData({ email: "", password: "" });
       navigate({ to: "/profile" });
     } catch (error) {
       console.error("Login error:", error);
@@ -138,231 +124,211 @@ export default function UserLoginForm() {
     }
   };
 
-  const testConnection = async () => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-    try {
-      setErrorMessage("");
-      setLoading(true);
-
-      await fetch(`${API_URL}/health`, {
-        method: "GET",
-        signal: controller.signal,
-      });
-
-      setErrorMessage("✅ Server connection successful!");
-    } catch (error) {
-      if (error instanceof Error && error.name === "AbortError") {
-        setErrorMessage("⏱️ Request timed out. Please try again.");
-      } else {
-        setErrorMessage(
-          "❌ Failed to connect to server. Please make sure it's running.",
-        );
-      }
-    } finally {
-      clearTimeout(timeoutId);
-      setLoading(false);
-    }
+  const formAnimation = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 },
   };
 
   return (
-    <div className="bg-primary flex min-h-screen flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Log in to your Account
-        </h2>
-      </div>
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8 dark:bg-gray-900">
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={formAnimation}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-md space-y-8"
+      >
+        <div>
+          <motion.h2
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white"
+          >
+            Welcome back
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400"
+          >
+            Sign in to your account
+          </motion.p>
+        </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white px-4 py-8 shadow sm:rounded-lg sm:px-10">
-          {success ? (
-            <div className="space-y-6">
-              <div className="rounded-md bg-green-50 p-4">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <svg
-                      className="h-5 w-5 text-green-400"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-green-800">
-                      Log In successful!
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <form className="space-y-6" onSubmit={handleSubmit}>
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-medium text-gray-700"
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="rounded-lg bg-white px-6 py-8 shadow-xl sm:px-10 dark:bg-gray-800"
+        >
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            <div>
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
+                Email
+              </label>
+              <motion.div whileTap={{ scale: 0.995 }} className="mt-1">
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="block w-full appearance-none rounded-lg border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                />
+              </motion.div>
+              {errors.email && (
+                <motion.p
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-2 text-sm text-red-600 dark:text-red-400"
                 >
-                  Email address
-                </label>
-                <div className="mt-1">
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    className={`block w-full appearance-none rounded-md border px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm ${errors.email ? "border-red-300" : "border-gray-300"}`}
-                  />
-                </div>
-                {errors.email && (
-                  <p className="mt-2 text-sm text-red-600">{errors.email}</p>
-                )}
-              </div>
-
-              <div>
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Password
-                </label>
-                <div className="relative mt-1">
-                  <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    autoComplete="new-password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    className={`block w-full appearance-none rounded-md border px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm ${errors.password ? "border-red-300" : "border-gray-300"}`}
-                  />
-                </div>
-                {errors.password && (
-                  <p className="mt-2 text-sm text-red-600">{errors.password}</p>
-                )}
-              </div>
-
-              {errorMessage && (
-                <div className="rounded-md bg-red-50 p-4">
-                  <div className="flex">
-                    <div className="flex-shrink-0">
-                      <svg
-                        className="h-5 w-5 text-red-400"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    </div>
-                    <div className="ml-3">
-                      <p className="text-sm font-medium text-red-800">
-                        {errorMessage}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                  {errors.email}
+                </motion.p>
               )}
+            </div>
 
-              <div>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className={`flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none ${loading ? "cursor-not-allowed opacity-75" : ""}`}
+            <div>
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
+                Password
+              </label>
+              <motion.div whileTap={{ scale: 0.995 }} className="mt-1">
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="block w-full appearance-none rounded-lg border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                />
+              </motion.div>
+              {errors.password && (
+                <motion.p
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-2 text-sm text-red-600 dark:text-red-400"
                 >
-                  {loading ? (
-                    <div className="flex items-center">
-                      <svg
-                        className="mr-3 -ml-1 h-5 w-5 animate-spin text-white"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                      Logging you in...
-                    </div>
-                  ) : (
-                    "Login"
-                  )}
+                  {errors.password}
+                </motion.p>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="text-sm">
+                <button
+                  type="button"
+                  onClick={() => navigate({ to: "/forgot-password" })}
+                  className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
+                >
+                  Forgot your password?
                 </button>
               </div>
-            </form>
-          )}
+            </div>
+
+            {errorMessage && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="rounded-md bg-red-50 p-4 dark:bg-red-900/50"
+              >
+                <p className="text-sm text-red-800 dark:text-red-200">
+                  {errorMessage}
+                </p>
+              </motion.div>
+            )}
+
+            <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex w-full justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 dark:bg-indigo-500 dark:hover:bg-indigo-400"
+              >
+                {loading ? (
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{
+                      duration: 1,
+                      repeat: Infinity,
+                      ease: "linear",
+                    }}
+                    className="h-5 w-5 rounded-full border-2 border-white border-t-transparent"
+                  />
+                ) : (
+                  "Sign in"
+                )}
+              </button>
+            </motion.div>
+          </form>
 
           <div className="mt-6">
-            <button
-              type="button"
-              onClick={testConnection}
-              className="flex w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none"
-              disabled={loading}
-            >
-              {loading ? "Checking..." : "Test Server Connection"}
-            </button>
-            {errorMessage && (
-              <p className="mt-2 text-center text-sm text-red-600">
-                {errorMessage}
-              </p>
-            )}
-          </div>
-          <div className="my-2 p-1">
-            <p>
-              forgot password{" "}
-              <button
-                onClick={() => navigate({ to: "/forgot-password" })}
-                className="cursor-pointer font-bold text-blue-400"
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300 dark:border-gray-600" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="bg-white px-2 text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+                  Or continue with
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <motion.div
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
               >
-                click here
-              </button>
-              .
-            </p>
-          </div>
-          <hr />
-          <div>
-            <p className="text-center text-sm text-gray-600">
-              Don't have an account?{" "}
-              <button
-                onClick={() => navigate({ to: "/register" })}
-                className="cursor-pointer font-bold text-blue-400"
-              >
-                Register
-              </button>
-            </p>
-            <hr />
-            {/* login with google */}
-            <div className="mt-4 flex justify-center">
-              <button
-                onClick={handleGoogleLogin}
-                className="flex w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none"
-              >
-                Login with Google
-              </button>
+                <button
+                  type="button"
+                  onClick={handleGoogleLogin}
+                  className="flex w-full items-center justify-center gap-3 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-gray-300 ring-inset hover:bg-gray-50 dark:bg-gray-700 dark:text-white dark:ring-gray-600 dark:hover:bg-gray-600"
+                >
+                  <svg className="h-5 w-5" viewBox="0 0 24 24">
+                    <path
+                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                      fill="#4285F4"
+                    />
+                    <path
+                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                      fill="#34A853"
+                    />
+                    <path
+                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                      fill="#FBBC05"
+                    />
+                    <path
+                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                      fill="#EA4335"
+                    />
+                  </svg>
+                  Continue with Google
+                </button>
+              </motion.div>
             </div>
           </div>
-        </div>
-      </div>
+
+          <div className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
+            Don't have an account?{" "}
+            <button
+              type="button"
+              onClick={() => navigate({ to: "/register" })}
+              className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
+            >
+              Sign up now
+            </button>
+          </div>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }

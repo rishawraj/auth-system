@@ -1,7 +1,8 @@
 import { useNavigate } from "@tanstack/react-router";
+import { motion } from "framer-motion";
 import React, { useState } from "react";
 
-import { RegisterResponse } from "../../../shared/src/types/auth";
+// import { RegisterResponse } from "../../../shared/src/types/auth";
 
 interface FormData {
   name: string;
@@ -21,7 +22,6 @@ export default function UserRegistrationForm() {
     email: "",
     password: "",
   });
-
   const [errors, setErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -63,10 +63,7 @@ export default function UserRegistrationForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setLoading(true);
     setErrorMessage("");
@@ -88,9 +85,7 @@ export default function UserRegistrationForm() {
         );
       }
 
-      const responseData: RegisterResponse = await response.json();
-      console.log("Registration successful:", responseData);
-
+      const responseData = await response.json();
       setSuccess(true);
       setFormData({ name: "", email: "", password: "" });
       navigate({ to: "/verify", search: { token: responseData.accessToken } });
@@ -99,74 +94,62 @@ export default function UserRegistrationForm() {
       setErrorMessage(
         error instanceof Error ? error.message : "Registration failed",
       );
-      // if (
-      //   error instanceof TypeError &&
-      //   error.message.includes("Failed to fetch")
-      // ) {
-      //   setErrorMessage(
-      //     `Unable to connect to the server. Please check if the server is running at ${API_URL}`,
-      //   );
-      // } else {
-      //   setErrorMessage(
-      //     error instanceof Error
-      //       ? error.message
-      //       : "An unexpected error occurred",
-      //   );
-      // }
     } finally {
       setLoading(false);
     }
   };
 
-  const tryAgain = () => {
-    setSuccess(false);
-    setErrorMessage("");
-  };
-
-  const testConnection = async () => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-    try {
-      setErrorMessage("");
-      setLoading(true);
-
-      await fetch(`${API_URL}/health`, {
-        method: "GET",
-        signal: controller.signal,
-      });
-
-      setErrorMessage("✅ Server connection successful!");
-    } catch (error) {
-      if (error instanceof Error && error.name === "AbortError") {
-        setErrorMessage("⏱️ Request timed out. Please try again.");
-      } else {
-        setErrorMessage(
-          "❌ Failed to connect to server. Please make sure it's running.",
-        );
-      }
-    } finally {
-      clearTimeout(timeoutId);
-      setLoading(false);
-    }
+  const formAnimation = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 },
   };
 
   return (
-    <div className="flex min-h-screen flex-col justify-center bg-gray-100 py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Create your account
-        </h2>
-      </div>
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8 dark:bg-gray-900">
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={formAnimation}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-md space-y-8"
+      >
+        <div>
+          <motion.h2
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white"
+          >
+            Create your account
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400"
+          >
+            Join us today
+          </motion.p>
+        </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white px-4 py-8 shadow sm:rounded-lg sm:px-10">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="rounded-lg bg-white px-6 py-8 shadow-xl sm:px-10 dark:bg-gray-800"
+        >
           {success ? (
-            <div className="space-y-6">
-              <div className="rounded-md bg-green-50 p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="space-y-6"
+            >
+              <div className="rounded-md bg-green-50 p-4 dark:bg-green-900/50">
                 <div className="flex">
                   <div className="flex-shrink-0">
-                    <svg
+                    <motion.svg
+                      animate={{ rotate: [0, 20, 0] }}
+                      transition={{ duration: 0.5 }}
                       className="h-5 w-5 text-green-400"
                       fill="currentColor"
                       viewBox="0 0 20 20"
@@ -176,173 +159,162 @@ export default function UserRegistrationForm() {
                         d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
                         clipRule="evenodd"
                       />
-                    </svg>
+                    </motion.svg>
                   </div>
                   <div className="ml-3">
-                    <p className="text-sm font-medium text-green-800">
-                      Registration successful! You can now log in.
+                    <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                      Registration successful! Please check your email to verify
+                      your account.
                     </p>
                   </div>
                 </div>
               </div>
-              <button
-                onClick={tryAgain}
-                className="flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none"
-              >
-                Register another account
-              </button>
-            </div>
+            </motion.div>
           ) : (
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div>
                 <label
                   htmlFor="name"
-                  className="block text-sm font-medium text-gray-700"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
                 >
-                  Name
+                  Full Name
                 </label>
-                <div className="mt-1">
+                <motion.div whileTap={{ scale: 0.995 }} className="mt-1">
                   <input
                     id="name"
                     name="name"
                     type="text"
                     autoComplete="name"
+                    required
                     value={formData.name}
                     onChange={handleChange}
-                    className={`block w-full appearance-none rounded-md border px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm ${errors.name ? "border-red-300" : "border-gray-300"}`}
+                    className="block w-full appearance-none rounded-lg border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
                   />
-                </div>
+                </motion.div>
                 {errors.name && (
-                  <p className="mt-2 text-sm text-red-600">{errors.name}</p>
+                  <motion.p
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-2 text-sm text-red-600 dark:text-red-400"
+                  >
+                    {errors.name}
+                  </motion.p>
                 )}
               </div>
 
               <div>
                 <label
                   htmlFor="email"
-                  className="block text-sm font-medium text-gray-700"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
                 >
                   Email address
                 </label>
-                <div className="mt-1">
+                <motion.div whileTap={{ scale: 0.995 }} className="mt-1">
                   <input
                     id="email"
                     name="email"
                     type="email"
                     autoComplete="email"
+                    required
                     value={formData.email}
                     onChange={handleChange}
-                    className={`block w-full appearance-none rounded-md border px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm ${errors.email ? "border-red-300" : "border-gray-300"}`}
+                    className="block w-full appearance-none rounded-lg border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
                   />
-                </div>
+                </motion.div>
                 {errors.email && (
-                  <p className="mt-2 text-sm text-red-600">{errors.email}</p>
+                  <motion.p
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-2 text-sm text-red-600 dark:text-red-400"
+                  >
+                    {errors.email}
+                  </motion.p>
                 )}
               </div>
 
               <div>
                 <label
                   htmlFor="password"
-                  className="block text-sm font-medium text-gray-700"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
                 >
                   Password
                 </label>
-                <div className="relative mt-1">
+                <motion.div whileTap={{ scale: 0.995 }} className="mt-1">
                   <input
                     id="password"
                     name="password"
                     type="password"
                     autoComplete="new-password"
+                    required
                     value={formData.password}
                     onChange={handleChange}
-                    className={`block w-full appearance-none rounded-md border px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm ${errors.password ? "border-red-300" : "border-gray-300"}`}
+                    className="block w-full appearance-none rounded-lg border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
                   />
-                </div>
+                </motion.div>
                 {errors.password && (
-                  <p className="mt-2 text-sm text-red-600">{errors.password}</p>
+                  <motion.p
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-2 text-sm text-red-600 dark:text-red-400"
+                  >
+                    {errors.password}
+                  </motion.p>
                 )}
               </div>
 
               {errorMessage && (
-                <div className="rounded-md bg-red-50 p-4">
-                  <div className="flex">
-                    <div className="flex-shrink-0">
-                      <svg
-                        className="h-5 w-5 text-red-400"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    </div>
-                    <div className="ml-3">
-                      <p className="text-sm font-medium text-red-800">
-                        {errorMessage}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="rounded-md bg-red-50 p-4 dark:bg-red-900/50"
+                >
+                  <p className="text-sm text-red-800 dark:text-red-200">
+                    {errorMessage}
+                  </p>
+                </motion.div>
               )}
 
-              <div>
+              <motion.div
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+              >
                 <button
                   type="submit"
                   disabled={loading}
-                  className={`flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none ${loading ? "cursor-not-allowed opacity-75" : ""}`}
+                  className="flex w-full justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 dark:bg-indigo-500 dark:hover:bg-indigo-400"
                 >
                   {loading ? (
-                    <div className="flex items-center">
-                      <svg
-                        className="mr-3 -ml-1 h-5 w-5 animate-spin text-white"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                      Registering...
-                    </div>
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{
+                        duration: 1,
+                        repeat: Infinity,
+                        ease: "linear",
+                      }}
+                      className="h-5 w-5 rounded-full border-2 border-white border-t-transparent"
+                    />
                   ) : (
-                    "Register"
+                    "Create Account"
                   )}
+                </button>
+              </motion.div>
+
+              <div className="text-center text-sm">
+                <span className="text-gray-600 dark:text-gray-400">
+                  Already have an account?{" "}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => navigate({ to: "/login" })}
+                  className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
+                >
+                  Sign in
                 </button>
               </div>
             </form>
           )}
-
-          <div className="mt-6">
-            <button
-              type="button"
-              onClick={testConnection}
-              className="flex w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none"
-              disabled={loading}
-            >
-              {loading ? "Checking..." : "Test Server Connection"}
-            </button>
-            {errorMessage && (
-              <p className="mt-2 text-center text-sm text-red-600">
-                {errorMessage}
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }
