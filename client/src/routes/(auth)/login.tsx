@@ -1,5 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
+import NavBar from "../../components/NavBar-test";
 import UserLoginForm from "../../components/UserLoginForm";
 import { getToken } from "../../utils/authToken";
 
@@ -12,5 +13,14 @@ export const Route = createFileRoute("/(auth)/login")({
       throw redirect({ to: "/profile" });
     }
   },
-  component: UserLoginForm,
+  component: Index,
 });
+
+function Index() {
+  return (
+    <>
+      <NavBar />
+      <UserLoginForm />
+    </>
+  );
+}

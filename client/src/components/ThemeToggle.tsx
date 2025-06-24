@@ -37,7 +37,7 @@ export function ThemeToggle() {
 
   return (
     <button
-      className="bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground inline-flex items-center gap-2 rounded-md p-2 transition-colors"
+      className="bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground inline-flex cursor-pointer items-center gap-2 rounded-md p-2 transition-colors"
       onClick={toggleTheme}
       title={`Switch to ${theme === "light" ? "dark" : theme === "dark" ? "system" : "light"} mode`}
     >

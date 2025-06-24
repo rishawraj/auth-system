@@ -27,7 +27,7 @@ const NavBar = () => {
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}
-          className="text-gray-600 md:hidden dark:text-gray-300"
+          className="cursor-pointer text-gray-600 md:hidden dark:text-gray-300"
           onClick={() => setMenuOpen(!menuOpen)}
           aria-label="Toggle Menu"
         >

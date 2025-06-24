@@ -229,7 +229,7 @@ export default function UserLoginForm() {
                 <button
                   type="button"
                   onClick={() => navigate({ to: "/forgot-password" })}
-                  className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
+                  className="cursor-pointer font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
                 >
                   Forgot your password?
                 </button>
@@ -252,7 +252,7 @@ export default function UserLoginForm() {
               <button
                 type="submit"
                 disabled={loading}
-                className="flex w-full justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 dark:bg-indigo-500 dark:hover:bg-indigo-400"
+                className="flex w-full cursor-pointer justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 dark:bg-indigo-500 dark:hover:bg-indigo-400"
               >
                 {loading ? (
                   <motion.div
@@ -291,7 +291,7 @@ export default function UserLoginForm() {
                 <button
                   type="button"
                   onClick={handleGoogleLogin}
-                  className="flex w-full items-center justify-center gap-3 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-gray-300 ring-inset hover:bg-gray-50 dark:bg-gray-700 dark:text-white dark:ring-gray-600 dark:hover:bg-gray-600"
+                  className="flex w-full cursor-pointer items-center justify-center gap-3 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-gray-300 ring-inset hover:bg-gray-50 dark:bg-gray-700 dark:text-white dark:ring-gray-600 dark:hover:bg-gray-600"
                 >
                   <svg className="h-5 w-5" viewBox="0 0 24 24">
                     <path
@@ -322,7 +322,7 @@ export default function UserLoginForm() {
             <button
               type="button"
               onClick={() => navigate({ to: "/register" })}
-              className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
+              className="cursor-pointer font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
             >
               Sign up now
             </button>
