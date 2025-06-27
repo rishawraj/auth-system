@@ -72,7 +72,6 @@ export async function handleGoogleCallback(
     // verify ID token
     const ticket = await OAuthClient.verifyIdToken({
       idToken: tokens.id_token || "",
-      // audience: config.clientId,
       audience: env.GOOGLE_CLIENT_ID,
     });
 
@@ -80,7 +79,6 @@ export async function handleGoogleCallback(
     if (!payload) {
       return send(res, 400, { error: "Invalid ID token" });
     }
-
     console.log("Payload:", payload);
 
     const { email, name } = payload;
@@ -95,13 +93,11 @@ export async function handleGoogleCallback(
     const os = ua.getOS().name || null;
     const device = ua.getDevice().model || "unknown";
 
-    // todo Replace with actual geo data from ip
     const last_location = null;
     const last_country = null;
     const last_city = null;
 
     let user: User;
-    // const token: string;
 
     // check if email user exists in the database with no oauth provider
     const existingUserResult = await pool.query<User>(
@@ -133,6 +129,7 @@ export async function handleGoogleCallback(
           user.id,
         ]
       );
+
       user = updateUserResult.rows[0];
     }
 
@@ -226,9 +223,6 @@ export async function handleGoogleCallback(
 
     const token = generateAccessToken(jwtpayload);
 
-    // res.setHeader("Set-Cookie", [
-    //   `refreshToken=${tokens.refresh_token}; HttpOnly; Path=/; Max-Age=${tokens.expiry_date}; SameSite=None; Secure=false; Domain=${env.DOMAIN}`,
-    // ]);
     setServerCookie({
       name: "refreshToken",
       value: tokens.refresh_token,
@@ -238,13 +232,13 @@ export async function handleGoogleCallback(
       isProduction: process.env.NODE_ENV === "production",
     });
 
-    //  redirect to frontend with token
-    const redirectUrl = `${FRONTEND_URL}/auth/google/callback?token=${token}`;
+    //  redirect to frontend with token and 2FA status
+    const redirectUrl = `${FRONTEND_URL}/auth/google/callback?token=${token}&isTwoFactorEnabled=${user.is_two_factor_enabled}`;
     res.writeHead(302, { Location: redirectUrl });
     res.end();
   } catch (error) {
     console.error("Google callback error:", error);
-    send(res, 500, { error: "Internal server error during Google callback" }); // respond with error
+    send(res, 500, { error: "Internal server error during Google callback" });
   }
 }
 

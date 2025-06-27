@@ -71,6 +71,7 @@ function RouteComponent() {
           newPassword: formData.newPassword,
         }),
       });
+      console.log(response);
 
       setMessage("Profile updated successfully!");
       setTimeout(() => {

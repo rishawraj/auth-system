@@ -2,6 +2,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { z } from "zod";
+
 import { setToken, setType } from "../utils/authToken";
 
 type FormErrors = {

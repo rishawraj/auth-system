@@ -22,7 +22,7 @@ export const Route = createFileRoute("/(auth)/2FALogin")({
 function RouteComponent() {
   const search = useSearch({ from: "/(auth)/2FALogin" });
   const { token, type } = search;
-  console.log({ token });
+  console.log({ token, type });
 
   const navigate = useNavigate();
 

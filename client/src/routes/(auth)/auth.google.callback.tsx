@@ -9,6 +9,7 @@ import { setToken, setType } from "../../utils/authToken";
 
 const authTokenSchema = z.object({
   token: z.string().optional().default(""),
+  isTwoFactorEnabled: z.boolean().optional().default(false),
 });
 
 export const Route = createFileRoute("/(auth)/auth/google/callback")({
@@ -19,14 +20,19 @@ export const Route = createFileRoute("/(auth)/auth/google/callback")({
 function RouteComponent() {
   const navigate = useNavigate({ from: "/auth/google/callback" });
   const search = useSearch({ from: "/(auth)/auth/google/callback" });
-  const token = search.token;
+  const { token, isTwoFactorEnabled } = search;
+
   console.log("Token from search params:", token);
+  console.log("2FA enabled:", isTwoFactorEnabled);
   // Here you can handle the token, e.g., store it in cookies or local storage
   if (token) {
-    // Cookies.set("token", token, { expires: 7 });
-    setToken(token);
-    setType("google");
-    navigate({ to: "/profile" });
+    if (isTwoFactorEnabled) {
+      navigate({ to: "/2FALogin", search: { token: token, type: "google" } });
+    } else {
+      setToken(token);
+      setType("google");
+      navigate({ to: "/profile" });
+    }
   }
 
   if (!token) {
