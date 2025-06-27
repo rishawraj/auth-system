@@ -3,10 +3,17 @@ import { motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
 
+import { getToken } from "../utils/authToken";
+
 import { ThemeToggle } from "./ThemeToggle";
 
 const NavBar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    const token = getToken();
+    return token !== null && token.length > 0;
+  });
 
   return (
     <motion.nav
@@ -39,18 +46,31 @@ const NavBar = () => {
           <NavLink to="/">Home</NavLink>
           <NavLink to="/about">About</NavLink>
           <NavLink to="/services">Services</NavLink>
-          <div className="flex items-center gap-4">
-            <NavLink to="/login">Login</NavLink>
-            <motion.div whileHover={{ scale: 1.05 }}>
-              <Link
-                to="/register"
-                className="rounded-full bg-indigo-600 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
-              >
-                Sign Up
-              </Link>
-            </motion.div>
-            <ThemeToggle />
-          </div>
+          {isAuthenticated ? (
+            <div className="flex items-center gap-4">
+              <motion.div whileHover={{ scale: 1.05 }}>
+                <Link
+                  to="/profile"
+                  className="rounded-full bg-indigo-600 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+                >
+                  Profile
+                </Link>
+              </motion.div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-4">
+              <NavLink to="/login">Login</NavLink>
+              <motion.div whileHover={{ scale: 1.05 }}>
+                <Link
+                  to="/register"
+                  className="rounded-full bg-indigo-600 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+                >
+                  Sign Up
+                </Link>
+              </motion.div>
+            </div>
+          )}
+          <ThemeToggle />
         </div>
       </div>
 
@@ -74,16 +94,27 @@ const NavBar = () => {
             Services
           </NavLink>
           <div className="flex flex-col gap-4 border-t pt-4">
-            <NavLink mobile to="/login" onClick={() => setMenuOpen(false)}>
-              Login
-            </NavLink>
-            <Link
-              to="/register"
-              onClick={() => setMenuOpen(false)}
-              className="w-full rounded-full bg-indigo-600 px-6 py-2 text-center text-sm font-medium text-white transition-colors hover:bg-indigo-700"
-            >
-              Sign Up
-            </Link>
+            {isAuthenticated ? (
+              <Link
+                to="/profile"
+                className="rounded-full bg-indigo-600 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+              >
+                Profile
+              </Link>
+            ) : (
+              <>
+                <NavLink mobile to="/login" onClick={() => setMenuOpen(false)}>
+                  Login
+                </NavLink>
+                <Link
+                  to="/register"
+                  onClick={() => setMenuOpen(false)}
+                  className="w-full rounded-full bg-indigo-600 px-6 py-2 text-center text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+                >
+                  Sign Up
+                </Link>
+              </>
+            )}
             <ThemeToggle />
           </div>
         </div>

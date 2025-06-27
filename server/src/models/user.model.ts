@@ -1,5 +1,5 @@
 export interface User {
-  id: number;
+  id: string; // uuid
   name: string;
   email: string;
   password: string;
@@ -16,6 +16,19 @@ export interface User {
   oauth_token_expires_at: Date | null;
   reset_password_token: string | null;
   reset_password_token_expiry_time: Date | null;
+  profile_pic: string | null;
+  last_login_method: string | null;
+  is_two_factor_enabled: boolean;
+  two_factor_secret: string | null;
+  is_deleted: boolean;
+  last_ip: string | null;
+  last_browser: string | null;
+  last_os: string | null;
+  last_device: string | null;
+  last_location: string | null;
+  last_country: string | null;
+  last_city: string | null;
+  tmp_two_factor_secret: string | null;
 }
 
 // User input for creating a user (e.g., POST /users)

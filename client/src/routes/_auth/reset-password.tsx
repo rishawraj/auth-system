@@ -11,13 +11,13 @@ const resetPasswordSearchSchema = z.object({
   token: z.string().optional().default(""), // Expect a token string, optional, defaults to empty string
 });
 
-export const Route = createFileRoute("/(auth)/reset-password")({
+export const Route = createFileRoute("/_auth/reset-password")({
   component: RouteComponent,
   validateSearch: resetPasswordSearchSchema, // Validate the search parameters using zod
 });
 
 function RouteComponent() {
-  const search = useSearch({ from: "/(auth)/reset-password" }); // Use the search schema to validate the search parameters
+  const search = useSearch({ from: "/_auth/reset-password" }); // Use the search schema to validate the search parameters
   const token = search.token;
 
   const [password, setPassword] = useState("");

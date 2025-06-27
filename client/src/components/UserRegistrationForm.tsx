@@ -86,9 +86,16 @@ export default function UserRegistrationForm() {
       }
 
       const responseData = await response.json();
+      console.log(responseData.qrcodeImageUrl);
       setSuccess(true);
       setFormData({ name: "", email: "", password: "" });
-      navigate({ to: "/verify", search: { token: responseData.accessToken } });
+      navigate({
+        to: "/verify",
+        search: {
+          token: responseData.accessToken,
+          QRCodeImageUrl: responseData.qrcodeImageUrl,
+        },
+      });
     } catch (error) {
       console.error("Registration error:", error);
       setErrorMessage(

@@ -2,7 +2,6 @@ import { useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { z } from "zod";
-
 import { setToken, setType } from "../utils/authToken";
 
 type FormErrors = {
@@ -14,6 +13,20 @@ interface FormData {
   email: string;
   password: string;
 }
+
+interface LoginResponse {
+  message: string;
+  accessToken: string;
+  type: string;
+  isTwoFactorEnabled: boolean;
+}
+
+// send(res, 200, {
+//   message: "Login successful",
+//   accessToken,
+//   type: "email",
+//   isTwoFactorEnabled: user.is_two_factor_enabled,
+// });
 
 const formSchema = z.object({
   email: z
@@ -91,18 +104,28 @@ export default function UserLoginForm() {
         return;
       }
 
-      const data = await response.json();
+      const data: LoginResponse = await response.json();
       const token = data.accessToken;
 
       if (!token) {
         throw new Error("Token not received from server");
       }
 
-      setToken(token);
-      setType("email");
+      console.log({
+        type: data.type,
+        isTowFactorEnabled: data.isTwoFactorEnabled,
+      });
+
       setSuccess(true);
       setFormData({ email: "", password: "" });
-      navigate({ to: "/profile" });
+
+      if (data.isTwoFactorEnabled) {
+        navigate({ to: "/2FALogin", search: { token: token, type: "email" } });
+      } else {
+        setToken(token);
+        setType("email");
+        navigate({ to: "/profile" });
+      }
     } catch (error) {
       console.error("Login error:", error);
       if (

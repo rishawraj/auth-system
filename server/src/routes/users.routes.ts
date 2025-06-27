@@ -9,6 +9,7 @@ import {
   handleTokenRefresh,
   testRefreshToken,
   handleLogout,
+  handleMe,
 } from "../controllers/user.controller.js";
 import {
   handleGoogleAuth,
@@ -32,6 +33,11 @@ export default async (req: IncomingMessage, res: ServerResponse) => {
 
   if (req.method === "GET" && pathname === "/profile") {
     await handleProfile(req, res);
+    return true;
+  }
+
+  if (req.method === "GET" && pathname === "/me") {
+    await handleMe(req, res);
     return true;
   }
 

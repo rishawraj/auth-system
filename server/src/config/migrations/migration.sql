@@ -33,7 +33,8 @@ CREATE TABLE IF NOT EXISTS public.users (
     last_device TEXT,
     last_location TEXT,
     last_country TEXT,
-    last_city TEXT
+    last_city TEXT,
+    tmp_two_factor_secret TEXT
 );
 
 -- Unique composite index for OAuth users

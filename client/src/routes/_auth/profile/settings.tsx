@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { useState } from "react";
 
@@ -87,17 +87,17 @@ function RouteComponent() {
         },
       ],
     },
-    {
-      title: "Privacy",
-      description: "Control your profile's visibility",
-      settings: [
-        {
-          key: "publicProfile" as keyof Settings,
-          label: "Public Profile",
-          description: "Make your profile visible to other users",
-        },
-      ],
-    },
+    // {
+    //   title: "Privacy",
+    //   description: "Control your profile's visibility",
+    //   settings: [
+    //     {
+    //       key: "publicProfile" as keyof Settings,
+    //       label: "Public Profile",
+    //       description: "Make your profile visible to other users",
+    //     },
+    //   ],
+    // },
   ];
 
   return (
@@ -179,6 +179,13 @@ function RouteComponent() {
                     </div>
                   </motion.div>
                 ))}
+
+                <Link
+                  className="mt-4 block text-sm font-medium text-indigo-600 hover:underline dark:text-indigo-400"
+                  to="/2FAEnable"
+                >
+                  Two-factor-authentication
+                </Link>
 
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}

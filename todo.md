@@ -34,8 +34,6 @@
 ##
 
 - [x] refresh tokens
-- [ ] limited access after registration if done by email.
-      no
 
 ## implement all field in email login as they are in google login
 

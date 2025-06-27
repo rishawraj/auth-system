@@ -1,6 +1,7 @@
 import { IncomingMessage, ServerResponse } from "http";
 import userRoutes from "./users.routes.js";
 import adminRoutes from "./admin.routes.js";
+import twoFactorAuthRoutes from "./twoFactorAuth.routes.js";
 import { send } from "../utils/helpers.js";
 
 export default async (req: IncomingMessage, res: ServerResponse) => {
@@ -14,6 +15,8 @@ export default async (req: IncomingMessage, res: ServerResponse) => {
 
   if (pathname.startsWith("/admin")) {
     return adminRoutes(req, res);
+  } else if (pathname.startsWith("/2fa")) {
+    return twoFactorAuthRoutes(req, res);
   } else {
     return userRoutes(req, res);
   }

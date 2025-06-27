@@ -21,6 +21,8 @@ import "dotenv/config";
 import { User } from "../models/user.model.js";
 import { UAParser } from "ua-parser-js";
 import crypto, { randomUUID } from "crypto";
+import { Secret, TOTP } from "otpauth";
+import qrcode from "qrcode";
 
 // import { RegisterResponse } from "../../../shared/src/types/auth.js";
 import { env } from "../config/env.js";
@@ -104,12 +106,17 @@ export async function handleRegister(
       .digest("hex");
     const profile_pic = `https://api.dicebear.com/7.x/adventurer/png?seed=${hashedEmail}`;
 
+    // 2fa
+    const secret = new Secret({ size: 20 });
+    const secretBase32 = secret.base32;
+    console.log(secretBase32);
+
     const newUserResult = await pool.query(
       `INSERT INTO users (
     name, email, password, verification_code, verification_code_expiry_time,
     last_login, last_ip, last_browser, last_os, last_device,
-    profile_pic
-  ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+    profile_pic, tmp_two_factor_secret
+  ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
    RETURNING id, name, email, is_active, registration_date`,
       [
         name,
@@ -123,6 +130,7 @@ export async function handleRegister(
         os,
         device,
         profile_pic,
+        secretBase32,
       ]
     );
 
@@ -133,12 +141,25 @@ export async function handleRegister(
       is_super_user: newUser.is_super_user,
     });
 
+    // generate QRCode 2fa
+    const totp = new TOTP({
+      issuer: "auth-system",
+      label: newUser.email,
+      secret: secretBase32,
+      digits: 6,
+      period: 30,
+    });
+
+    const OtpAuthUri = totp.toString();
+    const qrcodeImageUrl = await qrcode.toDataURL(OtpAuthUri);
+
     setImmediate(() => sendVerificationEmailWorker(email, verificationCode));
 
     const response = {
       message: "User registered successfully",
       user: newUser,
       accessToken,
+      qrcodeImageUrl,
     };
 
     send(res, 201, response);
@@ -250,7 +271,12 @@ export async function handleLogin(
       isProduction: process.env.NODE_ENV === "production",
     });
 
-    send(res, 200, { message: "Login successful", accessToken, type: "email" });
+    send(res, 200, {
+      message: "Login successful",
+      accessToken,
+      type: "email",
+      isTwoFactorEnabled: user.is_two_factor_enabled,
+    });
   } catch (error) {
     console.error("Login error:", error);
     send(res, 500, { error: "Internal server error" });
@@ -288,6 +314,54 @@ export async function handleProfile(
         const user = userResult.rows[0];
 
         send(res, 200, { user });
+      } else {
+        send(res, 400, { error: "Invalid token payload" });
+      }
+    } catch (error) {
+      console.log(error);
+      send(res, 401, { error: "Invalid token" });
+    }
+  } catch (error) {
+    console.error("Profile error:", error);
+    send(res, 500, { error: "Internal server error" });
+  }
+}
+
+export async function handleMe(req: IncomingMessage, res: ServerResponse) {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader) return send(res, 401, { error: "No token provided" });
+
+    const token = authHeader.split(" ")[1];
+
+    if (!token) {
+      return send(res, 401, { error: "Invalid authorization format" });
+    }
+
+    try {
+      const decoded = jwt.verify(token, SECRET);
+
+      if (
+        typeof decoded === "object" &&
+        decoded !== null &&
+        "email" in decoded
+      ) {
+        const userResult = await pool.query(
+          "SELECT * FROM users WHERE email = $1",
+          [decoded.email]
+        );
+
+        const user = userResult.rows[0];
+
+        send(res, 200, {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          profilePicture: user.profilePicture,
+          is_super_user: user.is_super_user,
+          is_two_factor_enabled: user.is_two_factor_enabled,
+        });
       } else {
         send(res, 400, { error: "Invalid token payload" });
       }

@@ -10,3 +10,11 @@ export function setItem<T>(key: string, value: T) {
     console.error(`Error setting item in localStorage: ${error}`);
   }
 }
+
+export function removeItem(key: string): void {
+  try {
+    localStorage.removeItem(key);
+  } catch (error) {
+    console.error(`Error removing item ${key} from localStorage:`, error);
+  }
+}

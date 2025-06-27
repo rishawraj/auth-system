@@ -15,9 +15,10 @@ function VerifyComponent() {
   const navigate = useNavigate({ from: "/verify" });
   const API_URL = import.meta.env.VITE_API_BASE_URL;
 
-  const search = useSearch({ from: "/(auth)/verify" }) as { token?: string }; // Let useSearch infer the correct type
-
-  console.log(search);
+  const search = useSearch({ from: "/(auth)/verify" }) as {
+    token?: string;
+    QRCodeImageUrl?: string;
+  }; // Let useSearch infer the correct type
 
   const token = search?.token as string; // token from /verify?token=...
   console.log(token);
@@ -83,7 +84,9 @@ function VerifyComponent() {
       setToken(token);
       setType("email");
 
-      navigate({ to: "/profile" });
+      navigate({
+        to: "/2FAEnable",
+      });
     } catch (error) {
       console.error("Error during verification:", error);
     }
