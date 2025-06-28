@@ -1,6 +1,8 @@
 import { IncomingMessage, ServerResponse } from "node:http";
 import {
   DisableTwoFactorAuth,
+  DisableTwoFactorAuthSendOTP,
+  DisableTwoFactorAuthVerifyOTP,
   EnableTwofactorAuth,
   ValidateTwoFactorAuth,
   VerifyTwoFactorAuth,
@@ -23,9 +25,17 @@ export default async (req: IncomingMessage, res: ServerResponse) => {
   }
 
   if (req.method === "POST" && pathname === "/2fa/disable") {
-    console.log("dissable");
-
     DisableTwoFactorAuth(req, res);
+    return true;
+  }
+
+  if (req.method === "POST" && pathname === "/2fa/disable-2fa-send-otp") {
+    DisableTwoFactorAuthSendOTP(req, res);
+    return true;
+  }
+
+  if (req.method === "POST" && pathname === "/2fa/disable-2fa-verify-otp") {
+    DisableTwoFactorAuthVerifyOTP(req, res);
     return true;
   }
 

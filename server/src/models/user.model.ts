@@ -29,6 +29,8 @@ export interface User {
   last_country: string | null;
   last_city: string | null;
   tmp_two_factor_secret: string | null;
+  disable_2fa_otp: string | null;
+  disable_2fa_otp_expiry_time: Date | null;
 }
 
 // User input for creating a user (e.g., POST /users)

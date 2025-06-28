@@ -1,5 +1,9 @@
 import { IncomingMessage, ServerResponse } from "node:http";
-import { readBody, send } from "../utils/helpers.js";
+import {
+  generateSixDigitCodeWithExpiry,
+  readBody,
+  send,
+} from "../utils/helpers.js";
 import { pool } from "../config/db.config.js";
 import jwt from "jsonwebtoken";
 import { env } from "../config/env.js";
@@ -7,6 +11,8 @@ import { Secret, TOTP } from "otpauth";
 import qrcode from "qrcode";
 import { z } from "zod";
 import bcrypt from "bcrypt";
+import { sendDisable2FAOtpEmailWorker } from "../workers/sendEmail.Worker.js";
+import { User } from "../models/user.model.js";
 
 const SECRET = env.ACCESS_TOKEN_SECRET;
 
@@ -102,6 +108,10 @@ const TwoFactorAuthSchema = z.object({
 
 const DisableTwoFactorAuthSchema = z.object({
   password: z.string(),
+});
+
+const DisableTwoFactorAuthOTPVerifySchema = z.object({
+  code: z.string(),
 });
 
 export async function VerifyTwoFactorAuth(
@@ -326,4 +336,163 @@ export async function ValidateTwoFactorAuth(
   } catch (error) {
     console.log(error);
   }
+}
+
+// disable 2fa for google auth
+export async function DisableTwoFactorAuthSendOTP(
+  req: IncomingMessage,
+  res: ServerResponse
+) {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader) return send(res, 401, { error: "No token provided" });
+
+    const token = authHeader.split(" ")[1];
+
+    if (!token) {
+      return send(res, 401, { error: "Invalid authorization format" });
+    }
+
+    try {
+      const decoded = jwt.verify(token, SECRET);
+
+      if (
+        typeof decoded === "object" &&
+        decoded !== null &&
+        "email" in decoded
+      ) {
+        const userResult = await pool.query(
+          "SELECT * FROM users WHERE email = $1",
+          [decoded.email]
+        );
+
+        const user = userResult.rows[0];
+
+        if (!user) {
+          return send(res, 404, { error: "User not found" });
+        }
+
+        const { code, expiresAt } = generateSixDigitCodeWithExpiry();
+
+        await pool.query(
+          `
+          UPDATE users
+          SET disable_2fa_otp = $1,
+              disable_2fa_otp_expiry_time = $2
+          WHERE id = $3
+          `,
+          [code, expiresAt, user.id]
+        );
+
+        // send email
+        setImmediate(() => sendDisable2FAOtpEmailWorker(user.email, code));
+      } else {
+        return send(res, 401, { error: "Invalid token" });
+      }
+    } catch (error) {
+      console.log(error);
+      return send(res, 401, { error: "Invalid token" });
+    }
+
+    // generate 6 digit code
+  } catch (error) {
+    console.log(error);
+    send(res, 500, { error: "Internal server error" });
+  }
+
+  // setImmediate(() => sendVerificationEmailWorker(email, verificationCode));
+
+  send(res, 200, {
+    message: "email sent",
+  });
+}
+
+export async function DisableTwoFactorAuthVerifyOTP(
+  req: IncomingMessage,
+  res: ServerResponse
+) {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader) return send(res, 401, { error: "No token provided" });
+
+    const token = authHeader.split(" ")[1];
+    console.log(token);
+
+    if (!token) {
+      return send(res, 401, { error: "Invalid authorization format" });
+    }
+
+    const body = await readBody(req);
+    console.log(body);
+
+    const result = DisableTwoFactorAuthOTPVerifySchema.safeParse(body);
+
+    if (!result.success) {
+      const errors = result.error.flatten().fieldErrors;
+      return send(res, 400, { errors });
+    }
+
+    const { code } = result.data;
+    console.log({ code });
+
+    if (!code) {
+      return send(res, 400, { error: "Invalid code" });
+    }
+
+    //
+
+    try {
+      const decoded = jwt.verify(token, SECRET);
+
+      if (
+        typeof decoded === "object" &&
+        decoded !== null &&
+        "email" in decoded
+      ) {
+        const userResult = await pool.query(
+          "SELECT * FROM users WHERE email = $1",
+          [decoded.email]
+        );
+
+        const user: User = userResult.rows[0];
+
+        if (!user) {
+          return send(res, 404, { error: "User not found" });
+        }
+
+        if (user.disable_2fa_otp !== code) {
+          return send(res, 400, { error: "Invalid code" });
+        }
+
+        if (user.disable_2fa_otp_expiry_time < new Date()) {
+          return send(res, 400, { error: "Code expired" });
+        }
+
+        await pool.query(
+          `
+          UPDATE users
+          SET is_two_factor_enabled = false,
+              disable_2fa_otp = NULL,
+              disable_2fa_otp_expiry_time = NULL
+          WHERE id = $1
+          `,
+          [user.id]
+        );
+      }
+    } catch (error) {
+      console.log(error);
+      return send(res, 401, { error: "Invalid token" });
+    }
+  } catch (error) {
+    console.log(error);
+    send(res, 500, { error: "Internal server error" });
+  }
+
+  //
+
+  send(res, 200, {
+    message: "2fa disabled",
+  });
 }

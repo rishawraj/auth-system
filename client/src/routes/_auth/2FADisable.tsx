@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 
 import { fetchWithAuth } from "../../utils/api";
+import { getType } from "../../utils/authToken";
 
 interface DisableResponse {
   ok: boolean;
@@ -14,6 +15,18 @@ export const Route = createFileRoute("/_auth/2FADisable")({
 });
 
 function RouteComponent() {
+  const type = getType();
+
+  // Render different components based on auth type
+  if (type === "google") {
+    return <GoogleOAuth2FADisable />;
+  }
+
+  return <EmailAuth2FADisable />;
+}
+
+// Password-based 2FA disable for email login
+function EmailAuth2FADisable() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -26,10 +39,6 @@ function RouteComponent() {
     setError("");
     setLoading(true);
 
-    //      send(res, 200, {
-    //   message: "2fa disabled",
-    // });
-
     try {
       const response = (await fetchWithAuth("/2fa/disable", {
         method: "POST",
@@ -39,7 +48,6 @@ function RouteComponent() {
       })) as DisableResponse;
 
       console.log(response);
-
       navigate({ to: "/profile" });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to disable 2FA");
@@ -142,6 +150,165 @@ function RouteComponent() {
               )}
             </motion.button>
           </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+interface DisableResponse {
+  success: boolean;
+  message?: string;
+}
+
+// OTP-based 2FA disable for Google login
+function GoogleOAuth2FADisable() {
+  const [otp, setOtp] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const navigate = useNavigate();
+
+  const handleSendOtp = async () => {
+    setError("");
+    try {
+      const res = await fetchWithAuth("/2fa/disable-2fa-send-otp", {
+        method: "POST",
+      });
+      console.log(res);
+      setOtpSent(true);
+    } catch (err) {
+      console.log(err);
+      setError("Failed to send OTP.");
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otp) return;
+
+    setError("");
+    setLoading(true);
+
+    try {
+      const response = (await fetchWithAuth("/2fa/disable-2fa-verify-otp", {
+        method: "POST",
+        body: JSON.stringify({
+          code: otp,
+        }),
+      })) as DisableResponse;
+
+      console.log(response);
+
+      navigate({ to: "/profile" });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to disable 2FA");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8 dark:bg-gray-900">
+      <div className="w-full max-w-md space-y-8">
+        <div>
+          <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+            Disable Two-Factor Authentication
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+            Enter the OTP sent to your registered email
+          </p>
+        </div>
+
+        <div className="mt-4 rounded-md bg-yellow-50 p-4 dark:bg-yellow-900/50">
+          <div className="flex">
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                Warning
+              </h3>
+              <div className="mt-2 text-sm text-yellow-700 dark:text-yellow-300">
+                <p>
+                  Disabling two-factor authentication will make your account
+                  less secure.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          {!otpSent ? (
+            <motion.button
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
+              type="button"
+              onClick={handleSendOtp}
+              className="w-full rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+            >
+              Send OTP
+            </motion.button>
+          ) : (
+            <>
+              <div>
+                <label
+                  htmlFor="otp"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  OTP Code
+                </label>
+                <input
+                  id="otp"
+                  name="otp"
+                  type="text"
+                  required
+                  maxLength={6}
+                  pattern="\d{6}"
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                />
+              </div>
+
+              {error && (
+                <p className="text-sm text-red-600 dark:text-red-400">
+                  {error}
+                </p>
+              )}
+
+              <div className="flex space-x-4">
+                <motion.button
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
+                  type="button"
+                  onClick={() => navigate({ to: "/profile" })}
+                  className="flex-1 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                >
+                  Cancel
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
+                  type="submit"
+                  disabled={loading || otp.length !== 6}
+                  className="flex-1 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50 dark:bg-red-500 dark:hover:bg-red-400"
+                >
+                  {loading ? (
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{
+                        duration: 1,
+                        repeat: Infinity,
+                        ease: "linear",
+                      }}
+                      className="mx-auto h-5 w-5 rounded-full border-2 border-white border-t-transparent"
+                    />
+                  ) : (
+                    "Disable 2FA"
+                  )}
+                </motion.button>
+              </div>
+            </>
+          )}
         </form>
       </div>
     </div>
