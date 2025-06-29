@@ -1,13 +1,11 @@
 import {
   createFileRoute,
-  Link,
   useNavigate,
   useSearch,
 } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { z } from "zod";
-
 import { setToken, setType } from "../../utils/authToken";
 
 const authLoginSchema = z.object({
@@ -15,57 +13,55 @@ const authLoginSchema = z.object({
   type: z.string().optional().default(""),
 });
 
-export const Route = createFileRoute("/(auth)/2FALogin")({
+export const Route = createFileRoute("/(auth)/use_backup_code")({
   component: RouteComponent,
   validateSearch: authLoginSchema,
 });
 
 function RouteComponent() {
-  const search = useSearch({ from: "/(auth)/2FALogin" });
+  const search = useSearch({ from: "/(auth)/use_backup_code" });
   const { token, type } = search;
-  console.log({ token, type });
-
   const navigate = useNavigate();
+  const API_URL = import.meta.env.VITE_API_BASE_URL;
 
-  const [code, setCode] = useState("");
+  const [backupCode, setBackupCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!token || code.length !== 6) return;
+    if (!token || !backupCode) return;
 
     setError("");
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:3000/2fa/validate", {
+      const response = await fetch(`${API_URL}/2fa/validate-backup`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          code,
+          code: backupCode,
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to verify 2FA code");
+        throw new Error(errorData.error || "Invalid backup code");
       }
 
       const data = await response.json();
       console.log(data);
 
-      // Set the new token and navigate to profile
-      // localStorage.setItem("token", data.accessToken);
+      // Set the token and navigate to profile
       setToken(token);
       setType(type);
       navigate({ to: "/profile" });
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to verify 2FA code",
+        err instanceof Error ? err.message : "Failed to verify backup code",
       );
     } finally {
       setLoading(false);
@@ -77,53 +73,42 @@ function RouteComponent() {
       <div className="w-full max-w-md space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
-            Two-Factor Authentication
+            Use Backup Code
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-            Please enter the 6-digit code from your authenticator app
+            Enter one of your backup codes to access your account
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-6">
           <div>
-            <label htmlFor="code" className="sr-only">
-              Authentication Code
+            <label htmlFor="backupCode" className="sr-only">
+              Backup Code
             </label>
             <input
-              id="code"
-              name="code"
+              id="backupCode"
+              name="backupCode"
               type="text"
               required
-              maxLength={6}
+              maxLength={9}
               className="relative block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
-              placeholder="Enter 6-digit code"
-              value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+              placeholder="Enter backup code (XXXX-XXXX)"
+              value={backupCode}
+              onChange={(e) => setBackupCode(e.target.value.toUpperCase())}
+              pattern="[A-Z0-9]{4}-[A-Z0-9]{4}"
             />
           </div>
 
           {error && (
             <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
           )}
-          <div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Don&apos;t have a code?{" "}
-              <Link
-                to="/use_backup_code"
-                className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
-                search={{ token: token, type: type }}
-              >
-                Use Backup Codes
-              </Link>
-            </p>
-          </div>
 
           <div>
             <motion.button
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
               type="submit"
-              disabled={loading || code.length !== 6}
+              disabled={loading || backupCode.length !== 9}
               className="group relative flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none disabled:opacity-50 dark:bg-indigo-500 dark:hover:bg-indigo-400"
             >
               {loading ? (
@@ -133,9 +118,21 @@ function RouteComponent() {
                   className="h-5 w-5 rounded-full border-2 border-white border-t-transparent"
                 />
               ) : (
-                "Verify"
+                "Verify Backup Code"
               )}
             </motion.button>
+          </div>
+
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={() =>
+                navigate({ to: "/2FALogin", search: { token, type } })
+              }
+              className="text-sm text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
+            >
+              Back to 2FA Code
+            </button>
           </div>
         </form>
       </div>

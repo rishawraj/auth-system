@@ -22,6 +22,7 @@ import { Route as Auth2FAEnableImport } from './routes/_auth/2FAEnable'
 import { Route as Auth2FADisableImport } from './routes/_auth/2FADisable'
 import { Route as Auth2FAImport } from './routes/_auth/2FA'
 import { Route as authVerifyImport } from './routes/(auth)/verify'
+import { Route as authUsebackupcodeImport } from './routes/(auth)/use_backup_code'
 import { Route as authRegisterImport } from './routes/(auth)/register'
 import { Route as authLoginImport } from './routes/(auth)/login'
 import { Route as authForgotPasswordImport } from './routes/(auth)/forgot-password'
@@ -98,6 +99,12 @@ const Auth2FARoute = Auth2FAImport.update({
 const authVerifyRoute = authVerifyImport.update({
   id: '/(auth)/verify',
   path: '/verify',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const authUsebackupcodeRoute = authUsebackupcodeImport.update({
+  id: '/(auth)/use_backup_code',
+  path: '/use_backup_code',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -234,6 +241,13 @@ declare module '@tanstack/react-router' {
       path: '/register'
       fullPath: '/register'
       preLoaderRoute: typeof authRegisterImport
+      parentRoute: typeof rootRoute
+    }
+    '/(auth)/use_backup_code': {
+      id: '/(auth)/use_backup_code'
+      path: '/use_backup_code'
+      fullPath: '/use_backup_code'
+      preLoaderRoute: typeof authUsebackupcodeImport
       parentRoute: typeof rootRoute
     }
     '/(auth)/verify': {
@@ -399,6 +413,7 @@ export interface FileRoutesByFullPath {
   '/forgot-password': typeof authForgotPasswordRoute
   '/login': typeof authLoginRoute
   '/register': typeof authRegisterRoute
+  '/use_backup_code': typeof authUsebackupcodeRoute
   '/verify': typeof authVerifyRoute
   '/2FA': typeof Auth2FARoute
   '/2FADisable': typeof Auth2FADisableRoute
@@ -424,6 +439,7 @@ export interface FileRoutesByTo {
   '/forgot-password': typeof authForgotPasswordRoute
   '/login': typeof authLoginRoute
   '/register': typeof authRegisterRoute
+  '/use_backup_code': typeof authUsebackupcodeRoute
   '/verify': typeof authVerifyRoute
   '/2FA': typeof Auth2FARoute
   '/2FADisable': typeof Auth2FADisableRoute
@@ -450,6 +466,7 @@ export interface FileRoutesById {
   '/(auth)/forgot-password': typeof authForgotPasswordRoute
   '/(auth)/login': typeof authLoginRoute
   '/(auth)/register': typeof authRegisterRoute
+  '/(auth)/use_backup_code': typeof authUsebackupcodeRoute
   '/(auth)/verify': typeof authVerifyRoute
   '/_auth/2FA': typeof Auth2FARoute
   '/_auth/2FADisable': typeof Auth2FADisableRoute
@@ -478,6 +495,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/register'
+    | '/use_backup_code'
     | '/verify'
     | '/2FA'
     | '/2FADisable'
@@ -502,6 +520,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/register'
+    | '/use_backup_code'
     | '/verify'
     | '/2FA'
     | '/2FADisable'
@@ -526,6 +545,7 @@ export interface FileRouteTypes {
     | '/(auth)/forgot-password'
     | '/(auth)/login'
     | '/(auth)/register'
+    | '/(auth)/use_backup_code'
     | '/(auth)/verify'
     | '/_auth/2FA'
     | '/_auth/2FADisable'
@@ -553,6 +573,7 @@ export interface RootRouteChildren {
   authForgotPasswordRoute: typeof authForgotPasswordRoute
   authLoginRoute: typeof authLoginRoute
   authRegisterRoute: typeof authRegisterRoute
+  authUsebackupcodeRoute: typeof authUsebackupcodeRoute
   authVerifyRoute: typeof authVerifyRoute
   authAuthGoogleCallbackRoute: typeof authAuthGoogleCallbackRoute
 }
@@ -566,6 +587,7 @@ const rootRouteChildren: RootRouteChildren = {
   authForgotPasswordRoute: authForgotPasswordRoute,
   authLoginRoute: authLoginRoute,
   authRegisterRoute: authRegisterRoute,
+  authUsebackupcodeRoute: authUsebackupcodeRoute,
   authVerifyRoute: authVerifyRoute,
   authAuthGoogleCallbackRoute: authAuthGoogleCallbackRoute,
 }
@@ -588,6 +610,7 @@ export const routeTree = rootRoute
         "/(auth)/forgot-password",
         "/(auth)/login",
         "/(auth)/register",
+        "/(auth)/use_backup_code",
         "/(auth)/verify",
         "/(auth)/auth/google/callback"
       ]
@@ -626,6 +649,9 @@ export const routeTree = rootRoute
     },
     "/(auth)/register": {
       "filePath": "(auth)/register.tsx"
+    },
+    "/(auth)/use_backup_code": {
+      "filePath": "(auth)/use_backup_code.tsx"
     },
     "/(auth)/verify": {
       "filePath": "(auth)/verify.tsx"

@@ -2,6 +2,7 @@ import { IncomingMessage, ServerResponse } from "http";
 import jwt from "jsonwebtoken";
 import crypto from "node:crypto";
 import { env } from "../config/env.js";
+import { pool } from "../config/db.config.js";
 
 type CodeWithExpiry = {
   code: string;
@@ -99,4 +100,55 @@ export function setServerCookie({
 
   // Append cookie
   res.setHeader("Set-Cookie", cookie);
+}
+
+export interface BackupCode {
+  raw: string; // shown to user
+  hash: string; // stored in DB
+}
+
+/**
+ * Generate 10 backup codes in format XXXX-XXXX
+ */
+export async function generateBackupCodes(count = 10): Promise<BackupCode[]> {
+  const codes: BackupCode[] = [];
+
+  for (let i = 0; i < count; i++) {
+    // e.g., "D8F2-A1B9"
+    const raw = crypto.randomBytes(4).toString("hex").toUpperCase().slice(0, 8);
+    const formatted = `${raw.slice(0, 4)}-${raw.slice(4, 8)}`;
+
+    // You can use bcrypt or SHA256. SHA256 is faster for backup codes.
+    const hash = crypto.createHash("sha256").update(formatted).digest("hex");
+
+    codes.push({ raw: formatted, hash });
+  }
+
+  return codes;
+}
+
+// export async function createAndStoreBackupCodes(userId: number) {
+//   const codes = await generateBackupCodes();
+
+//   const values = codes.map((code) => `(${userId}, '${code.hash}')`).join(", ");
+
+//   await pool.query(`
+//     INSERT INTO two_fa_backup_codes (user_id, code_hash)
+//     VALUES ${values}
+//   `);
+
+//   // Show these codes only once to the user
+//   return codes.map((c) => c.raw);
+// }
+
+export async function deleteBackupCodes(userId: string) {
+  try {
+    await pool.query("DELETE FROM two_fa_backup_codes WHERE user_id = $1", [
+      userId,
+    ]);
+    return true;
+  } catch (error) {
+    console.error("Error deleting backup codes:", error);
+    return false;
+  }
 }

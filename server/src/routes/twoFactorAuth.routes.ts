@@ -4,6 +4,7 @@ import {
   DisableTwoFactorAuthSendOTP,
   DisableTwoFactorAuthVerifyOTP,
   EnableTwofactorAuth,
+  ValidateBackupCode,
   ValidateTwoFactorAuth,
   VerifyTwoFactorAuth,
 } from "../controllers/2FA.controller.js";
@@ -18,14 +19,22 @@ export default async (req: IncomingMessage, res: ServerResponse) => {
   }
 
   if (req.method === "POST" && pathname === "/2fa/verify") {
-    console.log("thiss dude");
-
     VerifyTwoFactorAuth(req, res);
     return true;
   }
 
   if (req.method === "POST" && pathname === "/2fa/disable") {
     DisableTwoFactorAuth(req, res);
+    return true;
+  }
+
+  if (req.method === "POST" && pathname === "/2fa/validate") {
+    ValidateTwoFactorAuth(req, res);
+    return true;
+  }
+
+  if (req.method === "POST" && pathname === "/2fa/validate-backup") {
+    ValidateBackupCode(req, res);
     return true;
   }
 
@@ -36,11 +45,6 @@ export default async (req: IncomingMessage, res: ServerResponse) => {
 
   if (req.method === "POST" && pathname === "/2fa/disable-2fa-verify-otp") {
     DisableTwoFactorAuthVerifyOTP(req, res);
-    return true;
-  }
-
-  if (req.method === "POST" && pathname === "/2fa/validate") {
-    ValidateTwoFactorAuth(req, res);
     return true;
   }
 

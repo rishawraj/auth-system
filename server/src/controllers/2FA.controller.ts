@@ -1,5 +1,7 @@
 import { IncomingMessage, ServerResponse } from "node:http";
 import {
+  deleteBackupCodes,
+  generateBackupCodes,
   generateSixDigitCodeWithExpiry,
   readBody,
   send,
@@ -13,6 +15,7 @@ import { z } from "zod";
 import bcrypt from "bcrypt";
 import { sendDisable2FAOtpEmailWorker } from "../workers/sendEmail.Worker.js";
 import { User } from "../models/user.model.js";
+import crypto from "crypto";
 
 const SECRET = env.ACCESS_TOKEN_SECRET;
 
@@ -66,6 +69,8 @@ export async function EnableTwofactorAuth(
           [secretBase32, user.id]
         );
 
+        // generate backup codes
+
         // generate QRCode 2fa
         const totp = new TOTP({
           issuer: "auth-system",
@@ -111,6 +116,10 @@ const DisableTwoFactorAuthSchema = z.object({
 });
 
 const DisableTwoFactorAuthOTPVerifySchema = z.object({
+  code: z.string(),
+});
+
+const ValidateBackupCodeSchema = z.object({
   code: z.string(),
 });
 
@@ -168,8 +177,25 @@ export async function VerifyTwoFactorAuth(
       send(res, 500, { error: "unable to enable 2fa in the database" });
     }
 
+    //
+    const codes = await generateBackupCodes();
+    console.log(codes);
+
+    // save the backup codes
+    await Promise.all(
+      codes.map(async (code) => {
+        await pool.query(
+          "INSERT INTO two_fa_backup_codes (user_id, code_hash) VALUES ($1, $2)",
+          [user.id, code.hash]
+        );
+      })
+    );
+
+    const rawCodes = codes.map((c) => c.raw);
+
     send(res, 200, {
       message: "2fa enabled",
+      rawCodes,
     });
   } catch (error) {
     console.error("Profile error:", error);
@@ -236,6 +262,9 @@ export async function DisableTwoFactorAuth(
             "UPDATE users SET is_two_factor_enabled = $1, two_factor_secret = $2 WHERE id = $3",
             [false, null, user.id]
           );
+
+          // Delete backup codes
+          await deleteBackupCodes(user.id);
         } catch (error) {
           console.log(error);
           send(res, 500, { error: "unable to disable 2fa in the database" });
@@ -441,8 +470,6 @@ export async function DisableTwoFactorAuthVerifyOTP(
       return send(res, 400, { error: "Invalid code" });
     }
 
-    //
-
     try {
       const decoded = jwt.verify(token, SECRET);
 
@@ -470,12 +497,16 @@ export async function DisableTwoFactorAuthVerifyOTP(
           return send(res, 400, { error: "Code expired" });
         }
 
+        // Delete backup codes first
+        await deleteBackupCodes(user.id);
+
         await pool.query(
           `
           UPDATE users
           SET is_two_factor_enabled = false,
               disable_2fa_otp = NULL,
-              disable_2fa_otp_expiry_time = NULL
+              disable_2fa_otp_expiry_time = NULL,
+              two_factor_secret = NULL
           WHERE id = $1
           `,
           [user.id]
@@ -490,9 +521,80 @@ export async function DisableTwoFactorAuthVerifyOTP(
     send(res, 500, { error: "Internal server error" });
   }
 
-  //
-
   send(res, 200, {
     message: "2fa disabled",
   });
+}
+
+export async function ValidateBackupCode(
+  req: IncomingMessage,
+  res: ServerResponse
+) {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return send(res, 401, { error: "No token provided" });
+
+    const token = authHeader.split(" ")[1];
+    if (!token)
+      return send(res, 401, { error: "Invalid authorization format" });
+
+    const body = await readBody(req);
+    const result = ValidateBackupCodeSchema.safeParse(body);
+
+    if (!result.success) {
+      const errors = result.error.flatten().fieldErrors;
+      return send(res, 400, { errors });
+    }
+
+    const { code } = result.data;
+    if (!code) return send(res, 400, { error: "Invalid backup code" });
+
+    try {
+      const decoded = jwt.verify(token, SECRET);
+      if (
+        typeof decoded === "object" &&
+        decoded !== null &&
+        "email" in decoded
+      ) {
+        const userResult = await pool.query(
+          "SELECT * FROM users WHERE email = $1",
+          [decoded.email]
+        );
+
+        const user = userResult.rows[0];
+        if (!user) return send(res, 404, { error: "User not found" });
+
+        // Hash the provided backup code
+        const hash = crypto.createHash("sha256").update(code).digest("hex");
+
+        // Check if the backup code exists and hasn't been used
+        const backupCodeResult = await pool.query(
+          "SELECT * FROM two_fa_backup_codes WHERE user_id = $1 AND code_hash = $2 AND used = false",
+          [user.id, hash]
+        );
+
+        if (backupCodeResult.rows.length === 0) {
+          return send(res, 400, {
+            error: "Invalid or already used backup code",
+          });
+        }
+
+        // Mark the backup code as used
+        await pool.query(
+          "UPDATE two_fa_backup_codes SET used = true, used_at = NOW() WHERE id = $1",
+          [backupCodeResult.rows[0].id]
+        );
+
+        send(res, 200, { message: "Backup code validated successfully" });
+      } else {
+        send(res, 401, { error: "Invalid token" });
+      }
+    } catch (error) {
+      console.error("Error validating backup code:", error);
+      send(res, 401, { error: "Invalid token" });
+    }
+  } catch (error) {
+    console.error("Error in backup code validation:", error);
+    send(res, 500, { error: "Internal server error" });
+  }
 }

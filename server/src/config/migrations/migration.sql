@@ -51,3 +51,13 @@ CREATE TABLE IF NOT EXISTS public.refresh_tokens (
     issued_at TIMESTAMPTZ DEFAULT now(),
     CONSTRAINT refresh_tokens_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE
 );
+
+-- TWO FACTOR BACKUP CODES
+CREATE TABLE two_fa_backup_codes (
+  id SERIAL PRIMARY KEY,
+  user_id UUID REFERENCES "users"(id) ON DELETE CASCADE,
+  code_hash TEXT NOT NULL,
+  used BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  used_at TIMESTAMPTZ
+);
