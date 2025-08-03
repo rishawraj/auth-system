@@ -1,84 +1,112 @@
-## todo
+# TODO
 
-- [ ] implement frontend
+## Frontend
 
-  - look for inspiration copy something (dashboard?)
-  - admin
+- [ ] Implement UI
+  - [ ] Look for inspiration (e.g. dashboard)
+  - [ ] Admin dashboard
+  - [ ] Use React Query
 
-- [ ] notification for login / logouts
+## Features
 
-- [ ] rate limiting login register
+- [ ] Notifications for login / logout
+- [ ] Rate limiting for login and register
+- [ ] Account recovery
+- [ ] Runtime validation
+- [ ] Admin functionality
+- [ ] Profile picture
+  - [ ] Upload profile pic
+  - [ ] Allow Google profile pic to override Dicebear one
 
-- [ ] account recovery
+## Improvements
 
-- [ ] runtime validation?
+- [ ] Input Validation Enhancement
 
-- [ ] sonarqube
+  - [ ] Add client-side password strength validation
+  - [ ] Implement better OTP input handling with auto-focus
+  - [ ] Add visual feedback for password requirements
 
-- [x] logout remove access token in google oauth
-- [x] in /verify
-      set http cookies
-      and in client
-      handle it.
-- [x] then implement client side refreshtoken logic.
+- [ ] Accessibility Improvements
 
-- [x] use .env var for client and server url
-- [x] centralize jwt expiry time
-- [x] husky
-- [x] eslint
-- [x] req to server for admin status ?? => no.
-  - [x] but request to server for admin resources.
+  - [ ] Add ARIA labels and roles
+  - [ ] Implement keyboard navigation
+  - [ ] Add screen reader friendly error messages
 
----
+- [ ] Error Handling
+  - [ ] Add more specific error messages
+  - [ ] Implement retry mechanisms for failed API calls
+  - [ ] Add network status monitoring
 
-##
+## New Features
 
-- [x] refresh tokens
+- [ ] Recovery Options Management
 
-## implement all field in email login as they are in google login
+  - [ ] Add backup email configuration
+  - [ ] Add backup phone number setup
+  - [ ] Implement recovery verification flow
 
-- [x] profile pic
-  - [x] generate a svg store in db or
-  - [ ] use aws s3 (setup) | uploadthing.com ??
-    - no just use db to store the url.
-- [x] ip, browser, os, device, location , country
+- [ ] Backup Codes Enhancement
 
-## deploy
+  - [ ] Add PDF export option
+  - [ ] Implement QR code generation
+  - [ ] Add encrypted file download
 
-- [ ] client to gh-pages (domain)
-- [ ] vercel / render /
-- [ ] db (neon)
+- [ ] Activity Monitoring
 
-## 2fa vs mfa
+  - [ ] Recent login history
+  - [ ] Device tracking
+  - [ ] Location tracking
 
-    last_login_method VARCHAR(20),
-    is_two_factor_enabled BOOLEAN DEFAULT FALSE,
-    two_factor_secret VARCHAR(255),
+- [ ] Emergency Access System
 
-## tests
+  - [ ] Trusted contacts system
+  - [ ] Emergency access protocol
+  - [ ] Time-delayed account recovery
 
-- [ ] test all code
+- [ ] Multi-Device Management
 
-## db
+  - [ ] Device list view
+  - [ ] Device authorization
+  - [ ] Remote device logout
 
-- [x] uuid
+- [ ] Security Features
 
-## frontend
+  - [ ] Security score system
+  - [ ] Account security assessment
+  - [ ] Security recommendations
+  - [ ] Rate limiting UI with attempt counter
 
-- [ ] use react query
+- [ ] Notification Preferences
+  - [ ] Email alert settings
+  - [ ] Push notification setup
+  - [ ] Unusual activity alerts
 
-### aws services
+## Deployment
 
-- [ ] aws ses email
+- [ ] Deploy client to GitHub Pages (custom domain)
+- [ ] Deploy server to Vercel / Render
+- [ ] Setup database on Neon
 
-## profile pic
+## Testing
+
+- [ ] Test all code
+
+## Database
+
+- [ ] Use AWS S3 or UploadThing for storing profile picture URLs (optional)
+- [ ] Setup and integrate AWS SES for sending emails
+
+## Miscellaneous
+
+- [ ] SonarQube integration
+
+## Notes
+
+### Dicebear Avatar Example
 
 ```ts
 const avatarUrl = `https://api.dicebear.com/7.x/adventurer/png?seed=${uuidv4()}`;
 ```
-
-- [ ] google profile pic override the dicebear one?
-- [ ] upload profile pic
 
 ## structure
 

@@ -25,7 +25,7 @@ const BackupCodesModal = ({
   const [allCopied, setAllCopied] = useState(false);
   const [codesRevealed, setCodesRevealed] = useState(false);
 
-  const navigate = useNavigate({ from: "/2FA" });
+  const navigate = useNavigate();
 
   // Ensure backupCodes is always an array
   const validBackupCodes = Array.isArray(backupCodes) ? backupCodes : [];

@@ -126,29 +126,31 @@ export async function generateBackupCodes(count = 10): Promise<BackupCode[]> {
 
   return codes;
 }
-
-// export async function createAndStoreBackupCodes(userId: number) {
-//   const codes = await generateBackupCodes();
-
-//   const values = codes.map((code) => `(${userId}, '${code.hash}')`).join(", ");
-
-//   await pool.query(`
-//     INSERT INTO two_fa_backup_codes (user_id, code_hash)
-//     VALUES ${values}
-//   `);
-
-//   // Show these codes only once to the user
-//   return codes.map((c) => c.raw);
+// export async function deleteBackupCodes(userId: string) {
+//   try {
+//     await pool.query("DELETE FROM two_fa_backup_codes WHERE user_id = $1", [
+//       userId,
+//     ]);
+//     return true;
+//   } catch (error) {
+//     console.error("Error deleting backup codes:", error);
+//     return false;
+//   }
 // }
 
 export async function deleteBackupCodes(userId: string) {
+  console.log(`[DEBUG] Attempting to delete codes for user: ${userId}`);
   try {
     await pool.query("DELETE FROM two_fa_backup_codes WHERE user_id = $1", [
       userId,
     ]);
+    console.log(`[DEBUG] Successfully deleted codes for user: ${userId}`); // This log will likely not appear
     return true;
   } catch (error) {
-    console.error("Error deleting backup codes:", error);
+    console.error(
+      `[DEBUG] Error deleting backup codes for user: ${userId}`,
+      error
+    );
     return false;
   }
 }

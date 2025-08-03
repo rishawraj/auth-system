@@ -67,15 +67,26 @@ function TwoFactorPage() {
                   : "Add an extra layer of security to your account by enabling two-factor authentication."}
               </p>
             </div>
-            <div className="mt-5">
+            <div className="mt-5 flex">
               {is2FAEnabled ? (
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className={`inline-flex items-center rounded-md px-4 py-2 text-sm font-medium text-white shadow-sm focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none ${"bg-red-600 hover:bg-red-700"}`}
-                >
-                  <Link to="/2FADisable">Disable 2FA</Link>
-                </motion.button>
+                <div className="flex gap-3">
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className={`inline-flex items-center rounded-md px-4 py-2 text-sm font-medium text-white shadow-sm focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none ${"bg-red-600 hover:bg-red-700"}`}
+                  >
+                    <Link to="/2FADisable">Disable 2FA</Link>
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className={`inline-flex items-center rounded-md px-4 py-2 text-sm font-medium text-white shadow-sm focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none ${"bg-green-600 hover:bg-green-700"}`}
+                  >
+                    <Link to="/regenerate2FAcodes">
+                      Regenerate New Backup Codes
+                    </Link>
+                  </motion.button>
+                </div>
               ) : (
                 <motion.button
                   whileHover={{ scale: 1.02 }}

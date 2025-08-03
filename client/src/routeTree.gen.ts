@@ -16,6 +16,7 @@ import { Route as AboutImport } from './routes/about'
 import { Route as AuthImport } from './routes/_auth'
 import { Route as IndexImport } from './routes/index'
 import { Route as AuthResetPasswordImport } from './routes/_auth/reset-password'
+import { Route as AuthRegenerate2FAcodesImport } from './routes/_auth/regenerate2FAcodes'
 import { Route as AuthLogoutImport } from './routes/_auth/logout'
 import { Route as AuthIsAdminImport } from './routes/_auth/_isAdmin'
 import { Route as Auth2FAEnableImport } from './routes/_auth/2FAEnable'
@@ -64,6 +65,12 @@ const IndexRoute = IndexImport.update({
 const AuthResetPasswordRoute = AuthResetPasswordImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => AuthRoute,
+} as any)
+
+const AuthRegenerate2FAcodesRoute = AuthRegenerate2FAcodesImport.update({
+  id: '/regenerate2FAcodes',
+  path: '/regenerate2FAcodes',
   getParentRoute: () => AuthRoute,
 } as any)
 
@@ -292,6 +299,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLogoutImport
       parentRoute: typeof AuthImport
     }
+    '/_auth/regenerate2FAcodes': {
+      id: '/_auth/regenerate2FAcodes'
+      path: '/regenerate2FAcodes'
+      fullPath: '/regenerate2FAcodes'
+      preLoaderRoute: typeof AuthRegenerate2FAcodesImport
+      parentRoute: typeof AuthImport
+    }
     '/_auth/reset-password': {
       id: '/_auth/reset-password'
       path: '/reset-password'
@@ -384,6 +398,7 @@ interface AuthRouteChildren {
   Auth2FAEnableRoute: typeof Auth2FAEnableRoute
   AuthIsAdminRoute: typeof AuthIsAdminRouteWithChildren
   AuthLogoutRoute: typeof AuthLogoutRoute
+  AuthRegenerate2FAcodesRoute: typeof AuthRegenerate2FAcodesRoute
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
   AuthProfileEditRoute: typeof AuthProfileEditRoute
   AuthProfileSettingsRoute: typeof AuthProfileSettingsRoute
@@ -396,6 +411,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   Auth2FAEnableRoute: Auth2FAEnableRoute,
   AuthIsAdminRoute: AuthIsAdminRouteWithChildren,
   AuthLogoutRoute: AuthLogoutRoute,
+  AuthRegenerate2FAcodesRoute: AuthRegenerate2FAcodesRoute,
   AuthResetPasswordRoute: AuthResetPasswordRoute,
   AuthProfileEditRoute: AuthProfileEditRoute,
   AuthProfileSettingsRoute: AuthProfileSettingsRoute,
@@ -419,6 +435,7 @@ export interface FileRoutesByFullPath {
   '/2FADisable': typeof Auth2FADisableRoute
   '/2FAEnable': typeof Auth2FAEnableRoute
   '/logout': typeof AuthLogoutRoute
+  '/regenerate2FAcodes': typeof AuthRegenerate2FAcodesRoute
   '/reset-password': typeof AuthResetPasswordRoute
   '/profile/edit': typeof AuthProfileEditRoute
   '/profile/settings': typeof AuthProfileSettingsRoute
@@ -445,6 +462,7 @@ export interface FileRoutesByTo {
   '/2FADisable': typeof Auth2FADisableRoute
   '/2FAEnable': typeof Auth2FAEnableRoute
   '/logout': typeof AuthLogoutRoute
+  '/regenerate2FAcodes': typeof AuthRegenerate2FAcodesRoute
   '/reset-password': typeof AuthResetPasswordRoute
   '/profile/edit': typeof AuthProfileEditRoute
   '/profile/settings': typeof AuthProfileSettingsRoute
@@ -473,6 +491,7 @@ export interface FileRoutesById {
   '/_auth/2FAEnable': typeof Auth2FAEnableRoute
   '/_auth/_isAdmin': typeof AuthIsAdminRouteWithChildren
   '/_auth/logout': typeof AuthLogoutRoute
+  '/_auth/regenerate2FAcodes': typeof AuthRegenerate2FAcodesRoute
   '/_auth/reset-password': typeof AuthResetPasswordRoute
   '/_auth/profile/edit': typeof AuthProfileEditRoute
   '/_auth/profile/settings': typeof AuthProfileSettingsRoute
@@ -501,6 +520,7 @@ export interface FileRouteTypes {
     | '/2FADisable'
     | '/2FAEnable'
     | '/logout'
+    | '/regenerate2FAcodes'
     | '/reset-password'
     | '/profile/edit'
     | '/profile/settings'
@@ -526,6 +546,7 @@ export interface FileRouteTypes {
     | '/2FADisable'
     | '/2FAEnable'
     | '/logout'
+    | '/regenerate2FAcodes'
     | '/reset-password'
     | '/profile/edit'
     | '/profile/settings'
@@ -552,6 +573,7 @@ export interface FileRouteTypes {
     | '/_auth/2FAEnable'
     | '/_auth/_isAdmin'
     | '/_auth/logout'
+    | '/_auth/regenerate2FAcodes'
     | '/_auth/reset-password'
     | '/_auth/profile/edit'
     | '/_auth/profile/settings'
@@ -626,6 +648,7 @@ export const routeTree = rootRoute
         "/_auth/2FAEnable",
         "/_auth/_isAdmin",
         "/_auth/logout",
+        "/_auth/regenerate2FAcodes",
         "/_auth/reset-password",
         "/_auth/profile/edit",
         "/_auth/profile/settings",
@@ -680,6 +703,10 @@ export const routeTree = rootRoute
     },
     "/_auth/logout": {
       "filePath": "_auth/logout.tsx",
+      "parent": "/_auth"
+    },
+    "/_auth/regenerate2FAcodes": {
+      "filePath": "_auth/regenerate2FAcodes.tsx",
       "parent": "/_auth"
     },
     "/_auth/reset-password": {
