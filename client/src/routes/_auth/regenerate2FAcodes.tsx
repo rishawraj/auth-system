@@ -111,7 +111,7 @@ function EmailAuth2FARegenerate() {
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
                 onClick={() => setShowConfirmation(true)}
-                className="flex w-full justify-center rounded-md bg-yellow-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-yellow-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-600 sm:w-auto"
+                className="flex w-full justify-center rounded-md bg-yellow-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-yellow-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-600 sm:w-auto"
               >
                 Continue
               </motion.button>
@@ -200,7 +200,7 @@ function EmailAuth2FARegenerate() {
                 whileTap={{ scale: 0.99 }}
                 onClick={handleRegenerateConfirm}
                 disabled={loading}
-                className="flex w-full justify-center rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 disabled:opacity-50 sm:w-auto"
+                className="flex w-full justify-center rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 disabled:opacity-50 sm:w-auto"
               >
                 {loading ? (
                   <motion.div
@@ -241,16 +241,18 @@ function GoogleAuth2FARegenerate() {
   const [showBackupCodes, setShowBackupCodes] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState("");
+  const [totp, setTotp] = useState("");
   const navigate = useNavigate();
 
   const handleSendOtp = async () => {
     setError("");
     try {
-      await fetchWithAuth("/2fa/disable-2fa-send-otp", {
+      await fetchWithAuth("/2fa/send-otp-google-user", {
         method: "POST",
       });
       setOtpSent(true);
     } catch (err) {
+      console.log(err);
       setError("Failed to send OTP.");
     }
   };
@@ -265,7 +267,8 @@ function GoogleAuth2FARegenerate() {
         {
           method: "POST",
           body: JSON.stringify({
-            code: otp,
+            otp,
+            totp,
           }),
         },
       );
@@ -342,7 +345,7 @@ function GoogleAuth2FARegenerate() {
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
                 onClick={() => setShowConfirmation(true)}
-                className="flex w-full justify-center rounded-md bg-yellow-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-yellow-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-600 sm:w-auto"
+                className="flex w-full justify-center rounded-md bg-yellow-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-yellow-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-600 sm:w-auto"
               >
                 Continue
               </motion.button>
@@ -408,6 +411,25 @@ function GoogleAuth2FARegenerate() {
                     onChange={(e) => setOtp(e.target.value)}
                   />
                 </div>
+                <div>
+                  <label
+                    htmlFor="totp"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    TOTP Code
+                  </label>
+                  <input
+                    id="totp"
+                    name="totp"
+                    type="text"
+                    required
+                    maxLength={6}
+                    pattern="\d{6}"
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    value={totp}
+                    onChange={(e) => setTotp(e.target.value)}
+                  />
+                </div>
 
                 {error && (
                   <p className="text-sm text-red-600 dark:text-red-400">
@@ -428,8 +450,9 @@ function GoogleAuth2FARegenerate() {
                   <motion.button
                     whileHover={{ scale: 1.01 }}
                     whileTap={{ scale: 0.99 }}
+                    //! ================
                     onClick={handleRegenerateConfirm}
-                    disabled={loading || otp.length !== 6}
+                    disabled={loading || otp.length !== 6 || totp.length !== 6}
                     className="flex-1 rounded-md border border-transparent bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:outline-none disabled:opacity-50 dark:bg-red-500 dark:hover:bg-red-400"
                   >
                     {loading ? (

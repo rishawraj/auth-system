@@ -13,7 +13,10 @@ import { Secret, TOTP } from "otpauth";
 import qrcode from "qrcode";
 import { z } from "zod";
 import bcrypt from "bcrypt";
-import { sendDisable2FAOtpEmailWorker } from "../workers/sendEmail.Worker.js";
+import {
+  sendDisable2FAOtpEmailWorker,
+  sendRegenerate2FABackupCodesOTPEmailWorker,
+} from "../workers/sendEmail.Worker.js";
 import { User } from "../models/user.model.js";
 import crypto from "crypto";
 
@@ -604,7 +607,7 @@ export async function ValidateBackupCode(
   }
 }
 
-export async function RegenerateBackupCodesEmail(
+export async function RegenerateBackupCodesEmailUser(
   req: IncomingMessage,
   res: ServerResponse
 ) {
@@ -700,6 +703,199 @@ export async function RegenerateBackupCodesEmail(
 
         const rawCodes = backupCodes.map((code) => code.raw);
         return send(res, 200, { rawCodes });
+      } catch (error) {
+        await client.query("ROLLBACK");
+        console.error("Transaction error:", error);
+        throw error;
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      console.error("Token verification error:", error);
+      return send(res, 401, { error: "Invalid token" });
+    }
+  } catch (error) {
+    console.error("Server error:", error);
+    return send(res, 500, { error: "Internal server error" });
+  }
+}
+
+export async function RegenerateBackupCodesSendOTPGoogleUser(
+  req: IncomingMessage,
+  res: ServerResponse
+) {
+  console.log("[CONTROLLER] regenerate backup codes sms");
+
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return send(res, 401, { error: "No token provided" });
+
+    const token = authHeader.split(" ")[1];
+    if (!token)
+      return send(res, 401, { error: "Invalid authorization format" });
+
+    const decoded = jwt.verify(token, SECRET);
+    if (
+      typeof decoded !== "object" ||
+      decoded === null ||
+      !("email" in decoded)
+    ) {
+      return send(res, 401, { error: "Invalid token payload" });
+    }
+
+    const userResult = await pool.query(
+      "SELECT * FROM users WHERE email = $1",
+      [decoded.email]
+    );
+
+    const user = userResult.rows[0];
+    if (!user) return send(res, 404, { error: "User not found" });
+
+    const secret = user.two_factor_secret;
+    if (!secret) {
+      return send(res, 400, {
+        error: "Two-factor authentication is not enabled",
+      });
+    }
+
+    // send otp
+
+    const { code, expiresAt } = generateSixDigitCodeWithExpiry(10); // 10 minutes
+
+    await pool.query(
+      `
+          UPDATE users
+          SET regenerate_2fa_otp = $1,
+             regenerate_2fa_otp_expiry = $2
+          WHERE id = $3
+          `,
+      [code, expiresAt, user.id]
+    );
+
+    // send email
+    setImmediate(() =>
+      sendRegenerate2FABackupCodesOTPEmailWorker(user.email, code)
+    );
+    send(res, 200, { message: "OTP sent successfully" });
+  } catch (error) {
+    console.error("Server error:", error);
+    return send(res, 500, { error: "Internal server error" });
+  }
+}
+export async function RegenerateBackupCodesGoogleUser(
+  req: IncomingMessage,
+  res: ServerResponse
+) {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return send(res, 401, { error: "No token provided" });
+
+    const token = authHeader.split(" ")[1];
+    if (!token)
+      return send(res, 401, { error: "Invalid authorization format" });
+
+    const body = await readBody(req);
+    const result = z
+      .object({
+        otp: z.string(),
+        totp: z.string(),
+      })
+      .safeParse(body);
+
+    if (!result.success) {
+      const errors = result.error.flatten().fieldErrors;
+      return send(res, 400, { errors });
+    }
+
+    try {
+      const decoded = jwt.verify(token, SECRET);
+      if (
+        typeof decoded !== "object" ||
+        decoded === null ||
+        !("email" in decoded)
+      ) {
+        return send(res, 401, { error: "Invalid token payload" });
+      }
+
+      const userResult = await pool.query(
+        "SELECT * FROM users WHERE email = $1",
+        [decoded.email]
+      );
+
+      const user = userResult.rows[0];
+      if (!user) return send(res, 404, { error: "User not found" });
+
+      // Verify OTP
+      if (!user.regenerate_2fa_otp || !user.regenerate_2fa_otp_expiry) {
+        return send(res, 400, { error: "Please request a new OTP" });
+      }
+
+      if (user.regenerate_2fa_otp !== result.data.otp) {
+        return send(res, 400, { error: "Invalid OTP" });
+      }
+
+      if (new Date(user.regenerate_2fa_otp_expiry) < new Date()) {
+        return send(res, 400, { error: "OTP has expired" });
+      }
+
+      // Verify TOTP
+      const secret = user.two_factor_secret;
+      if (!secret) {
+        return send(res, 400, {
+          error: "Two-factor authentication is not enabled",
+        });
+      }
+
+      const totp = new TOTP({
+        issuer: "auth-system",
+        label: user.email,
+        secret: secret,
+        digits: 6,
+        period: 30,
+      });
+
+      const delta = totp.validate({ token: result.data.totp, window: 1 });
+      if (delta === null) {
+        return send(res, 401, { error: "Invalid TOTP code" });
+      }
+
+      // Begin transaction for atomic operations
+      const client = await pool.connect();
+      try {
+        await client.query("BEGIN");
+
+        // Clear the OTP
+        await client.query(
+          `UPDATE users 
+           SET regenerate_2fa_otp = NULL,
+               regenerate_2fa_otp_expiry = NULL
+           WHERE id = $1`,
+          [user.id]
+        );
+
+        // Delete existing backup codes
+        await client.query(
+          "DELETE FROM two_fa_backup_codes WHERE user_id = $1",
+          [user.id]
+        );
+
+        // Generate new backup codes
+        const backupCodes = await generateBackupCodes();
+
+        // Insert new backup codes
+        await Promise.all(
+          backupCodes.map(async (code) => {
+            await client.query(
+              "INSERT INTO two_fa_backup_codes (user_id, code_hash) VALUES ($1, $2)",
+              [user.id, code.hash]
+            );
+          })
+        );
+
+        await client.query("COMMIT");
+
+        const rawCodes = backupCodes.map((code) => code.raw);
+        return send(res, 200, { codes: rawCodes });
       } catch (error) {
         await client.query("ROLLBACK");
         console.error("Transaction error:", error);

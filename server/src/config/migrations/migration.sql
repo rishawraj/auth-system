@@ -34,7 +34,9 @@ CREATE TABLE IF NOT EXISTS public.users (
     last_location TEXT,
     last_country TEXT,
     last_city TEXT,
-    tmp_two_factor_secret TEXT
+    tmp_two_factor_secret TEXT,
+    regenerate_2fa_otp VARCHAR(6),
+    regenerate_2fa_otp_expiry TIMESTAMPTZ
 );
 
 -- Unique composite index for OAuth users

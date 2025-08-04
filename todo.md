@@ -9,9 +9,7 @@
 
 ## Features
 
-- [ ] Notifications for login / logout
 - [ ] Rate limiting for login and register
-- [ ] Account recovery
 - [ ] Runtime validation
 - [ ] Admin functionality
 - [ ] Profile picture
@@ -152,3 +150,15 @@ auth-system/
 └── README.md
 
 ## sse vs websockets
+
+Rate limit all recovery endpoints.
+
+Log all recovery attempts (IP, timestamp, status).
+
+Don't reveal whether an email/phone exists.
+
+Always hash and store tokens server-side.
+
+Use HTTPS, secure cookies, CSRF protection.
+
+Tokens should be single-use and expire.

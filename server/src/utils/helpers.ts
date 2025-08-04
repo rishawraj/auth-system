@@ -13,7 +13,7 @@ export function generateSixDigitCodeWithExpiry(
   minutesValid = 60
 ): CodeWithExpiry {
   const code = Math.floor(100000 + Math.random() * 900000).toString();
-  const expiresAt = new Date(Date.now() + minutesValid * 60 * 1000); // e.g. 5 minutes from now
+  const expiresAt = new Date(Date.now() + minutesValid * 60 * 1000); // e.g. 60 minutes from now
   return { code, expiresAt };
 }
 
