@@ -6,7 +6,6 @@ import { getToken } from "../../utils/authToken";
 
 export const Route = createFileRoute("/(auth)/login")({
   beforeLoad: async () => {
-    // const token = Cookies.get("token");
     const token = getToken();
     console.log("Token from cookies:", token);
     if (token) {

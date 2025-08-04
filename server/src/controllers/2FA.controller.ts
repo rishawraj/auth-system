@@ -438,8 +438,6 @@ export async function DisableTwoFactorAuthSendOTP(
     send(res, 500, { error: "Internal server error" });
   }
 
-  // setImmediate(() => sendVerificationEmailWorker(email, verificationCode));
-
   send(res, 200, {
     message: "email sent",
   });

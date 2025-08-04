@@ -22,7 +22,6 @@ export function LogoutButton() {
       });
 
       // Remove the token from cookies on the client side
-      // Cookies.remove("token");
       removeToken();
 
       // Redirect to the login page

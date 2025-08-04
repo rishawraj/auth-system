@@ -32,7 +32,7 @@ export const Route = createFileRoute("/_auth/profile/")({
 function RouteComponent() {
   const profile = useLoaderData({ from: "/_auth/profile/" });
   const navigate = useNavigate();
-  const img_url = (profile && profile.user.profile_pic) || "";
+  const img_url = profile?.user?.profile_pic ?? "";
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">

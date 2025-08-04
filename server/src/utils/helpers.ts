@@ -29,7 +29,9 @@ export function readBody<T>(req: IncomingMessage): Promise<T> {
       try {
         resolve(JSON.parse(body));
       } catch (error) {
-        reject(error);
+        reject(
+          error instanceof Error ? error : new Error("Failed to parse JSON")
+        );
       }
     });
     req.on("error", (error) => reject(error));
@@ -126,17 +128,6 @@ export async function generateBackupCodes(count = 10): Promise<BackupCode[]> {
 
   return codes;
 }
-// export async function deleteBackupCodes(userId: string) {
-//   try {
-//     await pool.query("DELETE FROM two_fa_backup_codes WHERE user_id = $1", [
-//       userId,
-//     ]);
-//     return true;
-//   } catch (error) {
-//     console.error("Error deleting backup codes:", error);
-//     return false;
-//   }
-// }
 
 export async function deleteBackupCodes(userId: string) {
   console.log(`[DEBUG] Attempting to delete codes for user: ${userId}`);

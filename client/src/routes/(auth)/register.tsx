@@ -6,7 +6,6 @@ import { getToken } from "../../utils/authToken";
 
 export const Route = createFileRoute("/(auth)/register")({
   beforeLoad: async () => {
-    // const token = Cookies.get("token");
     const token = getToken();
     if (token) {
       throw redirect({ to: "/profile" });

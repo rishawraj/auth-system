@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_auth/_isAdmin/admin/")({
 
     if (!user.is_super_user) {
       console.log("User is not super user");
-      // alert("You are not authorized to access this page.");
+
       toast.error("You are not authorized to access this page.");
       throw redirect({ to: "/login" });
     }

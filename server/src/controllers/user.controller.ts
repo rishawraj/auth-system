@@ -24,7 +24,6 @@ import crypto, { randomUUID } from "crypto";
 import { Secret, TOTP } from "otpauth";
 import qrcode from "qrcode";
 
-// import { RegisterResponse } from "../../../shared/src/types/auth.js";
 import { env } from "../config/env.js";
 
 const SECRET = env.ACCESS_TOKEN_SECRET;
@@ -95,9 +94,6 @@ export async function handleRegister(
     const os = ua.getOS().name || null;
     const device = ua.getDevice().model || "unknown";
 
-    // const last_location = null;
-    // const last_country = null;
-    // const last_city = null;
     const last_login = new Date();
 
     const hashedEmail = crypto
@@ -253,14 +249,6 @@ export async function handleLogin(
       console.error("Error inserting refresh token:", error);
       return send(res, 500, { error: "Internal server error" });
     }
-
-    // "last_login_method": null,
-
-    // res.setHeader("Set-Cookie", [
-    //   `refreshToken=${refreshToken}; HttpOnly; Path=/; Max-Age=${refreshTokenExpiry}; SameSite=None; Secure=false; Domain=${
-    //     env.DOMAIN
-    //   }`,
-    // ]);
 
     setServerCookie({
       name: "refreshToken",
@@ -554,11 +542,6 @@ export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
       return send(res, 400, { error: "Missing token or verification code" });
     }
 
-    // interface DecodedToken {
-    //   email: string;
-    //   [key: string]: any; // for any additional JWT claims
-    // }
-
     let decodedToken;
 
     try {
@@ -651,11 +634,6 @@ export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
 
     // "last_login_method": null,
 
-    // res.setHeader("Set-Cookie", [
-    //   `refreshToken=${refreshToken}; HttpOnly; Path=/; Max-Age=${refreshTokenExpiry}; SameSite=None; Secure=false; Domain=${
-    //     env.DOMAIN
-    //   }`,
-    // ]);
     setServerCookie({
       name: "refreshToken",
       value: refreshToken,
@@ -802,9 +780,8 @@ export async function handleTokenRefresh(
   console.log("refresh token in here.");
   try {
     const cookies = parseCookies(req);
-    // console.log(cookies);
+
     const refreshToken = cookies["refreshToken"];
-    // console.log(refreshToken);
 
     if (!refreshToken) {
       return send(res, 400, { error: "Refresh token is required" });
@@ -865,7 +842,6 @@ export async function handleTokenRefresh(
 
       const newAccessToken = generateAccessToken(accessTokenPayload);
 
-      // send(res, 200, { accessToken: newAccessToken });
       send(res, 200, {
         message: "Token refreshed successfully",
         accessToken: newAccessToken,

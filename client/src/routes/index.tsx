@@ -87,7 +87,7 @@ function Index() {
       >
         {features.map((feature, index) => (
           <motion.div
-            key={index}
+            key={feature.title + index}
             variants={itemVariants}
             whileHover={{ scale: 1.05 }}
             className="rounded-lg bg-white p-6 shadow-lg transition-shadow hover:shadow-xl dark:bg-gray-800"

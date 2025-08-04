@@ -9,7 +9,6 @@ import { pool } from "../config/db.config.js";
 import { User } from "../models/user.model.js";
 import { OAuth2Client, TokenPayload } from "google-auth-library";
 import "dotenv/config";
-// import { config } from "../types/config.js";
 import { UAParser } from "ua-parser-js";
 import { env } from "../config/env.js";
 
@@ -108,7 +107,7 @@ export async function handleGoogleCallback(
     if (existingUserResult.rows.length > 0) {
       // user exists, update oauth provider and id
       user = existingUserResult.rows[0];
-      const updateUserResult = await pool.query<User>(
+      await pool.query<User>(
         `UPDATE users SET 
           oauth_provider = $1, 
           oauth_id = $2, 
@@ -129,8 +128,6 @@ export async function handleGoogleCallback(
           user.id,
         ]
       );
-
-      user = updateUserResult.rows[0];
     }
 
     // check if google user exists in the database

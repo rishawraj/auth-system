@@ -2,8 +2,6 @@ import { useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import React, { useState } from "react";
 
-// import { RegisterResponse } from "../../../shared/src/types/auth";
-
 interface FormData {
   name: string;
   email: string;
@@ -81,7 +79,7 @@ export default function UserRegistrationForm() {
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
         throw new Error(
-          errorData?.message || `Server error: ${response.status}`,
+          errorData?.message ?? `Server error: ${response.status}`,
         );
       }
 

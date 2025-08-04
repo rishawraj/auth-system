@@ -71,7 +71,7 @@ function VerifyComponent() {
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
         throw new Error(
-          errorData?.message || `Server error: ${response.status}`,
+          errorData?.message ?? `Server error: ${response.status}`,
         );
       }
 
@@ -105,7 +105,7 @@ function VerifyComponent() {
         <div className="mb-6 flex gap-2">
           {verificationCode.map((digit, index) => (
             <input
-              key={index}
+              key={`verify-input-${index + Math.random()}`}
               type="text"
               maxLength={1}
               value={digit}

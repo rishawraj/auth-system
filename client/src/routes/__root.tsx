@@ -2,7 +2,6 @@ import { createRootRoute, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { ToastContainer } from "react-toastify";
 
-// import { Navbar } from "../components/Navbar";
 import { useTheme } from "../hooks/useTheme";
 import { ThemeProvider } from "../Providers/ThemeProvider";
 

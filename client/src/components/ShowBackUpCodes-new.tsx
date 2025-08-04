@@ -203,7 +203,7 @@ Instructions:
                   <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
                     {validBackupCodes.map((code, index) => (
                       <motion.button
-                        key={index}
+                        key={code}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.05 }}

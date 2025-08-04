@@ -55,10 +55,7 @@ export const Route = createFileRoute("/_auth/2FA")({
 });
 
 function RouteComponent() {
-  // const loaderData = Route.useLoaderData();
   const loaderData = useLoaderData({ from: "/_auth/2FA" });
-
-  // console.log(loaderData);
 
   const result = useMemo<LoaderResult>(
     () =>

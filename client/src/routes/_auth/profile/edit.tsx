@@ -34,8 +34,8 @@ function RouteComponent() {
   const [error, setError] = useState("");
 
   const [formData, setFormData] = useState({
-    name: profile?.user.name || "",
-    email: profile?.user.email || "",
+    name: profile?.user.name ?? "",
+    email: profile?.user.email ?? "",
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",

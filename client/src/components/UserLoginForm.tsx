@@ -22,13 +22,6 @@ interface LoginResponse {
   isTwoFactorEnabled: boolean;
 }
 
-// send(res, 200, {
-//   message: "Login successful",
-//   accessToken,
-//   type: "email",
-//   isTwoFactorEnabled: user.is_two_factor_enabled,
-// });
-
 const formSchema = z.object({
   email: z
     .string()
@@ -101,7 +94,7 @@ export default function UserLoginForm() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
-        setErrorMessage(errorData?.error || "Login failed");
+        setErrorMessage(errorData?.error ?? "Login failed");
         return;
       }
 

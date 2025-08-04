@@ -25,7 +25,7 @@ export default async (req: IncomingMessage, res: ServerResponse) => {
   }
 
   // get user by id
-  const getUserByIdMatch = pathname.match(/^\/admin\/users\/([^/]+)$/);
+  const getUserByIdMatch = RegExp(/^\/admin\/users\/([^/]+)$/).exec(pathname);
   if (req.method === "GET" && getUserByIdMatch) {
     const userId = getUserByIdMatch[1];
     console.log("userId", userId);

@@ -11,7 +11,6 @@ import { getToken } from "../../../../../utils/authToken";
 
 export const Route = createFileRoute("/_auth/_isAdmin/admin/users/")({
   beforeLoad: async () => {
-    // const token = Cookies.get("token");
     const token = getToken();
     console.log({ token });
     if (!token) {
@@ -20,7 +19,6 @@ export const Route = createFileRoute("/_auth/_isAdmin/admin/users/")({
   },
 
   loader: async () => {
-    // const token = Cookies.get("token");
     const token = getToken();
     const API_URL = import.meta.env.VITE_API_BASE_URL;
     console.log({ token });
@@ -54,10 +52,6 @@ function RouteComponent() {
   const navigate = useNavigate();
 
   const handleUserClick = (userId: string) => {
-    console.log("User ID:", userId);
-    // Navigate to the user details page
-    // You can use the router's navigate function or any other method to navigate
-    // For example, if you're using react-router-dom:
     navigate({ to: `/admin/users/${userId}` });
   };
 

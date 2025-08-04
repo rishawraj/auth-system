@@ -1,5 +1,4 @@
 export const getToken = (): string | null => {
-  // const token = Cookies.get("token");
   const token = localStorage.getItem("token"); // Retrieve token from localStorage
   if (!token) {
     return null;
@@ -8,12 +7,10 @@ export const getToken = (): string | null => {
 };
 
 export const setToken = (token: string): void => {
-  // Cookies.set("token", token, { expires: 7 }); // Set cookie to expire in 7 days
   localStorage.setItem("token", token); // Store token in localStorage
 };
 
 export const removeToken = (): void => {
-  // Cookies.remove("token");
   localStorage.removeItem("token"); // Remove token from localStorage
 };
 

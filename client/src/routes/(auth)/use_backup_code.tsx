@@ -6,6 +6,7 @@ import {
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { z } from "zod";
+
 import { setToken, setType } from "../../utils/authToken";
 
 const authLoginSchema = z.object({
@@ -49,7 +50,7 @@ function RouteComponent() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Invalid backup code");
+        throw new Error(errorData.error ?? "Invalid backup code");
       }
 
       const data = await response.json();

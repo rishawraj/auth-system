@@ -3,6 +3,7 @@
 ## Frontend
 
 - [ ] Implement UI
+  - [ ] use css variable for colors everywhere
   - [ ] Look for inspiration (e.g. dashboard)
   - [ ] Admin dashboard
   - [ ] Use React Query
@@ -14,7 +15,6 @@
 - [ ] Admin functionality
 - [ ] Profile picture
   - [ ] Upload profile pic
-  - [ ] Allow Google profile pic to override Dicebear one
 
 ## Improvements
 

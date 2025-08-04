@@ -90,8 +90,6 @@ export async function checkSuperUser(req: AuthenticatedRequest) {
       is_super_user: user.is_super_user,
     };
 
-    // console.log(req.user);
-
     return {
       isAuthenticated: true,
       statusCode: 200,

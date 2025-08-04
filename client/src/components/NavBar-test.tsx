@@ -10,7 +10,7 @@ import { ThemeToggle } from "./ThemeToggle";
 const NavBar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+  const [isAuthenticated] = useState(() => {
     const token = getToken();
     return token !== null && token.length > 0;
   });

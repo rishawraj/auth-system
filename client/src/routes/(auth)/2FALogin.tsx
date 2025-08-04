@@ -52,7 +52,7 @@ function RouteComponent() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to verify 2FA code");
+        throw new Error(errorData.error ?? "Failed to verify 2FA code");
       }
 
       const data = await response.json();
