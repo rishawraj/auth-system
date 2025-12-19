@@ -12,6 +12,7 @@
 
 import { Route as rootRoute } from "./routes/__root";
 import { Route as TestImport } from "./routes/test";
+import { Route as ServicesImport } from "./routes/services";
 import { Route as AboutImport } from "./routes/about";
 import { Route as AuthImport } from "./routes/_auth";
 import { Route as IndexImport } from "./routes/index";
@@ -42,6 +43,12 @@ import { Route as AuthIsAdminAdminUsersPostIdImport } from "./routes/_auth/_isAd
 const TestRoute = TestImport.update({
   id: "/test",
   path: "/test",
+  getParentRoute: () => rootRoute,
+} as any);
+
+const ServicesRoute = ServicesImport.update({
+  id: "/services",
+  path: "/services",
   getParentRoute: () => rootRoute,
 } as any);
 
@@ -213,6 +220,13 @@ declare module "@tanstack/react-router" {
       path: "/about";
       fullPath: "/about";
       preLoaderRoute: typeof AboutImport;
+      parentRoute: typeof rootRoute;
+    };
+    "/services": {
+      id: "/services";
+      path: "/services";
+      fullPath: "/services";
+      preLoaderRoute: typeof ServicesImport;
       parentRoute: typeof rootRoute;
     };
     "/test": {
@@ -424,6 +438,7 @@ export interface FileRoutesByFullPath {
   "/": typeof IndexRoute;
   "": typeof AuthIsAdminRouteWithChildren;
   "/about": typeof AboutRoute;
+  "/services": typeof ServicesRoute;
   "/test": typeof TestRoute;
   "/2FALogin": typeof auth2FALoginRoute;
   "/forgot-password": typeof authForgotPasswordRoute;
@@ -451,6 +466,7 @@ export interface FileRoutesByTo {
   "/": typeof IndexRoute;
   "": typeof AuthIsAdminRouteWithChildren;
   "/about": typeof AboutRoute;
+  "/services": typeof ServicesRoute;
   "/test": typeof TestRoute;
   "/2FALogin": typeof auth2FALoginRoute;
   "/forgot-password": typeof authForgotPasswordRoute;
@@ -479,6 +495,7 @@ export interface FileRoutesById {
   "/": typeof IndexRoute;
   "/_auth": typeof AuthRouteWithChildren;
   "/about": typeof AboutRoute;
+  "/services": typeof ServicesRoute;
   "/test": typeof TestRoute;
   "/(auth)/2FALogin": typeof auth2FALoginRoute;
   "/(auth)/forgot-password": typeof authForgotPasswordRoute;
@@ -509,6 +526,7 @@ export interface FileRouteTypes {
     | "/"
     | ""
     | "/about"
+    | "/services"
     | "/test"
     | "/2FALogin"
     | "/forgot-password"
@@ -535,6 +553,7 @@ export interface FileRouteTypes {
     | "/"
     | ""
     | "/about"
+    | "/services"
     | "/test"
     | "/2FALogin"
     | "/forgot-password"
@@ -561,6 +580,7 @@ export interface FileRouteTypes {
     | "/"
     | "/_auth"
     | "/about"
+    | "/services"
     | "/test"
     | "/(auth)/2FALogin"
     | "/(auth)/forgot-password"
@@ -590,6 +610,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute;
   AuthRoute: typeof AuthRouteWithChildren;
   AboutRoute: typeof AboutRoute;
+  ServicesRoute: typeof ServicesRoute;
   TestRoute: typeof TestRoute;
   auth2FALoginRoute: typeof auth2FALoginRoute;
   authForgotPasswordRoute: typeof authForgotPasswordRoute;
@@ -604,6 +625,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRouteWithChildren,
   AboutRoute: AboutRoute,
+  ServicesRoute: ServicesRoute,
   TestRoute: TestRoute,
   auth2FALoginRoute: auth2FALoginRoute,
   authForgotPasswordRoute: authForgotPasswordRoute,
@@ -627,6 +649,7 @@ export const routeTree = rootRoute
         "/",
         "/_auth",
         "/about",
+        "/services",
         "/test",
         "/(auth)/2FALogin",
         "/(auth)/forgot-password",
@@ -657,6 +680,9 @@ export const routeTree = rootRoute
     },
     "/about": {
       "filePath": "about.tsx"
+    },
+    "/services": {
+      "filePath": "services.tsx"
     },
     "/test": {
       "filePath": "test.tsx"

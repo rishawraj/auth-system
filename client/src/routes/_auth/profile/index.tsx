@@ -101,6 +101,16 @@ function RouteComponent() {
                 >
                   Settings
                 </motion.button>
+                {profile?.user.is_super_user && (
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => navigate({ to: "/admin" })}
+                    className="inline-flex items-center rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-purple-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-600"
+                  >
+                    Admin Dashboard
+                  </motion.button>
+                )}
                 <div className="w-full sm:w-auto">
                   <LogoutButton />
                 </div>

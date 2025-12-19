@@ -1,18 +1,26 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { toast } from "react-toastify";
 
-import { getUserFromToken } from "../../utils/authToken";
+import { fetchWithAuth } from "../../utils/api";
+
+interface MeResponse {
+  id: string;
+  email: string;
+  name: string;
+  is_super_user: boolean;
+}
 
 export const Route = createFileRoute("/_auth/_isAdmin")({
   beforeLoad: async () => {
-    const user = getUserFromToken();
-    console.log("User from token:", user);
-    if (!user) {
-      throw redirect({ to: "/login" });
-    }
-    if (!user.is_super_user) {
-      console.log("User is not super user");
-      toast.error("You are not authorized to access this page.");
+    try {
+      const user = await fetchWithAuth<MeResponse>("/me");
+
+      if (!user.is_super_user) {
+        toast.error("You are not authorized to access this page.");
+        throw redirect({ to: "/profile" });
+      }
+    } catch (error) {
+      console.error("Error checking admin status:", error);
       throw redirect({ to: "/login" });
     }
   },

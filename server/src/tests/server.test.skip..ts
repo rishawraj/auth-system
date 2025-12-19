@@ -7,18 +7,42 @@ import { pool } from "../config/db.config.js";
 const server = http.createServer(handler);
 
 // Disable console output before tests vitest
-console.log = vi.fn();
-console.error = vi.fn();
+// console.log = vi.fn();
+// console.error = vi.fn();
+
+const testUser = {
+  name: "Test User",
+  email: `test-${Date.now()}@example.com`,
+  password: "password123",
+};
 
 beforeAll(async () => {
+  vi.spyOn(console, "log").mockImplementation(() => {});
+  vi.spyOn(console, "error").mockImplementation(() => {});
+  await new Promise<void>((resolve) => server.listen(0, () => resolve()));
   // Clean up the database before running tests
   await pool.query("DELETE FROM users WHERE email = $1", [testUser.email]);
 });
 
 afterAll(async () => {
-  // Clean up the database after running tests
-  await pool.query("DELETE FROM users WHERE email = $1", [testUser.email]);
-  server.close();
+  try {
+    await pool.query("DELETE FROM users WHERE email = $1", [testUser.email]);
+  } catch (error) {
+    console.error("Cleanup failed:", error);
+  } finally {
+    await pool.end();
+  }
+
+  await new Promise<void>((resolve, reject) => {
+    server.close((err) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve();
+      }
+    });
+  });
+  vi.restoreAllMocks();
 });
 
 describe("Server basic routes", () => {
@@ -34,12 +58,6 @@ describe("Server basic routes", () => {
     expect(res.text).toContain("Server is healthy");
   });
 });
-
-const testUser = {
-  name: "Test User",
-  email: "test@example.com",
-  password: "password123",
-};
 
 describe("Authentication System Tests", () => {
   describe("User Registration", () => {
