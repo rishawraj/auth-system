@@ -145,3 +145,66 @@ export async function deleteBackupCodes(userId: string) {
     return false;
   }
 }
+
+//
+export function normalizeIP(ip: string | undefined): string | undefined {
+  return ip?.replace("::ffff:", "");
+}
+
+export async function logLoginAttempt({
+  userId,
+  email,
+  success,
+  ip,
+  userAgent,
+  oauthProvider = null,
+}: {
+  userId: string | null;
+  email: string;
+  success: boolean;
+  ip: string | null;
+  userAgent?: string;
+  oauthProvider?: string | null;
+}) {
+  try {
+    let attemptCount = 1;
+
+    if (userId) {
+      await pool.query("BEGIN");
+
+      const result = await pool.query(
+        `
+        SELECT attempt_count
+        FROM login_activity
+        WHERE user_id = $1
+        ORDER BY created_at DESC
+        LIMIT 1
+        `,
+        [userId]
+      );
+
+      const prev = result.rows[0]?.attempt_count ?? 0;
+      attemptCount = success ? 1 : prev + 1;
+    }
+
+    await pool.query(
+      `
+      INSERT INTO login_activity
+      (user_id, email, success, ip_address, user_agent, oauth_provider, attempt_count)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `,
+      [userId, email, success, ip, userAgent, oauthProvider, attemptCount]
+    );
+
+    if (userId) {
+      await pool.query("COMMIT");
+    }
+  } catch (error) {
+    if (userId) {
+      await pool.query("ROLLBACK");
+    }
+
+    // never block auth because logging failed.
+    console.error("Failed to log login attemp:", error);
+  }
+}

@@ -3,6 +3,8 @@ import {
   deleteBackupCodes,
   generateBackupCodes,
   generateSixDigitCodeWithExpiry,
+  logLoginAttempt,
+  normalizeIP,
   readBody,
   send,
 } from "../utils/helpers.js";
@@ -111,6 +113,7 @@ const VerifyTwoFactorAuthSchema = z.object({
 
 const TwoFactorAuthSchema = z.object({
   code: z.string(),
+  type: z.string(),
 });
 
 const DisableTwoFactorAuthSchema = z.object({
@@ -298,6 +301,15 @@ export async function ValidateTwoFactorAuth(
   res: ServerResponse
 ) {
   try {
+    const rawIp =
+      (Array.isArray(req.headers["x-forwarded-for"])
+        ? req.headers["x-forwarded-for"][0]
+        : req.headers["x-forwarded-for"]?.split(",")[0]) ||
+      req.socket.remoteAddress;
+
+    const ip_address = normalizeIP(rawIp);
+    const userAgent = req.headers["user-agent"];
+
     const authHeader = req.headers.authorization;
 
     if (!authHeader) return send(res, 401, { error: "No token provided" });
@@ -316,7 +328,7 @@ export async function ValidateTwoFactorAuth(
       return send(res, 400, { errors });
     }
 
-    const { code } = result.data;
+    const { code, type } = result.data;
 
     if (!code) {
       return send(res, 400, { error: "Invalid 2fa code" });
@@ -354,8 +366,31 @@ export async function ValidateTwoFactorAuth(
         const delta = totp.validate({ token: code, window: 1 });
         console.log({ delta });
         if (delta === null) {
+          console.log(
+            "%cTwo factor auth failed",
+            "color: red; font-size: 20px; font-weight: bold;"
+          );
+
+          await logLoginAttempt({
+            userId: user.id,
+            email: user.email,
+            success: false,
+            ip: ip_address,
+            userAgent,
+            oauthProvider: type === "google" ? "google" : null,
+          });
+
           return send(res, 400, { error: "Invalid 2fa code" });
         }
+
+        await logLoginAttempt({
+          userId: user.id,
+          email: user.email,
+          success: true,
+          ip: ip_address,
+          userAgent,
+          oauthProvider: type === "google" ? "google" : null,
+        });
 
         send(res, 200, {
           message: "2fa validated",

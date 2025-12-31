@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate, redirect } from "@tanstack/react-router";
 import { toast } from "react-toastify";
 
 import { getUserFromToken } from "../../../../utils/authToken";
+import NavBar from "../../../../components/NavBar-test";
 
 export const Route = createFileRoute("/_auth/_isAdmin/admin/")({
   beforeLoad: async () => {
@@ -29,15 +30,20 @@ function RouteComponent() {
 
   return (
     <div>
-      <h1>Admin</h1>
-      <p>This is the admin page.</p>
+      <NavBar />
 
-      <button
-        className="m-2 cursor-pointer rounded-md bg-green-400 p-2"
-        onClick={() => navigate({ to: "/admin/users" })}
-      >
-        manage users
-      </button>
+      <div className="bg-accent container mx-auto px-4 py-24">
+        <h1>Admin</h1>
+        <p>This is the admin page.</p>
+
+        <button
+          className="m-2 cursor-pointer rounded-md bg-green-400 p-2"
+          onClick={() => navigate({ to: "/admin/users" })}
+        >
+          manage users
+        </button>
+        <div>hello</div>
+      </div>
     </div>
   );
 }

@@ -47,6 +47,7 @@ function RouteComponent() {
         },
         body: JSON.stringify({
           code,
+          type,
         }),
       });
 

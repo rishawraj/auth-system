@@ -4,6 +4,8 @@ import {
   generateRefreshToken,
   generateSixDigitCodeWithExpiry,
   hashToken,
+  logLoginAttempt,
+  normalizeIP,
   parseCookies,
   readBody,
   send,
@@ -170,6 +172,15 @@ export async function handleLogin(
   res: ServerResponse
 ): Promise<void> {
   try {
+    const rawIp =
+      (Array.isArray(req.headers["x-forwarded-for"])
+        ? req.headers["x-forwarded-for"][0]
+        : req.headers["x-forwarded-for"]?.split(",")[0]) ||
+      req.socket.remoteAddress;
+
+    const ip_address = normalizeIP(rawIp);
+    const userAgent = req.headers["user-agent"];
+
     const body = await readBody(req);
     const result = loginSchema.safeParse(body);
 
@@ -194,12 +205,26 @@ export async function handleLogin(
     console.log({ user });
 
     if (!user) {
+      await logLoginAttempt({
+        userId: null,
+        email,
+        success: false,
+        ip: ip_address,
+        userAgent,
+      });
       console.log("user not found");
       return send(res, 401, { error: "Invalid credentials" });
     }
 
     // Check if this is an OAuth user with no password
     if (user.oauth_provider && !user.password) {
+      await logLoginAttempt({
+        userId: user.id,
+        email,
+        success: false,
+        ip: ip_address,
+        userAgent,
+      });
       console.log("OAuth user detected");
       return send(res, 400, {
         error:
@@ -209,7 +234,17 @@ export async function handleLogin(
 
     const match = await bcrypt.compare(password, user.password);
 
-    if (!match) return send(res, 401, { error: "Invalid credentials" });
+    if (!match) {
+      await logLoginAttempt({
+        userId: user.id,
+        email,
+        success: false,
+        ip: ip_address,
+        userAgent,
+      });
+
+      return send(res, 401, { error: "Invalid credentials" });
+    }
 
     // ! ======
 
@@ -258,6 +293,17 @@ export async function handleLogin(
       path: "/",
       isProduction: process.env.NODE_ENV === "production",
     });
+
+    // ! log login activity
+    if (!user.is_two_factor_enabled) {
+      logLoginAttempt({
+        userId: user.id,
+        email,
+        success: true,
+        ip: ip_address,
+        userAgent,
+      });
+    }
 
     send(res, 200, {
       message: "Login successful",

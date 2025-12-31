@@ -220,6 +220,15 @@ export async function handleGoogleCallback(
 
     const token = generateAccessToken(jwtpayload);
 
+    // ! log login activity
+
+    // const ip_address = normalizeIP(ip);
+
+    // await pool.query(
+    //   "INSERT INTO login_activity (user_id, email, success, ip_address, user_agent, oauth_provider ) VALUES ($1, $2, $3, $4, $5, $6)",
+    //   [user.id, email, true, ip_address, req.headers["user-agent"], "google"]
+    // );
+
     setServerCookie({
       name: "refreshToken",
       value: tokens.refresh_token,
