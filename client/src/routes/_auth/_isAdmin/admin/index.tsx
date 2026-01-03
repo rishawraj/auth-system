@@ -1,8 +1,11 @@
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate, redirect } from "@tanstack/react-router";
 import { toast } from "react-toastify";
 
-import { getUserFromToken } from "../../../../utils/authToken";
 import NavBar from "../../../../components/NavBar-test";
+import { recentActivityQuery, statsQuery } from "../../../../queries/dashboard";
+import { queryClient } from "../../../../queryClient";
+import { getUserFromToken } from "../../../../utils/authToken";
 
 export const Route = createFileRoute("/_auth/_isAdmin/admin/")({
   beforeLoad: async () => {
@@ -21,13 +24,31 @@ export const Route = createFileRoute("/_auth/_isAdmin/admin/")({
     }
   },
 
+  // temporary
+  loader: async () => {
+    await Promise.all([
+      queryClient.ensureQueryData(recentActivityQuery),
+      queryClient.ensureQueryData(statsQuery),
+    ]);
+  },
+
+  // ! make this work!
+  // loader: async ({ context }) => {
+  //   await Promise.all([
+  //     context.queryClient.ensureQueryData(recentActivityQuery),
+  //     context.queryClient.ensureQueryData(statsQuery),
+  //   ]);
+  // },
+
   component: RouteComponent,
   errorComponent: () => <div>Something went wrong</div>,
 });
 
 function RouteComponent() {
   const navigate = useNavigate();
-
+  // const { response } = useLoaderData({ from: "/_auth/_isAdmin/admin/" });
+  const stats = useQuery(statsQuery);
+  const recentActivity = useQuery(recentActivityQuery);
   return (
     <div>
       <NavBar />
@@ -43,6 +64,8 @@ function RouteComponent() {
           manage users
         </button>
         <div>hello</div>
+        <pre>{`${JSON.stringify(stats.data, null, 2)}`}</pre>
+        <pre>{`${JSON.stringify(recentActivity.data, null, 2)}`}</pre>
       </div>
     </div>
   );

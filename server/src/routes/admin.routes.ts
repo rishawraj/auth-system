@@ -1,6 +1,11 @@
 import { IncomingMessage, ServerResponse } from "http";
 import { send } from "../utils/helpers.js";
-import { getAllUsers, getUserById } from "../controllers/admin.controller.js";
+import {
+  getAdminOverviewStats,
+  getAllUsers,
+  getRecentActivity,
+  getUserById,
+} from "../controllers/admin.controller.js";
 import { checkSuperUser } from "../middleware/checkSuperUser.js";
 
 export default async (req: IncomingMessage, res: ServerResponse) => {
@@ -63,6 +68,48 @@ export default async (req: IncomingMessage, res: ServerResponse) => {
 
     return true; // Add this line to indicate the route was handled
   }
+
+  if (req.method === "GET" && pathname === "/admin/stats/overview") {
+    try {
+      const stats = await getAdminOverviewStats();
+
+      send(res, 200, {
+        status: "OK",
+        message: "Admin overview stats fetched successfully",
+        data: stats,
+      });
+    } catch (error) {
+      console.error("Error fetching admin stats:", error);
+
+      send(res, 500, {
+        status: "Internal Server Error",
+        message: "Failed to fetch admin stats",
+      });
+    }
+
+    return true;
+  }
+
+  if (req.method === "GET" && pathname === "/admin/recent-activity") {
+    try {
+      const result = await getRecentActivity();
+
+      send(res, 200, {
+        status: "OK",
+        message: "Recent Activity fetched successfully",
+        data: result,
+      });
+    } catch (error) {
+      console.error("Error fetching recent acitvity", error);
+
+      send(res, 500, {
+        status: "Internal Server Error",
+        message: "Failed to fetch recent activity",
+      });
+    }
+  }
+
+  // if (req.method === "GET" && pathname === "/admin/admin-audit-logs") {}
 
   return false; // Add this line to indicate no routes matched
 };
