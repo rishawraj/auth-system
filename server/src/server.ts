@@ -20,7 +20,10 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
     if (FRONTEND_URL) {
       res.setHeader("Access-Control-Allow-Origin", `${FRONTEND_URL}`);
     }
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.setHeader(
+      "Access-Control-Allow-Methods",
+      "GET, POST, PATCH, DELETE, OPTIONS"
+    );
     res.setHeader(
       "Access-Control-Allow-Headers",
       "Content-Type, Accept, Authorization, Cache-Control"

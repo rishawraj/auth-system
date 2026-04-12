@@ -1,9 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, useNavigate, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { toast } from "react-toastify";
 
+import AdminDashboardUsers from "../../../../components/AdminDashboardUsers";
 import NavBar from "../../../../components/NavBar-test";
-import { recentActivityQuery, statsQuery } from "../../../../queries/dashboard";
+import { RecentActivity } from "../../../../components/RecentActivity";
+import { StatCard } from "../../../../components/StatCard";
+import {
+  recentActivityQuery,
+  statsQuery,
+  adminDashboardUsersQuery,
+} from "../../../../queries/dashboard";
 import { queryClient } from "../../../../queryClient";
 import { getUserFromToken } from "../../../../utils/authToken";
 
@@ -45,28 +52,46 @@ export const Route = createFileRoute("/_auth/_isAdmin/admin/")({
 });
 
 function RouteComponent() {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   // const { response } = useLoaderData({ from: "/_auth/_isAdmin/admin/" });
   const stats = useQuery(statsQuery);
   const recentActivity = useQuery(recentActivityQuery);
+  const adminDashboardUsers = useQuery(adminDashboardUsersQuery);
+  // console.log("rope", recentActivity.data.data);
   return (
-    <div>
+    <>
       <NavBar />
+      <div className="space-y-6 p-6 pt-24">
+        <h1 className="text-2xl font-bold">Admin Dashboard</h1>
 
-      <div className="bg-accent container mx-auto px-4 py-24">
-        <h1>Admin</h1>
-        <p>This is the admin page.</p>
+        {/* Stats */}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <StatCard
+            label="Total Users"
+            value={stats.data.data.totalUsers}
+            color="blue"
+          />
+          <StatCard
+            label="Successful Logins"
+            value={stats.data.data.successfulLogins}
+            color="green"
+          />
+          <StatCard
+            label="Failed Logins"
+            value={stats.data.data.failedLogins}
+            color="red"
+          />
+        </div>
 
-        <button
-          className="m-2 cursor-pointer rounded-md bg-green-400 p-2"
-          onClick={() => navigate({ to: "/admin/users" })}
-        >
-          manage users
-        </button>
-        <div>hello</div>
-        <pre>{`${JSON.stringify(stats.data, null, 2)}`}</pre>
-        <pre>{`${JSON.stringify(recentActivity.data, null, 2)}`}</pre>
+        {/* users */}
+
+        <AdminDashboardUsers
+          users={adminDashboardUsers?.data?.data?.rows || []}
+        />
+
+        {/* Activity */}
+        <RecentActivity data={recentActivity.data.data} />
       </div>
-    </div>
+    </>
   );
 }

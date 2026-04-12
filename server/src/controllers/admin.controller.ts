@@ -3,7 +3,9 @@ import { pool } from "../config/db.config.js";
 import { User } from "../models/user.model.js";
 
 export async function getAllUsers() {
-  const users = await pool.query("SELECT * FROM users;");
+  const users = await pool.query(
+    "SELECT * FROM users WHERE is_deleted = false;"
+  );
   return users;
 }
 
@@ -63,11 +65,33 @@ export async function updateUser(
   );
   return user;
 }
-
-export async function deleteUser(id: number) {
-  const user = await pool.query("DELETE FROM users WHERE id = $1;", [id]);
-  return user;
+export async function updateUserStatus(id: string, { is_active }) {
+  const query = `
+  UPDATE users
+  SET is_active = $1
+  WHERE id = $2
+  RETURNING id, name, email, is_active;
+  `;
+  const result = await pool.query(query, [is_active, id]);
+  return result.rows[0];
 }
+
+// export async function deleteUser(id: string) {
+//   const user = await pool.query("DELETE FROM users WHERE id = $1;", [id]);
+//   return user;
+// }
+
+// Soft delete
+export const softDeleteUser = async (id: string) => {
+  const query = `
+    UPDATE users 
+    SET is_deleted = true, is_active = false 
+    WHERE id = $1 
+    RETURNING id;
+  `;
+  const result = await pool.query(query, [id]);
+  return result.rows[0];
+};
 
 export async function getAdminOverviewStats() {
   const query = `
