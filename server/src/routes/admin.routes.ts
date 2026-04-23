@@ -3,6 +3,7 @@ import { readBody, send } from "../utils/helpers.js";
 import {
   getAdminOverviewStats,
   getAllUsers,
+  getPaginatedUsers,
   getRecentActivity,
   getUserById,
   softDeleteUser,
@@ -22,6 +23,7 @@ export default async (req: IncomingMessage, res: ServerResponse) => {
 
   // For all other admin routes, check authentication
   const authResult = await checkSuperUser(req);
+
   if (!authResult.isAuthenticated) {
     console.log(`Authentication failed: ${authResult.message}`);
     send(res, authResult.statusCode, {
@@ -121,6 +123,34 @@ export default async (req: IncomingMessage, res: ServerResponse) => {
     });
 
     return true; // Add this line to indicate the route was handled
+  }
+
+  if (req.method === "GET" && pathname === "/admin/paginated-users") {
+    try {
+      const page = parseInt(parsedUrl.searchParams.get("page") || "1");
+      const limit = parseInt(parsedUrl.searchParams.get("limit") || "10");
+
+      const result = await getPaginatedUsers(page, limit);
+
+      send(res, 200, {
+        status: "OK",
+        message: "Users fetched successfully",
+        data: {
+          users: result.users,
+          pagination: {
+            currentPage: page,
+            totalPages: result.totalPages,
+            totalCount: result.totalCount,
+            hasNextPage: page < result.totalPages,
+            hasPrevPage: page > 1,
+          },
+        },
+      });
+    } catch (error) {
+      console.error("Pagination error:", error);
+      send(res, 500, { status: "Error", message: "Failed to fetch users" });
+    }
+    return true;
   }
 
   if (req.method === "GET" && pathname === "/admin/stats/overview") {

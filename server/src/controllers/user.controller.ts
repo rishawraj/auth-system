@@ -216,6 +216,11 @@ export async function handleLogin(
       return send(res, 401, { error: "Invalid credentials" });
     }
 
+    if (user.is_deleted) {
+      console.log("Attempted login to deleted account");
+      return send(res, 401, { error: "Invalid credentials" });
+    }
+
     // Check if this is an OAuth user with no password
     if (user.oauth_provider && !user.password) {
       await logLoginAttempt({

@@ -1,9 +1,9 @@
-import { deleteUser, toggleUserStatus } from "../queries/adminDashboardUsers";
-
-import { Search, UserCog } from "lucide-react";
-
-import type { User } from "../types/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
+import { ExternalLink, Search, UserCog } from "lucide-react";
+
+import { deleteUser, toggleUserStatus } from "../queries/adminDashboardUsers";
+import type { User } from "../types/types";
 
 // Status Styles Mapping
 const STATUS_STYLES = {
@@ -13,6 +13,7 @@ const STATUS_STYLES = {
 };
 
 const AdminDashboardUsers = ({ users }: { users: User[] }) => {
+  console.log("users from admindashboard:", { users });
   const queryClient = useQueryClient();
 
   const userStatusMutation = useMutation({
@@ -48,6 +49,13 @@ const AdminDashboardUsers = ({ users }: { users: User[] }) => {
             <UserCog />
           </span>
           User Directory
+          {/*  */}
+          <Link
+            to="/admin/users"
+            className="brightness-75 hover:brightness-100"
+          >
+            <ExternalLink />
+          </Link>
         </h3>
 
         <div className="relative flex w-full max-w-sm items-center">

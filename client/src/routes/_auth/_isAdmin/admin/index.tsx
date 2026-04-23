@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
+import { useState } from "react";
 import { toast } from "react-toastify";
 
 import AdminDashboardUsers from "../../../../components/AdminDashboardUsers";
@@ -9,7 +10,7 @@ import { StatCard } from "../../../../components/StatCard";
 import {
   recentActivityQuery,
   statsQuery,
-  adminDashboardUsersQuery,
+  adminDashboardPaginatedUsersQuery,
 } from "../../../../queries/dashboard";
 import { queryClient } from "../../../../queryClient";
 import { getUserFromToken } from "../../../../utils/authToken";
@@ -54,9 +55,11 @@ export const Route = createFileRoute("/_auth/_isAdmin/admin/")({
 function RouteComponent() {
   // const navigate = useNavigate();
   // const { response } = useLoaderData({ from: "/_auth/_isAdmin/admin/" });
+
+  const [page, setPage] = useState(1);
   const stats = useQuery(statsQuery);
   const recentActivity = useQuery(recentActivityQuery);
-  const adminDashboardUsers = useQuery(adminDashboardUsersQuery);
+  const adminDashboardUsers = useQuery(adminDashboardPaginatedUsersQuery(page));
   // console.log("rope", recentActivity.data.data);
   return (
     <>
@@ -85,9 +88,32 @@ function RouteComponent() {
 
         {/* users */}
 
-        <AdminDashboardUsers
-          users={adminDashboardUsers?.data?.data?.rows || []}
-        />
+        <div>
+          <AdminDashboardUsers
+            users={adminDashboardUsers?.data?.data?.users || []}
+          />
+
+          <div className="flex gap-4">
+            <button
+              disabled={page === 1}
+              onClick={() => setPage((prev) => prev - 1)}
+            >
+              Previous
+            </button>
+
+            <span className="text-white">Page {page}</span>
+
+            <button
+              disabled={
+                page >=
+                (adminDashboardUsers?.data?.data?.pagination?.totalPages || 1)
+              }
+              onClick={() => setPage((prev) => prev + 1)}
+            >
+              Next
+            </button>
+          </div>
+        </div>
 
         {/* Activity */}
         <RecentActivity data={recentActivity.data.data} />

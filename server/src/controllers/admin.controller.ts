@@ -4,7 +4,7 @@ import { User } from "../models/user.model.js";
 
 export async function getAllUsers() {
   const users = await pool.query(
-    "SELECT * FROM users WHERE is_deleted = false;"
+    "SELECT * FROM users WHERE is_deleted = false ORDER BY registration_date DESC;"
   );
   return users;
 }
@@ -37,6 +37,27 @@ export async function getUserById(id: string): Promise<User | null> {
     );
   }
 }
+
+export const getPaginatedUsers = async (page = 1, limit = 10) => {
+  const offset = (page = (page - 1) * limit);
+
+  const countQuery = "SELECT COUNT(*) FROM users WHERE is_deleted = false";
+  const usersQuery = `
+    SELECT * FROM users 
+    WHERE is_deleted = false 
+    ORDER BY registration_date DESC 
+    LIMIT $1 OFFSET $2
+  `;
+
+  const totalCount = await pool.query(countQuery);
+  const users = await pool.query(usersQuery, [limit, offset]);
+
+  return {
+    users: users.rows,
+    totalCount: parseInt(totalCount.rows[0].count),
+    totalPages: Math.ceil(totalCount.rows[0].count / limit),
+  };
+};
 
 export async function createUser(
   name: string,

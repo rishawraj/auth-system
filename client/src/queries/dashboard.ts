@@ -35,19 +35,24 @@ export const recentActivityQuery = queryOptions({
   },
 });
 
-export const adminDashboardUsersQuery = queryOptions({
-  queryKey: ["admin-dashboard-users"],
-  queryFn: () => {
-    const API_URL = import.meta.env.VITE_API_BASE_URL;
-    const token = getToken();
-    const response = fetch(`${API_URL}/admin/users`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    }).then((res) => res.json());
-    console.log(" from admindahboard uesrs");
-    return response;
-  },
-});
+export const adminDashboardPaginatedUsersQuery = (page: number) =>
+  queryOptions({
+    queryKey: ["admin-dashboard-users", page],
+    queryFn: () => {
+      const API_URL = import.meta.env.VITE_API_BASE_URL;
+      const token = getToken();
+      const response = fetch(
+        `${API_URL}/admin/paginated-users?page=${page}&limit=10`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      ).then((res) => res.json());
+      console.log(" from admindahboard uesrs");
+      return response;
+    },
+    placeholderData: (previousData) => previousData,
+  });
