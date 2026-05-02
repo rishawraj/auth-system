@@ -38,19 +38,47 @@ export async function getUserById(id: string): Promise<User | null> {
   }
 }
 
-export const getPaginatedUsers = async (page = 1, limit = 10) => {
-  const offset = (page = (page - 1) * limit);
+export const getPaginatedUsers = async (page = 1, limit = 10, search = "") => {
+  const offset = (page - 1) * limit;
+  const searchParam = `%${search}%`;
 
-  const countQuery = "SELECT COUNT(*) FROM users WHERE is_deleted = false";
-  const usersQuery = `
-    SELECT * FROM users 
-    WHERE is_deleted = false 
-    ORDER BY registration_date DESC 
-    LIMIT $1 OFFSET $2
-  `;
+  // const countQuery = search
+  //   ? "SELECT COUNT(*) FROM users WHERE is_deleted = false AND (name ILIKE $1 OR email ILIKE $1"
+  //   : "SELECT COUNT(*) FROM users WHERE is_deleted = false";
 
-  const totalCount = await pool.query(countQuery);
-  const users = await pool.query(usersQuery, [limit, offset]);
+  // const usersQuery = search
+  //   ? `
+  //   SELECT * FROM users
+  //   WHERE is_deleted = false
+  //   AND (name ILIKE $3 OR email ILIKE $3)
+  //   ORDER BY registration_date DESC
+  //   LIMIT $1 OFFSET $2`
+  //   : `
+  //   SELECT * FROM users
+  //   WHERE is_deleted = false
+  //   ORDER BY registration_date DESC
+  //   LIMIT $1 OFFSET $2
+  // `;
+
+  // const totalCount = await pool.query(countQuery, search ? [searchParam] : []);
+  // const users = await pool.query(
+  //   usersQuery,
+  //   search ? [limit, offset, searchParam] : [limit, offset]
+  // );
+
+  const countQuery = search
+    ? "SELECT COUNT(*) FROM users WHERE is_deleted = false AND (name ILIKE $1 OR email ILIKE $1)"
+    : "SELECT COUNT(*) FROM users WHERE is_deleted = false";
+
+  const usersQuery = search
+    ? `SELECT * FROM users WHERE is_deleted = false AND (name ILIKE $3 OR email ILIKE $3) ORDER BY registration_date DESC LIMIT $1 OFFSET $2`
+    : `SELECT * FROM users WHERE is_deleted = false ORDER BY registration_date DESC LIMIT $1 OFFSET $2`;
+
+  const totalCount = await pool.query(countQuery, search ? [searchParam] : []);
+  const users = await pool.query(
+    usersQuery,
+    search ? [limit, offset, searchParam] : [limit, offset]
+  );
 
   return {
     users: users.rows,

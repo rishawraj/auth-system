@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
 import AdminDashboardUsers from "../../../../components/AdminDashboardUsers";
@@ -53,14 +53,23 @@ export const Route = createFileRoute("/_auth/_isAdmin/admin/")({
 });
 
 function RouteComponent() {
-  // const navigate = useNavigate();
-  // const { response } = useLoaderData({ from: "/_auth/_isAdmin/admin/" });
-
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const stats = useQuery(statsQuery);
   const recentActivity = useQuery(recentActivityQuery);
-  const adminDashboardUsers = useQuery(adminDashboardPaginatedUsersQuery(page));
-  // console.log("rope", recentActivity.data.data);
+  const adminDashboardUsers = useQuery(
+    adminDashboardPaginatedUsersQuery(page, debouncedSearch),
+  );
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   return (
     <>
       <NavBar />
@@ -88,12 +97,15 @@ function RouteComponent() {
 
         {/* users */}
 
-        <div>
+        <div className="flex-col justify-center">
           <AdminDashboardUsers
             users={adminDashboardUsers?.data?.data?.users || []}
+            currentPage={page}
+            // callback function for search (input change)
+            onSearchChange={setSearch}
           />
 
-          <div className="flex gap-4">
+          <div className="flex justify-center gap-4 bg-amber-600">
             <button
               disabled={page === 1}
               onClick={() => setPage((prev) => prev - 1)}

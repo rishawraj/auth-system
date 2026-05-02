@@ -1,3 +1,5 @@
+// for /admin/index.tsx
+
 import { queryOptions } from "@tanstack/react-query";
 
 import { getToken } from "../utils/authToken";
@@ -35,14 +37,17 @@ export const recentActivityQuery = queryOptions({
   },
 });
 
-export const adminDashboardPaginatedUsersQuery = (page: number) =>
+export const adminDashboardPaginatedUsersQuery = (
+  page: number,
+  search: string,
+) =>
   queryOptions({
-    queryKey: ["admin-dashboard-users", page],
+    queryKey: ["admin-dashboard-users", page, search],
     queryFn: () => {
       const API_URL = import.meta.env.VITE_API_BASE_URL;
       const token = getToken();
       const response = fetch(
-        `${API_URL}/admin/paginated-users?page=${page}&limit=10`,
+        `${API_URL}/admin/paginated-users?page=${page}&limit=10&search=${encodeURIComponent(search)}`,
         {
           method: "GET",
           headers: {
@@ -51,7 +56,6 @@ export const adminDashboardPaginatedUsersQuery = (page: number) =>
           },
         },
       ).then((res) => res.json());
-      console.log(" from admindahboard uesrs");
       return response;
     },
     placeholderData: (previousData) => previousData,

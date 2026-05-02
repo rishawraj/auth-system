@@ -1,9 +1,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { ExternalLink, Search, UserCog } from "lucide-react";
+import { useState } from "react";
 
 import { deleteUser, toggleUserStatus } from "../queries/adminDashboardUsers";
 import type { User } from "../types/types";
+
+import { HighlightMatch } from "./HighlightMatch";
 
 // Status Styles Mapping
 const STATUS_STYLES = {
@@ -12,10 +15,18 @@ const STATUS_STYLES = {
   admin: "bg-blue-500/10 text-blue-400 border-blue-500/20",
 };
 
-const AdminDashboardUsers = ({ users }: { users: User[] }) => {
-  console.log("users from admindashboard:", { users });
-  const queryClient = useQueryClient();
+const AdminDashboardUsers = ({
+  users,
+  currentPage,
+  onSearchChange,
+}: {
+  users: User[];
+  currentPage: number;
+  onSearchChange: (val: string) => void;
+}) => {
+  const [hightlightedWord, setHighlightedWord] = useState("");
 
+  const queryClient = useQueryClient();
   const userStatusMutation = useMutation({
     mutationFn: toggleUserStatus,
     onSuccess: () => {
@@ -69,6 +80,10 @@ const AdminDashboardUsers = ({ users }: { users: User[] }) => {
             className="w-full rounded-lg border border-white/10 bg-white/5 py-2 pr-4 pl-10 text-sm text-white transition-all focus:border-blue-500/40 focus:ring-2 focus:ring-blue-500/40 focus:outline-none"
             placeholder="Search users..."
             type="text"
+            onChange={(e) => {
+              setHighlightedWord(e.target.value);
+              onSearchChange(e.target.value);
+            }}
           />
         </div>
       </div>
@@ -84,70 +99,105 @@ const AdminDashboardUsers = ({ users }: { users: User[] }) => {
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
-            {users.map((user) => (
-              <tr key={user.id} className="transition-colors hover:bg-white/5">
-                {/* User Info Column */}
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold`}
-                    >
-                      <img
-                        src={`${user.profile_pic}`}
-                        alt={user.name.slice(0, 2)}
-                      />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-white">
-                        {user.email}
-                      </p>
-                      <p className="text-xs text-slate-500">ID: {user.id}</p>
-                    </div>
-                  </div>
-                </td>
-
-                {/* Status Column */}
-                <td className="px-6 py-4">
-                  <span
-                    className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold tracking-tight uppercase ${STATUS_STYLES[user.is_active ? "active" : "inactive"]}`}
-                  >
-                    {user.is_active ? "active" : "inactive"}
-                  </span>
-                </td>
-
-                {/* Actions Column */}
-                <td className="px-6 py-4 text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    <button
-                      onClick={() => {
-                        userStatusMutation.mutate({
-                          id: user.id,
-                          is_active: !user.is_active,
-                        });
-                      }}
-                      disabled={
-                        user.is_super_user || userStatusMutation.isPending
-                      }
-                      className={`rounded px-3 py-1.5 text-xs font-semibold transition-all ${user.is_super_user ? "cursor-not-allowed text-slate-400 opacity-30" : "text-slate-400 hover:bg-white/10 hover:text-white"}`}
-                    >
-                      Block
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (confirm("Are you sure?"))
-                          userDeleteMutation.mutate({ id: user.id });
-                      }}
-                      disabled={
-                        user.is_super_user || userDeleteMutation.isPending
-                      }
-                      className={`rounded px-3 py-1.5 text-xs font-semibold transition-all ${user.is_super_user ? "cursor-not-allowed text-slate-400 opacity-30" : "text-red-400/80 hover:bg-red-400/10 hover:text-red-400"}`}
-                    >
-                      Delete
-                    </button>
+            {users.length === 0 ? (
+              <tr>
+                <td colSpan={3} className="px-6 py-16 text-center">
+                  <div className="flex flex-col items-center gap-2">
+                    <Search className="h-8 w-8 text-white/20" />
+                    <p className="text-sm font-medium text-white/40">
+                      No users found
+                    </p>
+                    <p className="text-xs text-white/20">
+                      Try searching with a different name or email
+                    </p>
                   </div>
                 </td>
               </tr>
-            ))}
+            ) : (
+              users.map((user, index) => {
+                const userNumber = (currentPage - 1) * 10 + (index + 1);
+                return (
+                  <tr
+                    key={user.id}
+                    className="transition-colors hover:bg-white/5"
+                  >
+                    {/* User Info Column */}
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="font-mono text-xs text-slate-500">
+                          {userNumber.toString().padStart(2, "0")}
+                        </div>
+                        <div
+                          className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold`}
+                        >
+                          <img
+                            src={`${user.profile_pic}`}
+                            alt={user.name.slice(0, 2)}
+                          />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-white">
+                            <HighlightMatch
+                              text={user.name}
+                              search={hightlightedWord}
+                            />
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            {
+                              <HighlightMatch
+                                text={user.email}
+                                search={hightlightedWord}
+                              />
+                            }
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Status Column */}
+                    <td className="px-6 py-4">
+                      <span
+                        className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold tracking-tight uppercase ${STATUS_STYLES[user.is_active ? "active" : "inactive"]}`}
+                      >
+                        {user.is_active ? "active" : "inactive"}
+                      </span>
+                    </td>
+
+                    {/* Actions Column */}
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => {
+                            userStatusMutation.mutate({
+                              id: user.id,
+                              is_active: !user.is_active,
+                            });
+                          }}
+                          disabled={
+                            user.is_super_user || userStatusMutation.isPending
+                          }
+                          className={`rounded px-3 py-1.5 text-xs font-semibold transition-all ${user.is_super_user ? "cursor-not-allowed text-slate-400 opacity-30" : "text-slate-400 hover:bg-white/10 hover:text-white"}`}
+                        >
+                          {user.is_active ? "block" : "unblock"}
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm("Are you sure?"))
+                              userDeleteMutation.mutate({ id: user.id });
+                          }}
+                          disabled={
+                            user.is_super_user || userDeleteMutation.isPending
+                          }
+                          className={`rounded px-3 py-1.5 text-xs font-semibold transition-all ${user.is_super_user ? "cursor-not-allowed text-slate-400 opacity-30" : "text-red-400/80 hover:bg-red-400/10 hover:text-red-400"}`}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>

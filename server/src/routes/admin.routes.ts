@@ -129,8 +129,9 @@ export default async (req: IncomingMessage, res: ServerResponse) => {
     try {
       const page = parseInt(parsedUrl.searchParams.get("page") || "1");
       const limit = parseInt(parsedUrl.searchParams.get("limit") || "10");
+      const search = parsedUrl.searchParams.get("search") || "";
 
-      const result = await getPaginatedUsers(page, limit);
+      const result = await getPaginatedUsers(page, limit, search);
 
       send(res, 200, {
         status: "OK",
