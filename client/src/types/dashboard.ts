@@ -10,3 +10,11 @@ export type ActivityItem = {
   email: string;
   time: string;
 };
+
+export type AdminLogItem = {
+  admin_name: string;
+  target_user_name: string;
+  id: string;
+  target_user_id: string;
+  action: string;
+};

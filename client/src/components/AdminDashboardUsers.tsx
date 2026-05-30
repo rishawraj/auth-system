@@ -4,6 +4,7 @@ import { ExternalLink, Search, UserCog } from "lucide-react";
 import { useState } from "react";
 
 import { deleteUser, toggleUserStatus } from "../queries/adminDashboardUsers";
+import { adminLogsQuery } from "../queries/dashboard";
 import type { User } from "../types/types";
 
 import { HighlightMatch } from "./HighlightMatch";
@@ -29,8 +30,14 @@ const AdminDashboardUsers = ({
   const queryClient = useQueryClient();
   const userStatusMutation = useMutation({
     mutationFn: toggleUserStatus,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-dashboard-users"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["admin-dashboard-users"],
+      });
+
+      await queryClient.invalidateQueries({
+        queryKey: adminLogsQuery.queryKey,
+      });
     },
     onError: (error) => {
       console.error("Mutation failed: ", error);

@@ -13,7 +13,7 @@ export const HighlightMatch = ({
   return (
     <span>
       {parts.map((part, i) =>
-        regex.test(part) ? (
+        i % 2 === 1 ? ( // odd indexes are matches
           <mark key={i} className="rounded bg-yellow-200 px-0.5 text-black">
             {part}
           </mark>

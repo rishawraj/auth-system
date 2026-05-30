@@ -1,9 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
 import AdminDashboardUsers from "../../../../components/AdminDashboardUsers";
+import AdminLogs from "../../../../components/AdminLogs";
 import NavBar from "../../../../components/NavBar-test";
 import { RecentActivity } from "../../../../components/RecentActivity";
 import { StatCard } from "../../../../components/StatCard";
@@ -11,8 +12,8 @@ import {
   recentActivityQuery,
   statsQuery,
   adminDashboardPaginatedUsersQuery,
+  adminLogsQuery,
 } from "../../../../queries/dashboard";
-import { queryClient } from "../../../../queryClient";
 import { getUserFromToken } from "../../../../utils/authToken";
 
 export const Route = createFileRoute("/_auth/_isAdmin/admin/")({
@@ -32,21 +33,13 @@ export const Route = createFileRoute("/_auth/_isAdmin/admin/")({
     }
   },
 
-  // temporary
-  loader: async () => {
+  loader: async ({ context }) => {
     await Promise.all([
-      queryClient.ensureQueryData(recentActivityQuery),
-      queryClient.ensureQueryData(statsQuery),
+      context.queryClient.ensureQueryData(recentActivityQuery),
+      context.queryClient.ensureQueryData(statsQuery),
+      context.queryClient.ensureInfiniteQueryData(adminLogsQuery),
     ]);
   },
-
-  // ! make this work!
-  // loader: async ({ context }) => {
-  //   await Promise.all([
-  //     context.queryClient.ensureQueryData(recentActivityQuery),
-  //     context.queryClient.ensureQueryData(statsQuery),
-  //   ]);
-  // },
 
   component: RouteComponent,
   errorComponent: () => <div>Something went wrong</div>,
@@ -58,6 +51,14 @@ function RouteComponent() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const stats = useQuery(statsQuery);
   const recentActivity = useQuery(recentActivityQuery);
+  // const adminLogs = useQuery(adminLogsQuery);
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useInfiniteQuery(adminLogsQuery);
+
+  const allAdminLogs = data?.pages.flatMap((page) => page.data.logs) || [];
+
+  console.log({ data, allAdminLogs, hasNextPage });
+
   const adminDashboardUsers = useQuery(
     adminDashboardPaginatedUsersQuery(page, debouncedSearch),
   );
@@ -74,6 +75,13 @@ function RouteComponent() {
     <>
       <NavBar />
       <div className="space-y-6 p-6 pt-24">
+        <AdminLogs
+          data={allAdminLogs}
+          fetchNextPage={fetchNextPage}
+          hasNextPage={hasNextPage}
+          isFetchingNextPage={isFetchingNextPage}
+        />
+
         <h1 className="text-2xl font-bold">Admin Dashboard</h1>
 
         {/* Stats */}
@@ -127,6 +135,7 @@ function RouteComponent() {
           </div>
         </div>
 
+        {/* <AdminLogs data={adminLogs.data.data.rows} /> */}
         {/* Activity */}
         <RecentActivity data={recentActivity.data.data} />
       </div>

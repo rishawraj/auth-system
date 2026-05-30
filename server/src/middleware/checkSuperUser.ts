@@ -21,10 +21,7 @@ interface AuthenticatedRequest extends IncomingMessage {
  * Returns an object with authentication result and appropriate status codes
  */
 export async function checkSuperUser(req: AuthenticatedRequest) {
-  console.log("Middleware checkSuperUser");
-
   const authHeader = req.headers.authorization;
-  console.log("Authorization Header:", authHeader);
 
   if (!authHeader) {
     return {

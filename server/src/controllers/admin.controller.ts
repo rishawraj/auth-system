@@ -114,7 +114,10 @@ export async function updateUser(
   );
   return user;
 }
-export async function updateUserStatus(id: string, { is_active }) {
+export async function updateUserStatus(
+  id: string,
+  { is_active }: { is_active: boolean }
+) {
   const query = `
   UPDATE users
   SET is_active = $1
@@ -173,4 +176,136 @@ export async function getRecentActivity() {
     email: row.email,
     time: formatDistanceToNow(new Date(row.created_at), { addSuffix: true }),
   }));
+}
+
+// admin-audit-logs
+export async function logAdminActions({
+  adminId,
+  userId,
+  action,
+}: {
+  adminId: string;
+  userId: string;
+  action: string;
+}) {
+  console.log({ adminId, userId, action });
+  const query = `
+    INSERT INTO admin_audit_logs (
+    admin_id, action, target_user_id
+    ) VALUES ($1, $2, $3)
+  `;
+
+  try {
+    await pool.query(query, [adminId, action, userId]);
+  } catch (error) {
+    console.error("could not log this event ", error);
+  }
+}
+
+export async function getAdminLogs(cursor: string | null, limit: number) {
+  console.log(cursor, limit);
+
+  // const query = `
+  //   SELECT
+  //     a.id AS log_id,
+  //     a.action,
+  //     a.metadata,
+  //     a.ip_address,
+  //     a.user_agent,
+  //     a.created_at,
+  //     admins.id AS admin_id,
+  //     admins.name AS admin_name,
+  //     targets.id AS target_user_id,
+  //     targets.name AS target_user_name
+  //   FROM admin_audit_logs a
+  //   INNER JOIN
+  //     users admins ON a.admin_id = admins.id
+  //   INNER JOIN
+  //     users targets ON a.target_user_id = targets.id
+  //   ORDER BY
+  //     a.created_at DESC;
+  // `;
+
+  // const logs = pool.query(query);
+
+  // return logs;
+
+  let lastcreatedAt = null;
+  let lastId = null;
+
+  // 1. if cursor
+  if (cursor) {
+    try {
+      const decodedCursor = Buffer.from(cursor, "base64").toString("utf-8");
+      const parsedCursor = JSON.parse(decodedCursor);
+      lastcreatedAt = parsedCursor.created_at;
+      lastId = parsedCursor.id;
+    } catch (error) {
+      console.warn(
+        "Invalid cursor provided, failling back to first page.",
+        error
+      );
+    }
+  }
+  //2. buid query
+  let query = `
+    SELECT 
+      a.id AS log_id,
+      a.action,
+      a.metadata,
+      a.ip_address,
+      a.user_agent,
+      a.created_at,
+      admins.id AS admin_id,
+      admins.name AS admin_name,      
+      targets.id AS target_user_id,
+      targets.name AS target_user_name 
+    FROM admin_audit_logs a
+    INNER JOIN users admins ON a.admin_id = admins.id
+    LEFT JOIN users targets ON a.target_user_id = targets.id
+  `;
+
+  const queryParams: unknown[] = [];
+
+  if (lastcreatedAt && lastId) {
+    query += `
+      WHERE a.created_at < $1
+        OR (a.created_at = $1 AND a.id<$2)
+    `;
+
+    queryParams.push(lastcreatedAt, lastId);
+  }
+
+  // +1 for next page
+  query += `
+    ORDER BY a.created_at DESC, a.id DESC
+    LIMIT $${queryParams.length + 1}
+  `;
+
+  queryParams.push(limit + 1);
+
+  const { rows } = await pool.query(query, queryParams);
+
+  const hasMore = rows.length > limit;
+  console.log({ hasMore });
+  // only return 10
+  const logsToReturn = hasMore ? rows.slice(0, -1) : rows;
+
+  // generate the next cursor from the last item in arr
+
+  let nextCursor = null;
+  if (logsToReturn.length > 0) {
+    const lastLog = logsToReturn[logsToReturn.length - 1];
+    const cursorObj = {
+      created_at: lastLog.created_at,
+      id: lastLog.log_id,
+    };
+    nextCursor = Buffer.from(JSON.stringify(cursorObj)).toString("base64");
+  }
+
+  return {
+    logs: logsToReturn,
+    nextCursor,
+    hasMore,
+  };
 }

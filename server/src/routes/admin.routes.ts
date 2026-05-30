@@ -1,17 +1,30 @@
 import { IncomingMessage, ServerResponse } from "http";
 import { readBody, send } from "../utils/helpers.js";
 import {
+  getAdminLogs,
   getAdminOverviewStats,
   getAllUsers,
   getPaginatedUsers,
   getRecentActivity,
   getUserById,
+  logAdminActions,
   softDeleteUser,
   updateUserStatus,
 } from "../controllers/admin.controller.js";
 import { checkSuperUser } from "../middleware/checkSuperUser.js";
 
-export default async (req: IncomingMessage, res: ServerResponse) => {
+// import { setTimeout } from "timers/promises";
+
+interface SuperUser {
+  id: string;
+  email: string;
+  is_super_user: boolean;
+}
+
+export default async (
+  req: IncomingMessage & { user?: SuperUser },
+  res: ServerResponse
+) => {
   // parse url
   const parsedUrl = new URL(req.url || "", `http://${req.headers.host}`);
   const pathname = parsedUrl.pathname;
@@ -64,8 +77,8 @@ export default async (req: IncomingMessage, res: ServerResponse) => {
   }
 
   // todo prevent deactivation of super user
+  // req has user info req.user.is_superuser?
   if (req.method === "PATCH" && getUserByIdMatch) {
-    console.log("spider");
     const userId = getUserByIdMatch[1];
 
     try {
@@ -73,7 +86,14 @@ export default async (req: IncomingMessage, res: ServerResponse) => {
       const { is_active } = body;
 
       const updateUser = await updateUserStatus(userId, { is_active });
+
       if (updateUser) {
+        logAdminActions({
+          adminId: req.user.id,
+          userId: userId,
+          action: `${is_active ? "ACTIVATE" : "DEACTIVATE"}`,
+        });
+
         send(res, 200, {
           status: "OK",
           message: `User ${is_active ? "activated" : "blocked"} successfully`,
@@ -98,6 +118,11 @@ export default async (req: IncomingMessage, res: ServerResponse) => {
       const deletedUser = await softDeleteUser(userId);
 
       if (deletedUser) {
+        logAdminActions({
+          adminId: req.user.id,
+          userId: userId,
+          action: "DELETE",
+        });
         send(res, 200, {
           status: "OK",
           message: "User marked as deleted successfully",
@@ -194,7 +219,30 @@ export default async (req: IncomingMessage, res: ServerResponse) => {
     }
   }
 
-  // if (req.method === "GET" && pathname === "/admin/admin-audit-logs") {}
+  if (req.method === "GET" && pathname === "/admin/admin-audit-logs") {
+    try {
+      const limit = parseInt(parsedUrl.searchParams.get("limit") || "10");
+      const cursor = parsedUrl.searchParams.get("cursor") || null;
+
+      console.log({ limit, cursor });
+
+      const result = await getAdminLogs(cursor, limit);
+
+      // await setTimeout(2000);
+
+      send(res, 200, {
+        status: "OK",
+        message: "Admin logs fetched successfully",
+        data: result,
+      });
+    } catch (error) {
+      console.error("Error getting logs", error);
+      send(res, 500, {
+        status: "Internal Server Error",
+        message: "Failed to get admin logs",
+      });
+    }
+  }
 
   return false; // Add this line to indicate no routes matched
 };

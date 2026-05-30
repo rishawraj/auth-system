@@ -1,9 +1,14 @@
-import { createRootRoute, Outlet } from "@tanstack/react-router";
+import type { QueryClient } from "@tanstack/react-query";
+import { Outlet, createRootRouteWithContext } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { ToastContainer } from "react-toastify";
 
 import { useTheme } from "../hooks/useTheme";
 import { ThemeProvider } from "../Providers/ThemeProvider";
+
+interface RouterContext {
+  queryClient: QueryClient;
+}
 
 const RootLayout = () => {
   const { theme } = useTheme();
@@ -31,7 +36,7 @@ const RootLayout = () => {
   );
 };
 
-export const Route = createRootRoute({
+export const Route = createRootRouteWithContext<RouterContext>()({
   component: () => (
     <ThemeProvider defaultTheme="dark">
       <RootLayout />

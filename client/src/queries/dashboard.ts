@@ -1,6 +1,6 @@
 // for /admin/index.tsx
 
-import { queryOptions } from "@tanstack/react-query";
+import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query";
 
 import { getToken } from "../utils/authToken";
 
@@ -34,6 +34,36 @@ export const recentActivityQuery = queryOptions({
       },
     }).then((res) => res.json());
     return response;
+  },
+});
+
+export const adminLogsQuery = infiniteQueryOptions({
+  queryKey: ["admin-logs"],
+  initialPageParam: null as string | null,
+  queryFn: ({ pageParam }) => {
+    const API_URL = import.meta.env.VITE_API_BASE_URL;
+    const token = getToken();
+
+    // construct URL
+    const url = new URL(`${API_URL}/admin/admin-audit-logs`);
+    url.searchParams.set("limit", "10");
+    if (pageParam) {
+      url.searchParams.set("cursor", pageParam);
+    }
+
+    const response = fetch(url.toString(), {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    }).then((res) => res.json());
+
+    return response;
+  },
+  getNextPageParam: (lastPage) => {
+    console.log("last page response: ", lastPage);
+    return lastPage.data.hasMore ? lastPage.data.nextCursor : undefined;
   },
 });
 
