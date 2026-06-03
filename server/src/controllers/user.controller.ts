@@ -27,6 +27,8 @@ import { Secret, TOTP } from "otpauth";
 import qrcode from "qrcode";
 
 import { env } from "../config/env.js";
+import busboy from "busboy";
+import { uploadToR2 } from "../utils/uploadToR2.js";
 
 const SECRET = env.ACCESS_TOKEN_SECRET;
 const FRONTEND_URL = env.FRONTEND_URL;
@@ -364,6 +366,165 @@ export async function handleProfile(
     console.error("Profile error:", error);
     send(res, 500, { error: "Internal server error" });
   }
+}
+
+export async function updateProfile(
+  req: IncomingMessage,
+  res: ServerResponse
+): Promise<void> {
+  console.log("hi from updateProfile");
+
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return send(res, 401, { error: "No token provided" });
+
+  const token = authHeader.split(" ")[1];
+  if (!token) return send(res, 401, { error: "Invalid authorization format" });
+
+  let userEmail: string;
+
+  try {
+    const decoded = jwt.verify(token, SECRET);
+    if (typeof decoded === "object" && decoded !== null && "email" in decoded) {
+      userEmail = decoded.email as string;
+    } else {
+      return send(res, 400, { error: "Invalid token payload" });
+    }
+  } catch {
+    return send(res, 401, { error: "Invalid token" });
+  }
+
+  // fetch current user
+  const userResult = await pool.query(
+    "SELECT * FROM users WHERE email = $1 AND is_deleted = false",
+    [userEmail]
+  );
+
+  if (userResult.rows.length === 0) {
+    return send(res, 404, { error: "User not found" });
+  }
+
+  const user = userResult.rows[0];
+  const isOauthUser = !!user.oauth_provider;
+  // !
+
+  const fields: Record<string, string> = {};
+  let profilePicUrl: string | null = null;
+
+  let uploadPromise: Promise<void>;
+
+  await new Promise<void>((resolve, reject) => {
+    const bb = busboy({ headers: req.headers });
+
+    bb.on("field", (name, value) => {
+      fields[name] = value;
+    });
+
+    // file upload
+    bb.on("file", (fieldname, stream, info) => {
+      if (fieldname !== "profile_pic") {
+        stream.resume();
+        return;
+      }
+
+      const chunks: Buffer[] = [];
+
+      stream.on("data", (chunk) => chunks.push(chunk));
+      // store the promise
+      uploadPromise = new Promise<void>((res, rej) => {
+        stream.on("end", async () => {
+          try {
+            const buffer = Buffer.concat(chunks);
+            const ext = info.mimeType.split("/")[1] ?? "png";
+            //todo
+            const key = `avatar/user-${user.id}.${ext}`;
+            profilePicUrl = await uploadToR2(buffer, key, info.mimeType);
+            res();
+          } catch (error) {
+            rej(error);
+          }
+        });
+      });
+    });
+
+    bb.on("finish", resolve);
+    bb.on("error", reject);
+    req.pipe(bb);
+  });
+
+  await uploadPromise;
+
+  console.log({ fields, profilePicUrl });
+
+  //todo save fields + profilePic URL to db
+
+  // build dynamic update
+  const updates: string[] = [];
+  const values: unknown[] = [];
+  let idx = 1;
+
+  const append = (col: string, val: unknown) => {
+    updates.push(`${col} = $${idx++}`);
+    values.push(val);
+  };
+
+  if (fields.name?.trim()) {
+    append("name", fields.name.trim());
+  }
+
+  if (!isOauthUser) {
+    // update email
+    if (fields.email?.trim()) {
+      const emailTaken = await pool.query(
+        "SELECT id FROM users WHERE email = $1 AND id != $2",
+        [fields.email.trim(), user.id]
+      );
+      if (emailTaken.rows.length > 0) {
+        return send(res, 400, { error: "Email is already in use." });
+      }
+      append("email", fields.email.trim());
+    }
+
+    // update password
+    if (fields.new_password) {
+      if (!fields.password) {
+        return send(res, 400, {
+          error: "Current password is required to set a new one.",
+        });
+      }
+      const passwordMatch = await bcrypt.compare(
+        fields.password,
+        user.password
+      );
+      if (!passwordMatch) {
+        return send(res, 400, { error: "Current password is incorrect." });
+      }
+      const hashed = await bcrypt.hash(fields.new_password, 10);
+      append("password", hashed);
+    }
+  }
+
+  if (profilePicUrl) {
+    append("profile_pic", profilePicUrl);
+  }
+
+  if (updates.length === 0) {
+    return send(res, 400, { error: "No valid fields to update." });
+  }
+
+  values.push(user.id);
+
+  const query = `
+    UPDATE users
+    SET ${updates.join(", ")}
+    WHERE id = $${idx}
+    RETURNING id, name, email, profile_pic, oauth_provider
+  `;
+
+  const updated = await pool.query(query, values);
+  return send(res, 200, {
+    message: "Profile updated successfully.",
+    user: updated.rows[0],
+  });
 }
 
 export async function handleMe(req: IncomingMessage, res: ServerResponse) {

@@ -10,6 +10,7 @@ import {
   testRefreshToken,
   handleLogout,
   handleMe,
+  updateProfile,
 } from "../controllers/user.controller.js";
 import {
   handleGoogleAuth,
@@ -33,6 +34,11 @@ export default async (req: IncomingMessage, res: ServerResponse) => {
 
   if (req.method === "GET" && pathname === "/profile") {
     await handleProfile(req, res);
+    return true;
+  }
+
+  if (req.method === "PATCH" && pathname === "/profile") {
+    await updateProfile(req, res);
     return true;
   }
 
