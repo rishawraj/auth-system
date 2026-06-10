@@ -36,3 +36,25 @@ export const deleteUser = async ({ id }: { id: string }) => {
 
   return response;
 };
+
+// todo not from here
+export const verifyEmail = async (code: string) => {
+  const API_URL = import.meta.env.VITE_API_BASE_URL;
+  const token = getToken();
+  console.log({ code, token });
+
+  const response = await fetch(`${API_URL}/verify-email`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ code }),
+  });
+  const data = await response.json();
+  console.log({ data });
+
+  if (!response.ok)
+    throw new Error(data.error || data.message || "failed to update email");
+  return data;
+};

@@ -18,6 +18,7 @@ export const Route = createFileRoute("/_auth/profile/")({
 
     try {
       const data = await fetchWithAuth<ProfileResponse>("/profile");
+      console.log({ "/profile-data:": data });
       return data;
     } catch (error) {
       console.error("Error fetching profile:", error);

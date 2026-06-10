@@ -11,6 +11,7 @@ import {
   handleLogout,
   handleMe,
   updateProfile,
+  handleUpdateEmail,
 } from "../controllers/user.controller.js";
 import {
   handleGoogleAuth,
@@ -40,6 +41,11 @@ export default async (req: IncomingMessage, res: ServerResponse) => {
   if (req.method === "PATCH" && pathname === "/profile") {
     await updateProfile(req, res);
     return true;
+  }
+
+  if (req.method === "POST" && pathname === "/verify-email") {
+    await handleUpdateEmail(req, res);
+    return true
   }
 
   if (req.method === "GET" && pathname === "/me") {

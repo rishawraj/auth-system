@@ -13,6 +13,12 @@ import { User } from "../../../types/auth";
 import { fetchWithAuth } from "../../../utils/api";
 import { getCroppedCircularImage } from "../../../utils/cropImage";
 
+interface EditResponse {
+  status?: string;
+  message: string;
+  user: User;
+}
+
 // Cast to bypass the class component type mismatch
 const EasyCropper = Cropper as unknown as React.FC<
   Partial<CropperProps> & {
@@ -87,6 +93,7 @@ function RouteComponent() {
     });
     reader.readAsDataURL(file);
   };
+
   const onCropComplete = useCallback((_: Area, pixels: Area) => {
     setCroppedAreaPixels(pixels);
   }, []);
@@ -160,10 +167,19 @@ function RouteComponent() {
 
       // ✅ Actually shows the entries
       console.log([...body.entries()]);
-      await fetchWithAuth("/profile", {
+      const data = await fetchWithAuth<EditResponse>("/profile", {
         method: "PATCH",
         body,
       });
+
+      console.log({ data });
+
+      if (data.status === "email_verification_required") {
+        console.log("yes no 123");
+
+        navigate({ to: "/profile/verify-email" });
+        return;
+      }
     } catch (error) {
       console.error("Profile update failed:", error);
       setError("Something went wrong. Please try again.");

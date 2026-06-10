@@ -25,6 +25,9 @@ export interface User {
   last_location: string | null;
   last_country: string | null;
   last_city: string | null;
+
+  // update email
+  pending_email: string | null;
 }
 
 /**

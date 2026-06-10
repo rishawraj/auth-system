@@ -373,6 +373,7 @@ export async function updateProfile(
   res: ServerResponse
 ): Promise<void> {
   console.log("hi from updateProfile");
+  let emailVerificationPending = false;
 
   const authHeader = req.headers.authorization;
   if (!authHeader) return send(res, 401, { error: "No token provided" });
@@ -474,14 +475,46 @@ export async function updateProfile(
   if (!isOauthUser) {
     // update email
     if (fields.email?.trim()) {
+      const newEmail = fields.email.trim();
+
+      // not changed
+      if (newEmail === user.email) {
+        return send(res, 400, {
+          error: "New email is the same as current email.",
+        });
+      }
+
+      // already in use
       const emailTaken = await pool.query(
         "SELECT id FROM users WHERE email = $1 AND id != $2",
-        [fields.email.trim(), user.id]
+        [newEmail, user.id]
       );
       if (emailTaken.rows.length > 0) {
         return send(res, 400, { error: "Email is already in use." });
       }
-      append("email", fields.email.trim());
+
+      const { code, expiresAt } = generateSixDigitCodeWithExpiry();
+
+      await pool.query(
+        `UPDATE users
+        SET pending_email = $1,
+          verification_code = $2,
+          verification_code_expiry_time = $3
+        WHERE id = $4`,
+        [newEmail, code, expiresAt, user.id]
+      );
+
+      setImmediate(() => sendVerificationEmailWorker(newEmail, code));
+
+      if (updates.length === 0 && !profilePicUrl) {
+        return send(res, 200, {
+          status: "email_verification_required",
+          message: "Verification email sent to your new address.",
+        });
+      }
+
+      // append("email", fields.email.trim());
+      emailVerificationPending = true;
     }
 
     // update password
@@ -524,6 +557,7 @@ export async function updateProfile(
   return send(res, 200, {
     message: "Profile updated successfully.",
     user: updated.rows[0],
+    ...(emailVerificationPending && { satus: "email_verification_required" }),
   });
 }
 
@@ -741,6 +775,121 @@ function clearCookies(res: ServerResponse) {
     "token=; HttpOnly; Path=/; Max-Age=0",
     `accessToken=; HttpOnly; Path=/; Max-Age=0; Domain=${env.DOMAIN}`,
   ]);
+}
+
+export async function handleUpdateEmail(
+  req: IncomingMessage,
+  res: ServerResponse
+) {
+  try {
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.startsWith("Bearer ")
+      ? authHeader.split(" ")[1]
+      : null;
+
+    const body = await readBody<{ token: string; code: string }>(req);
+
+    const { code } = body;
+    console.log({ token, code });
+
+    if (!token || !code) {
+      return send(res, 400, { error: "Missing token or verification code" });
+    }
+
+    let decodedToken;
+
+    try {
+      decodedToken = jwt.verify(token, SECRET);
+    } catch (error) {
+      console.error("Token verification failed:", error.message);
+      return send(res, 401, { error: "Invalid or expired token" });
+    }
+    console.log(decodedToken);
+
+    const { email } = decodedToken;
+
+    // Query the database to check verification code
+    const userQuery =
+      "SELECT id, verification_code, verification_code_expiry_time, pending_email, is_super_user FROM users WHERE email = $1";
+
+    const userResult = await pool.query(userQuery, [email]);
+
+    if (userResult.rows.length === 0) {
+      return send(res, 404, { error: "User not found" });
+    }
+    const user = userResult.rows[0];
+    const currentTime = new Date();
+
+    if (!user.pending_email) {
+      return send(res, 400, { error: "No pending email" });
+    }
+
+    // Check if verification code is valid and not expired
+    if (user.verification_code !== code) {
+      return send(res, 400, { error: "Invalid verification code" });
+    }
+
+    if (
+      user.verification_code_expiry_time &&
+      new Date(user.verification_code_expiry_time) < currentTime
+    ) {
+      return send(res, 400, { error: "Verification code has expired" });
+    }
+
+    // Update user account to active status
+    const updateQuery = `
+      UPDATE users 
+      SET email = $1, 
+          verification_code = NULL, 
+          verification_code_expiry_time = NULL,
+          pending_email = NULL
+      WHERE id = $2
+    `;
+
+    await pool.query(updateQuery, [user.pending_email, user.id]);
+
+    // todo use user_id as token identity instead of email.
+    // for now re-issue tokens
+    const newAccessToken = generateAccessToken({
+      email: user.pending_email,
+      is_super_user: user.is_super_user,
+    });
+
+    const jti = randomUUID();
+    const refreshToken = generateRefreshToken({
+      email: user.pending_email,
+      jti,
+    });
+    const refreshTokenHash = hashToken(refreshToken);
+
+    const expiryTime = new Date(
+      // 1ms  * 1000 = 1s
+      Date.now() + env.REFRESH_TOKEN_EXPIRY * 1000
+    );
+
+    await pool.query(
+      `INSERT INTO refresh_tokens (user_id, token_hash, expires_at,jti)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (user_id)
+       DO UPDATE SET token_hash = $2, expires_at = $3, jti = $4`,
+      [user.id, refreshTokenHash, expiryTime, jti]
+    );
+
+    setServerCookie({
+      name: "refreshToken",
+      value: refreshToken,
+      res,
+      maxAge: env.REFRESH_TOKEN_EXPIRY,
+      path: "/",
+      isProduction: process.env.NODE_ENV === "production",
+    });
+
+    send(res, 200, { message: "email updated", accessToken: newAccessToken });
+  } catch (err) {
+    console.error("Logout error:", err);
+    clearCookies(res);
+    send(res, 500, { error: "Internal server error during logout" });
+  }
 }
 
 export async function handleVerify(req: IncomingMessage, res: ServerResponse) {

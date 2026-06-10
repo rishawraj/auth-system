@@ -30,6 +30,7 @@ import { Route as authLoginImport } from "./routes/(auth)/login";
 import { Route as authForgotPasswordImport } from "./routes/(auth)/forgot-password";
 import { Route as auth2FALoginImport } from "./routes/(auth)/2FALogin";
 import { Route as AuthProfileIndexImport } from "./routes/_auth/profile/index";
+import { Route as AuthProfileVerifyEmailImport } from "./routes/_auth/profile/verify-email";
 import { Route as AuthProfileSettingsImport } from "./routes/_auth/profile/settings";
 import { Route as AuthProfileEditImport } from "./routes/_auth/profile/edit";
 import { Route as AuthIsAdminAdminIndexImport } from "./routes/_auth/_isAdmin/admin/index";
@@ -149,6 +150,12 @@ const auth2FALoginRoute = auth2FALoginImport.update({
 const AuthProfileIndexRoute = AuthProfileIndexImport.update({
   id: "/profile/",
   path: "/profile/",
+  getParentRoute: () => AuthRoute,
+} as any);
+
+const AuthProfileVerifyEmailRoute = AuthProfileVerifyEmailImport.update({
+  id: "/profile/verify-email",
+  path: "/profile/verify-email",
   getParentRoute: () => AuthRoute,
 } as any);
 
@@ -341,6 +348,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AuthProfileSettingsImport;
       parentRoute: typeof AuthImport;
     };
+    "/_auth/profile/verify-email": {
+      id: "/_auth/profile/verify-email";
+      path: "/profile/verify-email";
+      fullPath: "/profile/verify-email";
+      preLoaderRoute: typeof AuthProfileVerifyEmailImport;
+      parentRoute: typeof AuthImport;
+    };
     "/_auth/profile/": {
       id: "/_auth/profile/";
       path: "/profile";
@@ -416,6 +430,7 @@ interface AuthRouteChildren {
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute;
   AuthProfileEditRoute: typeof AuthProfileEditRoute;
   AuthProfileSettingsRoute: typeof AuthProfileSettingsRoute;
+  AuthProfileVerifyEmailRoute: typeof AuthProfileVerifyEmailRoute;
   AuthProfileIndexRoute: typeof AuthProfileIndexRoute;
 }
 
@@ -429,6 +444,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthResetPasswordRoute: AuthResetPasswordRoute,
   AuthProfileEditRoute: AuthProfileEditRoute,
   AuthProfileSettingsRoute: AuthProfileSettingsRoute,
+  AuthProfileVerifyEmailRoute: AuthProfileVerifyEmailRoute,
   AuthProfileIndexRoute: AuthProfileIndexRoute,
 };
 
@@ -454,6 +470,7 @@ export interface FileRoutesByFullPath {
   "/reset-password": typeof AuthResetPasswordRoute;
   "/profile/edit": typeof AuthProfileEditRoute;
   "/profile/settings": typeof AuthProfileSettingsRoute;
+  "/profile/verify-email": typeof AuthProfileVerifyEmailRoute;
   "/profile": typeof AuthProfileIndexRoute;
   "/auth/google/callback": typeof authAuthGoogleCallbackRoute;
   "/admin/settings": typeof AuthIsAdminAdminSettingsRoute;
@@ -482,6 +499,7 @@ export interface FileRoutesByTo {
   "/reset-password": typeof AuthResetPasswordRoute;
   "/profile/edit": typeof AuthProfileEditRoute;
   "/profile/settings": typeof AuthProfileSettingsRoute;
+  "/profile/verify-email": typeof AuthProfileVerifyEmailRoute;
   "/profile": typeof AuthProfileIndexRoute;
   "/auth/google/callback": typeof authAuthGoogleCallbackRoute;
   "/admin/settings": typeof AuthIsAdminAdminSettingsRoute;
@@ -512,6 +530,7 @@ export interface FileRoutesById {
   "/_auth/reset-password": typeof AuthResetPasswordRoute;
   "/_auth/profile/edit": typeof AuthProfileEditRoute;
   "/_auth/profile/settings": typeof AuthProfileSettingsRoute;
+  "/_auth/profile/verify-email": typeof AuthProfileVerifyEmailRoute;
   "/_auth/profile/": typeof AuthProfileIndexRoute;
   "/(auth)/auth/google/callback": typeof authAuthGoogleCallbackRoute;
   "/_auth/_isAdmin/admin/settings": typeof AuthIsAdminAdminSettingsRoute;
@@ -542,6 +561,7 @@ export interface FileRouteTypes {
     | "/reset-password"
     | "/profile/edit"
     | "/profile/settings"
+    | "/profile/verify-email"
     | "/profile"
     | "/auth/google/callback"
     | "/admin/settings"
@@ -569,6 +589,7 @@ export interface FileRouteTypes {
     | "/reset-password"
     | "/profile/edit"
     | "/profile/settings"
+    | "/profile/verify-email"
     | "/profile"
     | "/auth/google/callback"
     | "/admin/settings"
@@ -597,6 +618,7 @@ export interface FileRouteTypes {
     | "/_auth/reset-password"
     | "/_auth/profile/edit"
     | "/_auth/profile/settings"
+    | "/_auth/profile/verify-email"
     | "/_auth/profile/"
     | "/(auth)/auth/google/callback"
     | "/_auth/_isAdmin/admin/settings"
@@ -675,6 +697,7 @@ export const routeTree = rootRoute
         "/_auth/reset-password",
         "/_auth/profile/edit",
         "/_auth/profile/settings",
+        "/_auth/profile/verify-email",
         "/_auth/profile/"
       ]
     },
@@ -745,6 +768,10 @@ export const routeTree = rootRoute
     },
     "/_auth/profile/settings": {
       "filePath": "_auth/profile/settings.tsx",
+      "parent": "/_auth"
+    },
+    "/_auth/profile/verify-email": {
+      "filePath": "_auth/profile/verify-email.tsx",
       "parent": "/_auth"
     },
     "/_auth/profile/": {
