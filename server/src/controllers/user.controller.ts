@@ -41,7 +41,12 @@ const registerSchema = z.object({
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters long"),
+  password: z.string().length(6, "Password must be at least 6 characters long"),
+});
+
+const verifySchema = z.object({
+  pending_email: z.string().email("Invalid email address"),
+  code: z.string().min(6, "invalid code"),
 });
 
 export async function handleRegister(
@@ -51,13 +56,13 @@ export async function handleRegister(
   try {
     const body = await readBody<{ token: string; code: string }>(req);
     const result = registerSchema.safeParse(body);
+
     if (!result.success) {
       const errors = result.error.flatten().fieldErrors;
       return send(res, 400, { errors });
     }
 
     const { name, email, password } = result.data;
-    console.log({ name, email, password });
 
     if (!email || !password) {
       return send(res, 400, { error: "Email and password are required" });
@@ -81,6 +86,7 @@ export async function handleRegister(
     }
 
     if (existingUserResult.rows.length > 0) {
+      console.error("email already exists!");
       return send(res, 400, { error: "User with this email already exists" });
     }
 
@@ -109,15 +115,14 @@ export async function handleRegister(
     // 2fa
     const secret = new Secret({ size: 20 });
     const secretBase32 = secret.base32;
-    console.log(secretBase32);
 
     const newUserResult = await pool.query(
       `INSERT INTO users (
-    name, email, password, verification_code, verification_code_expiry_time,
+    name, pending_email, password, verification_code, verification_code_expiry_time,
     last_login, last_ip, last_browser, last_os, last_device,
     profile_pic, tmp_two_factor_secret
   ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-   RETURNING id, name, email, is_active, registration_date`,
+   RETURNING id, name, pending_email, is_active, registration_date`,
       [
         name,
         email,
@@ -136,15 +141,10 @@ export async function handleRegister(
 
     const newUser = newUserResult.rows[0];
 
-    const accessToken = generateAccessToken({
-      email: newUser.email,
-      is_super_user: newUser.is_super_user,
-    });
-
     // generate QRCode 2fa
     const totp = new TOTP({
       issuer: "auth-system",
-      label: newUser.email,
+      label: newUser.pending_email,
       secret: secretBase32,
       digits: 6,
       period: 30,
@@ -158,7 +158,7 @@ export async function handleRegister(
     const response = {
       message: "User registered successfully",
       user: newUser,
-      accessToken,
+      // accessToken,
       qrcodeImageUrl,
     };
 
@@ -192,7 +192,6 @@ export async function handleLogin(
     }
 
     const { email, password } = result.data;
-    console.log({ email, password });
 
     if (!email || !password) {
       return send(res, 400, { error: "Email and password are required" });
@@ -204,7 +203,6 @@ export async function handleLogin(
     );
 
     const user = userResult.rows[0];
-    console.log({ user });
 
     if (!user) {
       await logLoginAttempt({
@@ -372,7 +370,6 @@ export async function updateProfile(
   req: IncomingMessage,
   res: ServerResponse
 ): Promise<void> {
-  console.log("hi from updateProfile");
   let emailVerificationPending = false;
 
   const authHeader = req.headers.authorization;
@@ -453,8 +450,6 @@ export async function updateProfile(
   });
 
   await uploadPromise;
-
-  console.log({ fields, profilePicUrl });
 
   //todo save fields + profilePic URL to db
 
@@ -659,8 +654,6 @@ async function handleEmailLogout(req: IncomingMessage, res: ServerResponse) {
       return send(res, 401, { error: "Invalid or expired refresh token" });
     }
 
-    // clear cookie on client
-    // res.setHeader("Set-Cookie", "refreshToken=; httpOnly; Path=/;Max-Age=0");
     setServerCookie({
       name: "refreshToken",
       value: "",
@@ -790,7 +783,6 @@ export async function handleUpdateEmail(
     const body = await readBody<{ token: string; code: string }>(req);
 
     const { code } = body;
-    console.log({ token, code });
 
     if (!token || !code) {
       return send(res, 400, { error: "Missing token or verification code" });
@@ -804,7 +796,6 @@ export async function handleUpdateEmail(
       console.error("Token verification failed:", error.message);
       return send(res, 401, { error: "Invalid or expired token" });
     }
-    console.log(decodedToken);
 
     const { email } = decodedToken;
 
@@ -894,31 +885,18 @@ export async function handleUpdateEmail(
 
 export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
   try {
-    const body = await readBody<{ token: string; code: string }>(req);
+    const body = await readBody(req);
+    const result = verifySchema.safeParse(body);
 
-    const { token, code } = body;
-    console.log({ token, code });
+    const { pending_email, code } = result.data;
 
-    if (!token || !code) {
-      return send(res, 400, { error: "Missing token or verification code" });
+    if (!pending_email || !code) {
+      return send(res, 400, { error: "Missing email or verification code" });
     }
 
-    let decodedToken;
-
-    try {
-      decodedToken = jwt.verify(token, SECRET);
-    } catch (error) {
-      console.error("Token verification failed:", error.message);
-      return send(res, 401, { error: "Invalid or expired token" });
-    }
-    console.log(decodedToken);
-
-    const { email } = decodedToken;
-
-    // Query the database to check verification code
     const userQuery =
-      "SELECT id, verification_code, verification_code_expiry_time FROM users WHERE email = $1";
-    const userResult = await pool.query(userQuery, [email]);
+      "SELECT id, verification_code, verification_code_expiry_time FROM users WHERE pending_email = $1";
+    const userResult = await pool.query(userQuery, [pending_email]);
 
     if (userResult.rows.length === 0) {
       return send(res, 404, { error: "User not found" });
@@ -943,21 +921,23 @@ export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
       UPDATE users 
       SET is_active = TRUE, 
           verification_code = NULL, 
-          verification_code_expiry_time = NULL 
-      WHERE id = $1
+          verification_code_expiry_time = NULL,
+          email = $1,
+          pending_email = NULL
+      WHERE id = $2
     `;
 
-    await pool.query(updateQuery, [user.id]);
+    await pool.query(updateQuery, [pending_email, user.id]);
 
     // Update the last login time
     await pool.query("UPDATE users SET last_login = $1 WHERE email = $2", [
       new Date(),
-      email,
+      pending_email,
     ]);
 
     // Generate a new access token
     const accessToken = generateAccessToken({
-      email: user.email,
+      email: pending_email,
       is_super_user: user.is_super_user,
     });
 
@@ -1006,7 +986,7 @@ export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
 
     send(res, 200, {
       message: "Account verified successfully",
-      email: email,
+      email: pending_email,
       accessToken,
       type: "email",
     });
@@ -1032,7 +1012,6 @@ export async function handleForgotPassword(
       [email]
     );
     const user = userResult.rows[0];
-    console.log(user);
     if (!user) {
       console.log("user not found");
       return send(res, 404, { error: "User not found" });
@@ -1049,7 +1028,6 @@ export async function handleForgotPassword(
     );
 
     const userId = passWordResetResult.rows[0];
-    console.log(userId);
 
     // fire and forget
     setImmediate(() => sendResetPasswordEmailWorker(email, resetEmailLink));
@@ -1087,7 +1065,6 @@ export async function handleResetPassword(
     }
 
     const { email } = decodedToken;
-    console.log({ email });
 
     // Query the database to check reset password token
     const userQuery =
@@ -1138,7 +1115,6 @@ export async function handleTokenRefresh(
   req: IncomingMessage,
   res: ServerResponse
 ): Promise<void> {
-  console.log("refresh token in here.");
   try {
     const cookies = parseCookies(req);
 
@@ -1159,7 +1135,6 @@ export async function handleTokenRefresh(
       return;
     }
 
-    console.log({ decoded });
     const { email, jti } = decoded;
 
     try {
@@ -1171,7 +1146,6 @@ export async function handleTokenRefresh(
       );
 
       const storedToken = tokenResult.rows[0];
-      console.log(storedToken);
 
       if (!storedToken) {
         return send(res, 401, { error: "Invalid or expired refresh token" });

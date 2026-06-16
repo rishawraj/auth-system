@@ -16,12 +16,11 @@ function VerifyComponent() {
   const API_URL = import.meta.env.VITE_API_BASE_URL;
 
   const search = useSearch({ from: "/(auth)/verify" }) as {
-    token?: string;
+    pending_email?: string;
     QRCodeImageUrl?: string;
   }; // Let useSearch infer the correct type
 
-  const token = search?.token as string; // token from /verify?token=...
-  console.log(token);
+  const pending_email = search?.pending_email;
 
   const [verificationCode, setVerificationCode] = useState<string[]>(
     Array(6).fill(""),
@@ -65,7 +64,7 @@ function VerifyComponent() {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
-        body: JSON.stringify({ token, code }),
+        body: JSON.stringify({ pending_email, code }),
       });
 
       if (!response.ok) {
@@ -76,11 +75,8 @@ function VerifyComponent() {
       }
 
       const responseData = await response.json();
-      console.log("Verification response:", responseData);
-      console.log(responseData.refreshToken);
 
-      // todo
-
+      const token = responseData.accessToken;
       setToken(token);
       setType("email");
 

@@ -84,13 +84,13 @@ export default function UserRegistrationForm() {
       }
 
       const responseData = await response.json();
-      console.log(responseData.qrcodeImageUrl);
       setSuccess(true);
       setFormData({ name: "", email: "", password: "" });
       navigate({
         to: "/verify",
         search: {
-          token: responseData.accessToken,
+          // token: responseData.accessToken,
+          pending_email: responseData.user.pending_email,
           QRCodeImageUrl: responseData.qrcodeImageUrl,
         },
       });

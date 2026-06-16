@@ -45,7 +45,7 @@ export default async (req: IncomingMessage, res: ServerResponse) => {
 
   if (req.method === "POST" && pathname === "/verify-email") {
     await handleUpdateEmail(req, res);
-    return true
+    return true;
   }
 
   if (req.method === "GET" && pathname === "/me") {
