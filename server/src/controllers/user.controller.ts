@@ -30,8 +30,8 @@ import { env } from "../config/env.js";
 import busboy from "busboy";
 import { uploadToR2 } from "../utils/uploadToR2.js";
 
-const SECRET = env.ACCESS_TOKEN_SECRET;
-const FRONTEND_URL = env.FRONTEND_URL;
+// const SECRET = env.ACCESS_TOKEN_SECRET;
+// const FRONTEND_URL = env.FRONTEND_URL;
 
 const registerSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -338,7 +338,7 @@ export async function handleProfile(
     }
 
     try {
-      const decoded = jwt.verify(token, SECRET);
+      const decoded = jwt.verify(token, env.ACCESS_TOKEN_SECRET);
 
       if (
         typeof decoded === "object" &&
@@ -381,7 +381,7 @@ export async function updateProfile(
   let userEmail: string;
 
   try {
-    const decoded = jwt.verify(token, SECRET);
+    const decoded = jwt.verify(token, env.ACCESS_TOKEN_SECRET);
     if (typeof decoded === "object" && decoded !== null && "email" in decoded) {
       userEmail = decoded.email as string;
     } else {
@@ -569,7 +569,7 @@ export async function handleMe(req: IncomingMessage, res: ServerResponse) {
     }
 
     try {
-      const decoded = jwt.verify(token, SECRET);
+      const decoded = jwt.verify(token, env.ACCESS_TOKEN_SECRET);
 
       if (
         typeof decoded === "object" &&
@@ -791,7 +791,7 @@ export async function handleUpdateEmail(
     let decodedToken;
 
     try {
-      decodedToken = jwt.verify(token, SECRET);
+      decodedToken = jwt.verify(token, env.ACCESS_TOKEN_SECRET);
     } catch (error) {
       console.error("Token verification failed:", error.message);
       return send(res, 401, { error: "Invalid or expired token" });
@@ -1018,12 +1018,20 @@ export async function handleForgotPassword(
     }
 
     //  send email with token
-    const token = jwt.sign({ email: user.email }, SECRET);
-    const resetEmailLink = `${FRONTEND_URL}/reset-password?token=${token}`;
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1hr
+    //  send email with token
+    //  send email with token
+
+    const token = jwt.sign({ email: user.email }, env.RESET_PASSWORD_SECRET);
+    // hash the token
+    const resetEmailLink = `${env.FRONTEND_URL}/reset-password?token=${token}`;
+
+    // const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1hr
+    const expiresAt = new Date(Date.now() + env.RESET_PASSWORD_EXPIRY * 1000);
 
     const passWordResetResult = await pool.query(
-      "UPDATE users SET reset_password_token = $1, reset_passsword_token_expiry_time = $2 WHERE email = $3 RETURNING *",
+      `UPDATE users 
+        SET reset_password_token = $1, reset_passsword_token_expiry_time = $2
+        WHERE email = $3 RETURNING *`,
       [token, expiresAt, email]
     );
 
@@ -1058,7 +1066,7 @@ export async function handleResetPassword(
     let decodedToken;
 
     try {
-      decodedToken = jwt.verify(token, SECRET);
+      decodedToken = jwt.verify(token, env.RESET_PASSWORD_SECRET);
     } catch (error) {
       console.error("Token verification failed:", error.message);
       return send(res, 401, { error: "Invalid or expired token" });

@@ -16,7 +16,6 @@ import { Route as ServicesImport } from "./routes/services";
 import { Route as AboutImport } from "./routes/about";
 import { Route as AuthImport } from "./routes/_auth";
 import { Route as IndexImport } from "./routes/index";
-import { Route as AuthResetPasswordImport } from "./routes/_auth/reset-password";
 import { Route as AuthRegenerate2FAcodesImport } from "./routes/_auth/regenerate2FAcodes";
 import { Route as AuthLogoutImport } from "./routes/_auth/logout";
 import { Route as AuthIsAdminImport } from "./routes/_auth/_isAdmin";
@@ -25,6 +24,7 @@ import { Route as Auth2FADisableImport } from "./routes/_auth/2FADisable";
 import { Route as Auth2FAImport } from "./routes/_auth/2FA";
 import { Route as authVerifyImport } from "./routes/(auth)/verify";
 import { Route as authUsebackupcodeImport } from "./routes/(auth)/use_backup_code";
+import { Route as authResetPasswordImport } from "./routes/(auth)/reset-password";
 import { Route as authRegisterImport } from "./routes/(auth)/register";
 import { Route as authLoginImport } from "./routes/(auth)/login";
 import { Route as authForgotPasswordImport } from "./routes/(auth)/forgot-password";
@@ -68,12 +68,6 @@ const IndexRoute = IndexImport.update({
   id: "/",
   path: "/",
   getParentRoute: () => rootRoute,
-} as any);
-
-const AuthResetPasswordRoute = AuthResetPasswordImport.update({
-  id: "/reset-password",
-  path: "/reset-password",
-  getParentRoute: () => AuthRoute,
 } as any);
 
 const AuthRegenerate2FAcodesRoute = AuthRegenerate2FAcodesImport.update({
@@ -120,6 +114,12 @@ const authVerifyRoute = authVerifyImport.update({
 const authUsebackupcodeRoute = authUsebackupcodeImport.update({
   id: "/(auth)/use_backup_code",
   path: "/use_backup_code",
+  getParentRoute: () => rootRoute,
+} as any);
+
+const authResetPasswordRoute = authResetPasswordImport.update({
+  id: "/(auth)/reset-password",
+  path: "/reset-password",
   getParentRoute: () => rootRoute,
 } as any);
 
@@ -271,6 +271,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof authRegisterImport;
       parentRoute: typeof rootRoute;
     };
+    "/(auth)/reset-password": {
+      id: "/(auth)/reset-password";
+      path: "/reset-password";
+      fullPath: "/reset-password";
+      preLoaderRoute: typeof authResetPasswordImport;
+      parentRoute: typeof rootRoute;
+    };
     "/(auth)/use_backup_code": {
       id: "/(auth)/use_backup_code";
       path: "/use_backup_code";
@@ -325,13 +332,6 @@ declare module "@tanstack/react-router" {
       path: "/regenerate2FAcodes";
       fullPath: "/regenerate2FAcodes";
       preLoaderRoute: typeof AuthRegenerate2FAcodesImport;
-      parentRoute: typeof AuthImport;
-    };
-    "/_auth/reset-password": {
-      id: "/_auth/reset-password";
-      path: "/reset-password";
-      fullPath: "/reset-password";
-      preLoaderRoute: typeof AuthResetPasswordImport;
       parentRoute: typeof AuthImport;
     };
     "/_auth/profile/edit": {
@@ -427,7 +427,6 @@ interface AuthRouteChildren {
   AuthIsAdminRoute: typeof AuthIsAdminRouteWithChildren;
   AuthLogoutRoute: typeof AuthLogoutRoute;
   AuthRegenerate2FAcodesRoute: typeof AuthRegenerate2FAcodesRoute;
-  AuthResetPasswordRoute: typeof AuthResetPasswordRoute;
   AuthProfileEditRoute: typeof AuthProfileEditRoute;
   AuthProfileSettingsRoute: typeof AuthProfileSettingsRoute;
   AuthProfileVerifyEmailRoute: typeof AuthProfileVerifyEmailRoute;
@@ -441,7 +440,6 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthIsAdminRoute: AuthIsAdminRouteWithChildren,
   AuthLogoutRoute: AuthLogoutRoute,
   AuthRegenerate2FAcodesRoute: AuthRegenerate2FAcodesRoute,
-  AuthResetPasswordRoute: AuthResetPasswordRoute,
   AuthProfileEditRoute: AuthProfileEditRoute,
   AuthProfileSettingsRoute: AuthProfileSettingsRoute,
   AuthProfileVerifyEmailRoute: AuthProfileVerifyEmailRoute,
@@ -460,6 +458,7 @@ export interface FileRoutesByFullPath {
   "/forgot-password": typeof authForgotPasswordRoute;
   "/login": typeof authLoginRoute;
   "/register": typeof authRegisterRoute;
+  "/reset-password": typeof authResetPasswordRoute;
   "/use_backup_code": typeof authUsebackupcodeRoute;
   "/verify": typeof authVerifyRoute;
   "/2FA": typeof Auth2FARoute;
@@ -467,7 +466,6 @@ export interface FileRoutesByFullPath {
   "/2FAEnable": typeof Auth2FAEnableRoute;
   "/logout": typeof AuthLogoutRoute;
   "/regenerate2FAcodes": typeof AuthRegenerate2FAcodesRoute;
-  "/reset-password": typeof AuthResetPasswordRoute;
   "/profile/edit": typeof AuthProfileEditRoute;
   "/profile/settings": typeof AuthProfileSettingsRoute;
   "/profile/verify-email": typeof AuthProfileVerifyEmailRoute;
@@ -489,6 +487,7 @@ export interface FileRoutesByTo {
   "/forgot-password": typeof authForgotPasswordRoute;
   "/login": typeof authLoginRoute;
   "/register": typeof authRegisterRoute;
+  "/reset-password": typeof authResetPasswordRoute;
   "/use_backup_code": typeof authUsebackupcodeRoute;
   "/verify": typeof authVerifyRoute;
   "/2FA": typeof Auth2FARoute;
@@ -496,7 +495,6 @@ export interface FileRoutesByTo {
   "/2FAEnable": typeof Auth2FAEnableRoute;
   "/logout": typeof AuthLogoutRoute;
   "/regenerate2FAcodes": typeof AuthRegenerate2FAcodesRoute;
-  "/reset-password": typeof AuthResetPasswordRoute;
   "/profile/edit": typeof AuthProfileEditRoute;
   "/profile/settings": typeof AuthProfileSettingsRoute;
   "/profile/verify-email": typeof AuthProfileVerifyEmailRoute;
@@ -519,6 +517,7 @@ export interface FileRoutesById {
   "/(auth)/forgot-password": typeof authForgotPasswordRoute;
   "/(auth)/login": typeof authLoginRoute;
   "/(auth)/register": typeof authRegisterRoute;
+  "/(auth)/reset-password": typeof authResetPasswordRoute;
   "/(auth)/use_backup_code": typeof authUsebackupcodeRoute;
   "/(auth)/verify": typeof authVerifyRoute;
   "/_auth/2FA": typeof Auth2FARoute;
@@ -527,7 +526,6 @@ export interface FileRoutesById {
   "/_auth/_isAdmin": typeof AuthIsAdminRouteWithChildren;
   "/_auth/logout": typeof AuthLogoutRoute;
   "/_auth/regenerate2FAcodes": typeof AuthRegenerate2FAcodesRoute;
-  "/_auth/reset-password": typeof AuthResetPasswordRoute;
   "/_auth/profile/edit": typeof AuthProfileEditRoute;
   "/_auth/profile/settings": typeof AuthProfileSettingsRoute;
   "/_auth/profile/verify-email": typeof AuthProfileVerifyEmailRoute;
@@ -551,6 +549,7 @@ export interface FileRouteTypes {
     | "/forgot-password"
     | "/login"
     | "/register"
+    | "/reset-password"
     | "/use_backup_code"
     | "/verify"
     | "/2FA"
@@ -558,7 +557,6 @@ export interface FileRouteTypes {
     | "/2FAEnable"
     | "/logout"
     | "/regenerate2FAcodes"
-    | "/reset-password"
     | "/profile/edit"
     | "/profile/settings"
     | "/profile/verify-email"
@@ -579,6 +577,7 @@ export interface FileRouteTypes {
     | "/forgot-password"
     | "/login"
     | "/register"
+    | "/reset-password"
     | "/use_backup_code"
     | "/verify"
     | "/2FA"
@@ -586,7 +585,6 @@ export interface FileRouteTypes {
     | "/2FAEnable"
     | "/logout"
     | "/regenerate2FAcodes"
-    | "/reset-password"
     | "/profile/edit"
     | "/profile/settings"
     | "/profile/verify-email"
@@ -607,6 +605,7 @@ export interface FileRouteTypes {
     | "/(auth)/forgot-password"
     | "/(auth)/login"
     | "/(auth)/register"
+    | "/(auth)/reset-password"
     | "/(auth)/use_backup_code"
     | "/(auth)/verify"
     | "/_auth/2FA"
@@ -615,7 +614,6 @@ export interface FileRouteTypes {
     | "/_auth/_isAdmin"
     | "/_auth/logout"
     | "/_auth/regenerate2FAcodes"
-    | "/_auth/reset-password"
     | "/_auth/profile/edit"
     | "/_auth/profile/settings"
     | "/_auth/profile/verify-email"
@@ -638,6 +636,7 @@ export interface RootRouteChildren {
   authForgotPasswordRoute: typeof authForgotPasswordRoute;
   authLoginRoute: typeof authLoginRoute;
   authRegisterRoute: typeof authRegisterRoute;
+  authResetPasswordRoute: typeof authResetPasswordRoute;
   authUsebackupcodeRoute: typeof authUsebackupcodeRoute;
   authVerifyRoute: typeof authVerifyRoute;
   authAuthGoogleCallbackRoute: typeof authAuthGoogleCallbackRoute;
@@ -653,6 +652,7 @@ const rootRouteChildren: RootRouteChildren = {
   authForgotPasswordRoute: authForgotPasswordRoute,
   authLoginRoute: authLoginRoute,
   authRegisterRoute: authRegisterRoute,
+  authResetPasswordRoute: authResetPasswordRoute,
   authUsebackupcodeRoute: authUsebackupcodeRoute,
   authVerifyRoute: authVerifyRoute,
   authAuthGoogleCallbackRoute: authAuthGoogleCallbackRoute,
@@ -677,6 +677,7 @@ export const routeTree = rootRoute
         "/(auth)/forgot-password",
         "/(auth)/login",
         "/(auth)/register",
+        "/(auth)/reset-password",
         "/(auth)/use_backup_code",
         "/(auth)/verify",
         "/(auth)/auth/google/callback"
@@ -694,7 +695,6 @@ export const routeTree = rootRoute
         "/_auth/_isAdmin",
         "/_auth/logout",
         "/_auth/regenerate2FAcodes",
-        "/_auth/reset-password",
         "/_auth/profile/edit",
         "/_auth/profile/settings",
         "/_auth/profile/verify-email",
@@ -721,6 +721,9 @@ export const routeTree = rootRoute
     },
     "/(auth)/register": {
       "filePath": "(auth)/register.tsx"
+    },
+    "/(auth)/reset-password": {
+      "filePath": "(auth)/reset-password.tsx"
     },
     "/(auth)/use_backup_code": {
       "filePath": "(auth)/use_backup_code.tsx"
@@ -756,10 +759,6 @@ export const routeTree = rootRoute
     },
     "/_auth/regenerate2FAcodes": {
       "filePath": "_auth/regenerate2FAcodes.tsx",
-      "parent": "/_auth"
-    },
-    "/_auth/reset-password": {
-      "filePath": "_auth/reset-password.tsx",
       "parent": "/_auth"
     },
     "/_auth/profile/edit": {

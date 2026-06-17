@@ -1,5 +1,7 @@
 # TODO
 
+- [ ] hash token in forgot password controller.
+
 - [ ] invalidate the query so that profile image is show correctly or just local file for image until the image is uploaded?
 - [ ] fetch with auth on all api routes?
 
