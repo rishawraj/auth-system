@@ -1,6 +1,7 @@
 import { IncomingMessage, ServerResponse } from "http";
 import {
   generateAccessToken,
+  logLoginAttempt,
   parseCookies,
   send,
   setServerCookie,
@@ -106,6 +107,7 @@ export async function handleGoogleCallback(
 
     if (existingUserResult.rows.length > 0) {
       // user exists, update oauth provider and id
+      // todo only update if tokens.refresh_token is actually provided
       user = existingUserResult.rows[0];
       await pool.query<User>(
         `UPDATE users SET 
@@ -221,13 +223,19 @@ export async function handleGoogleCallback(
     const token = generateAccessToken(jwtpayload);
 
     // ! log login activity
+    // const ip_address = normalizeIP(rawIp);
+    // const userAgent = req.headers["user-agent"];
 
-    // const ip_address = normalizeIP(ip);
-
-    // await pool.query(
-    //   "INSERT INTO login_activity (user_id, email, success, ip_address, user_agent, oauth_provider ) VALUES ($1, $2, $3, $4, $5, $6)",
-    //   [user.id, email, true, ip_address, req.headers["user-agent"], "google"]
-    // );
+    if (!user.is_two_factor_enabled) {
+      logLoginAttempt({
+        userId: user.id,
+        email: user.email,
+        success: true,
+        oauthProvider: "google",
+        ip: "",
+        userAgent: "",
+      });
+    }
 
     setServerCookie({
       name: "refreshToken",
@@ -254,13 +262,11 @@ export async function handleGoogleRefreshToken(
   res: ServerResponse
 ): Promise<void> {
   try {
-    const token = req.headers.authorization?.split(" ")[1];
-    console.log({ token });
+    // const token = req.headers.authorization?.split(" ")[1];
+    // console.log({ token });
 
     const cookies = parseCookies(req);
-    console.log(cookies);
     const refreshToken = cookies["refreshToken"];
-    console.log({ refreshToken });
 
     if (!refreshToken) {
       return send(res, 400, { error: "Refresh token is required" });
@@ -279,7 +285,6 @@ export async function handleGoogleRefreshToken(
     }
 
     const user = userResult.rows[0];
-    console.log(user);
 
     // Set the refresh token in the OAuth client
     OAuthClient.setCredentials({
@@ -288,6 +293,16 @@ export async function handleGoogleRefreshToken(
 
     // Get new tokens using the refresh token
     const { credentials } = await OAuthClient.refreshAccessToken();
+
+    if (!credentials.access_token) {
+      console.error(
+        "Google refresh did not return an access_token",
+        credentials
+      );
+      return send(res, 502, {
+        error: "Failed to refresh access token from Google",
+      });
+    }
 
     // Update user's tokens in the database
     await pool.query(

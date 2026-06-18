@@ -884,56 +884,59 @@ export async function handleUpdateEmail(
 }
 
 export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
+  const client = await pool.connect();
+
   try {
     const body = await readBody(req);
     const result = verifySchema.safeParse(body);
 
+    if (!result.success) {
+      return send(res, 400, { message: "Invalid request body" });
+    }
+
     const { pending_email, code } = result.data;
 
-    if (!pending_email || !code) {
-      return send(res, 400, { error: "Missing email or verification code" });
-    }
+    await client.query("BEGIN");
 
-    const userQuery =
-      "SELECT id, verification_code, verification_code_expiry_time FROM users WHERE pending_email = $1";
-    const userResult = await pool.query(userQuery, [pending_email]);
+    const userQuery = `
+      SELECT id, is_super_user, verification_code, verification_code_expiry_time 
+      FROM users 
+      WHERE pending_email = $1
+    `;
 
-    if (userResult.rows.length === 0) {
-      return send(res, 404, { error: "User not found" });
-    }
-    const user = userResult.rows[0];
-    const currentTime = new Date();
+    // const userResult = await client.query(userQuery, [pending_email]);
+    const { rows } = await client.query(userQuery, [pending_email]);
+
+    const user = rows[0];
 
     // Check if verification code is valid and not expired
-    if (user.verification_code !== code) {
+    if (!user || user.verification_code !== code) {
+      await client.query("ROLLBACK");
       return send(res, 400, { error: "Invalid verification code" });
     }
 
     if (
       user.verification_code_expiry_time &&
-      new Date(user.verification_code_expiry_time) < currentTime
+      new Date(user.verification_code_expiry_time) < new Date()
     ) {
+      await client.query("ROLLBACK");
       return send(res, 400, { error: "Verification code has expired" });
     }
 
     // Update user account to active status
     const updateQuery = `
       UPDATE users 
-      SET is_active = TRUE, 
-          verification_code = NULL, 
-          verification_code_expiry_time = NULL,
-          email = $1,
-          pending_email = NULL
+      SET 
+        is_active = TRUE, 
+        verification_code = NULL, 
+        verification_code_expiry_time = NULL,
+        email = $1,
+        pending_email = NULL,
+        last_login = NOW()
       WHERE id = $2
     `;
 
-    await pool.query(updateQuery, [pending_email, user.id]);
-
-    // Update the last login time
-    await pool.query("UPDATE users SET last_login = $1 WHERE email = $2", [
-      new Date(),
-      pending_email,
-    ]);
+    await client.query(updateQuery, [pending_email, user.id]);
 
     // Generate a new access token
     const accessToken = generateAccessToken({
@@ -943,7 +946,7 @@ export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
 
     const jti = randomUUID();
     const refreshTokenPayload = {
-      email: user.email,
+      email: pending_email,
       jti,
     };
 
@@ -953,7 +956,7 @@ export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
     // Set the refresh token in the database
     // hash the refresh token
 
-    const refreshTokenExpiry = env.REFRESH_TOKEN_EXPIRY;
+    const refreshTokenExpiry = Number(env.REFRESH_TOKEN_EXPIRY);
     if (isNaN(refreshTokenExpiry)) {
       throw new Error("REFRESH_TOKEN_EXPIRY must be a valid number");
     }
@@ -963,17 +966,22 @@ export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
       Date.now() + env.REFRESH_TOKEN_EXPIRY * 1000
     );
 
-    try {
-      await pool.query(
-        "INSERT INTO refresh_tokens (user_id, token_hash, expires_at, jti) VALUES ($1, $2, $3, $4) ON CONFLICT (user_id) DO UPDATE SET token_hash = $2, expires_at = $3, jti = $4 returning *",
-        [user.id, refreshTokenHash, expiryTime, jti]
-      );
-    } catch (error) {
-      console.error("Error inserting refresh token:", error);
-      return send(res, 500, { error: "Internal server error" });
-    }
+    // upsert refresh token
+    const upsertTokenQUery = `
+      INSERT INTO refresh_tokens (user_id, token_hash, expires_at, jti) 
+      VALUES ($1, $2, $3, $4) 
+      ON CONFLICT (user_id) 
+      DO UPDATE SET token_hash = $2, expires_at = $3, jti = $4
+      `;
 
-    // "last_login_method": null,
+    await client.query(upsertTokenQUery, [
+      user.id,
+      refreshTokenHash,
+      expiryTime,
+      jti,
+    ]);
+
+    await client.query("COMMIT");
 
     setServerCookie({
       name: "refreshToken",
@@ -991,8 +999,11 @@ export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
       type: "email",
     });
   } catch (error) {
+    await client.query("ROLLBACK");
     console.error("Verification error: ", error);
     send(res, 500, { error: "Internal server error duing verification" });
+  } finally {
+    client.release();
   }
 }
 
