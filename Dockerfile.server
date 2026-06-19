@@ -21,19 +21,17 @@ RUN npm run build -w server
 # 3 prod runtime
 FROM node:20-alpine AS runtime
 WORKDIR /app
-
 ENV NODE_ENV=production
+ENV HUSKY=0
 
 # copy only the compiled output
 COPY --from=build /app/server/dist ./server/dist
 COPY server/migrations ./migrations
+COPY server/package.json ./package.json
 
-# reinstall prod deps only
-COPY package.json package-lock.json ./
-COPY server/package.json ./server/
-COPY shared/package.json ./shared/
-COPY client/package.json ./client/
-RUN npm ci --omit=dev
+RUN --mount=type=cache,target=/root/.npm \
+    npm install --omit=dev --ignore-scripts
+
 
 EXPOSE 3000
 CMD ["node", "server/dist/server/src/server.js"]
