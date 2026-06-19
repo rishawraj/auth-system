@@ -75,6 +75,7 @@ async function seedUsers(count: number = 50) {
         disable_2fa_otp_expiry_time: null,
         regenerate_2fa_otp: null,
         regenerate_2fa_otp_expiry: null,
+        pending_email: null,
       };
 
       const query = `

@@ -1,0 +1,39 @@
+# 1. install all dependencies
+FROM node:20-alpine AS deps
+WORKDIR /app
+ENV HUSKY=0
+
+# copy all workspaces mainifest
+COPY package.json package-lock.json ./
+COPY server/package.json ./server/
+COPY shared/package.json ./shared/
+COPY client/package.json ./client/
+
+RUN npm ci
+
+# 2 build
+FROM deps AS build
+COPY . . 
+
+# server + shared 
+RUN npm run build -w server
+
+# 3 prod runtime
+FROM node:20-alpine AS runtime
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+# copy only the compiled output
+COPY --from=build /app/server/dist ./server/dist
+COPY server/migrations ./migrations
+
+# reinstall prod deps only
+COPY package.json package-lock.json ./
+COPY server/package.json ./server/
+COPY shared/package.json ./shared/
+COPY client/package.json ./client/
+RUN npm ci --omit=dev
+
+EXPOSE 3000
+CMD ["node", "server/dist/server/src/server.js"]

@@ -50,10 +50,6 @@ const envSchema = z.object({
 
   JWT_EXPIRATION: z.string().min(1, { message: "JWT_EXPIRATION is required" }),
 
-  UPLOADTHING_TOKEN: z
-    .string()
-    .min(1, { message: "UPLOADTHING_TOKEN is required" }),
-
   ACCESS_TOKEN_SECRET: z
     .string()
     .min(1, { message: "ACCESS_TOKEN_SECRET is required" }),
