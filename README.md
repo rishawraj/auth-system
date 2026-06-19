@@ -144,6 +144,12 @@ docker compose --env-file .env.docker up --build -d
 docker compose logs -f
 ```
 
+### Access Database Shell
+
+```bash
+docker compose --env-file .env.docker exec db psql -U rishaw -d auth_system_db
+```
+
 ### Stop Services
 
 ```bash

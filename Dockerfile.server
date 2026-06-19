@@ -30,7 +30,7 @@ COPY server/migrations ./migrations
 COPY server/package.json ./package.json
 
 RUN --mount=type=cache,target=/root/.npm \
-    npm install --omit=dev --ignore-scripts
+    npm install --omit=dev
 
 
 EXPOSE 3000
