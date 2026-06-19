@@ -1,186 +1,277 @@
-# Authentication System Documentation
+# Authentication System
 
-## Overview
+A production-ready authentication and user management system built with React, Node.js, TypeScript, PostgreSQL, and Docker.
 
-A complete authentication system built with Node.js, React, and PostgreSQL that provides secure user authentication with email verification and OAuth2.0 integration.
+## Features
+
+### Authentication
+
+- Email & Password Registration
+- Email Verification
+- Login / Logout
+- Refresh Token Rotation
+- Password Reset
+- Google OAuth 2.0 Login
+- JWT Authentication
+- Secure Cookie-Based Sessions
+
+### Security
+
+- bcrypt Password Hashing
+- Access & Refresh Tokens
+- Email Verification Flow
+- Password Reset Flow
+- Login Activity Tracking
+- Two-Factor Authentication (2FA)
+- Backup Recovery Codes
+- Protected Routes
+- Admin Audit Logging
+
+### User Management
+
+- User Profile Management
+- Profile Picture Uploads
+- Email Change Verification
+- Login History
+- Account Security Settings
+
+### Administration
+
+- Admin Dashboard
+- User Search & Pagination
+- Audit Logs
+- Login Activity Monitoring
+
+### Infrastructure
+
+- PostgreSQL Database
+- Database Migrations
+- Dockerized Deployment
+- Nginx Reverse Proxy
+- Health Checks
+- Persistent Database Volumes
+
+---
 
 ## Tech Stack
 
 ### Frontend
 
-- React + TypeScript
-- Vite (Build tool)
-- TanStack Router (Routing)
-- Tailwind CSS (Styling)
-- Zod (Form validation)
-- js-cookie (Cookie management)
+- React 19
+- TypeScript
+- Vite
+- TanStack Router
+- TanStack Query
+- Tailwind CSS
+- Zod
 
 ### Backend
 
-- Node.js + TypeScript
-- PostgreSQL (Database)
-- JWT (Authentication tokens)
-- bcrypt (Password hashing)
-- Nodemailer (Email service)
-- Google OAuth2.0 (Social login)
+- Node.js
+- TypeScript
+- PostgreSQL
+- pg
+- JWT
+- bcrypt
+- Nodemailer
+- Google OAuth 2.0
 
-## Features
+### DevOps
 
-1. **User Authentication**
+- Docker
+- Docker Compose
+- Nginx
 
-   - Email/Password Registration
-   - Email Verification
-   - Login/Logout
-   - Password Reset
-   - Google OAuth2.0 Integration
-
-2. **Security**
-
-   - Password Hashing with bcrypt
-   - JWT-based Authentication
-   - Protected Routes
-   - Email Verification
-   - Secure Password Reset Flow
-
-3. **Email Features**
-   - Verification Emails
-   - Password Reset Emails
-   - Asynchronous Email Processing
+---
 
 ## Project Structure
 
-### Frontend (`/client`)
-
+```text
+.
+├── client/
+│   ├── src/
+│   └── Dockerfile.client
+│
+├── server/
+│   ├── migrations/
+│   ├── scripts/
+│   │   └── migrate.ts
+│   ├── src/
+│   │   ├── controllers/
+│   │   ├── middleware/
+│   │   ├── routes/
+│   │   ├── services/
+│   │   └── utils/
+│   └── Dockerfile.server
+│
+├── docker-compose.yml
+└── nginx/
 ```
-src/
-├── components/           # Reusable UI components
-├── routes/              # Route components and configurations
-├── types/              # TypeScript type definitions
-└── utils/              # Utility functions and helpers
+
+---
+
+## Running Locally
+
+### Frontend
+
+```bash
+cd client
+npm install
+npm run dev
 ```
 
-### Backend (`/server`)
+### Backend
 
-```
-src/
-├── auth/               # Authentication-related code
-├── config/            # Configuration files
-├── controllers/       # Request handlers
-├── models/           # Data models
-├── routes/           # API routes
-├── utils/            # Utility functions
-└── workers/          # Background workers
+```bash
+cd server
+npm install
+npm run dev
 ```
 
-## API Endpoints
+---
 
-### Authentication Routes
+## Docker Setup
 
-- `POST /register` - User registration
-- `POST /login` - User login
-- `POST /logout` - User logout
-- `POST /verify` - Email verification
-- `POST /forgot-password` - Password reset request
-- `POST /reset-password` - Password reset
-- `GET /auth/google` - Google OAuth2.0 login
-- `GET /auth/google/callback` - Google OAuth2.0 callback
+### Build and Start
 
-### User Routes
+```bash
+docker compose --env-file .env.docker up --build -d
+```
 
-- `GET /profile` - Get user profile
-- `GET /users` - Get all users (admin only)
+### View Logs
 
-## Setup & Installation
+```bash
+docker compose logs -f
+```
 
-1. **Clone the repository**
+### Stop Services
 
-   ```bash
-   git clone [repository-url]
-   ```
+```bash
+docker compose down
+```
 
-2. **Frontend Setup**
+### Remove Containers and Database Volume
 
-   ```bash
-   cd client
-   npm install
-   cp .env.example .env
-   # Configure environment variables
-   npm run dev
-   ```
+```bash
+docker compose down -v
+```
 
-3. **Backend Setup**
+---
 
-   ```bash
-   cd server
-   npm install
-   cp .env.example .env
-   # Configure environment variables
-   npm run dev
-   ```
+## Database Migrations
 
-4. **Database Setup**
-   - Install PostgreSQL
-   - Create a database
-   - Update database configuration in server/.env
+Run migrations manually:
+
+```bash
+npm run migrate
+```
+
+When using Docker, migrations run automatically before the API server starts.
+
+Migration files are stored in:
+
+```text
+server/migrations/
+```
+
+Example:
+
+```text
+001_initial_schema.sql
+002_add_new_feature.sql
+003_update_indexes.sql
+```
+
+---
 
 ## Environment Variables
 
-### Frontend (.env)
+### Backend
 
+```env
+SECRET=
+REFRESH_TOKEN_SECRET=
+
+DB_HOST=
+DB_PORT=
+DB_NAME=
+DB_USER=
+DB_PASSWORD=
+
+EMAIL_USER=
+EMAIL_APP_PASSWORD=
+
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+
+FRONTEND_URL=
 ```
-VITE_API_BASE_URL=http://localhost:3000
+
+### Docker
+
+```env
+DB_USER=
+DB_PASSWORD=
+DB_NAME=
 ```
 
-### Backend (.env)
+---
 
+## API Highlights
+
+### Authentication
+
+```http
+POST /register
+POST /login
+POST /logout
+POST /refresh
+POST /verify
+POST /forgot-password
+POST /reset-password
 ```
-SECRET=your_jwt_secret
-FRONTEND_URL=http://localhost:5173
-EMAIL_USER=your_email
-EMAIL_APP_PASSWORD=your_app_password
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=auth_system_db
-DB_USER=your_db_user
-DB_PASSWORD=your_db_password
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
+
+### OAuth
+
+```http
+GET /auth/google
+GET /auth/google/callback
 ```
 
-## Security Considerations
+### User
 
-1. **Password Security**
+```http
+GET /profile
+PATCH /profile
+PATCH /change-email
+POST /change-password
+```
 
-   - Passwords are hashed using bcrypt
-   - Minimum password length enforcement
-   - Password reset tokens with expiration
+### Two Factor Authentication
 
-2. **JWT Security**
+```http
+POST /2fa/setup
+POST /2fa/verify
+POST /2fa/disable
+POST /2fa/backup-codes/regenerate
+```
 
-   - Short-lived tokens
-   - Secure cookie storage
-   - Protected routes validation
+### Admin
 
-3. **OAuth Security**
-   - Secure client credentials storage
-   - State parameter validation
-   - Token refresh mechanism
+```http
+GET /admin/users
+GET /admin/logs
+GET /admin/overview
+```
 
-## Error Handling
-
-The system implements comprehensive error handling:
-
-- Input validation errors
-- Authentication errors
-- Database errors
-- Email service errors
-- OAuth errors
+---
 
 ## Future Improvements
 
-1. [ ] Implement refresh tokens
-2. [ ] Add more OAuth providers (GitHub, Facebook)
-3. [ ] Add user roles and permissions
-4. [ ] Implement rate limiting
-5. [ ] Add session management
-6. [ ] Add 2FA support
+- GitHub OAuth
+- Rate Limiting
+- Redis-backed Queues
+- Session Revocation Dashboard
+- Account Lockout Policies
+- WebAuthn / Passkeys
+- Email Queue Worker

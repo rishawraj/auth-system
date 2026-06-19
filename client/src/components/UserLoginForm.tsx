@@ -116,6 +116,7 @@ export default function UserLoginForm() {
       if (data.isTwoFactorEnabled) {
         navigate({ to: "/2FALogin", search: { token: token, type: "email" } });
       } else {
+        console.log(success);
         setToken(token);
         setType("email");
         navigate({ to: "/profile" });

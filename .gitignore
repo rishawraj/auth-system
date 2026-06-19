@@ -2,3 +2,5 @@ node_modules
 logs.txt
 .scannerwork
 audit.md
+.env.docker
+.env*
