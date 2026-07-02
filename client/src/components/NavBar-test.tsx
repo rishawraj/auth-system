@@ -27,7 +27,7 @@ const NavBar = () => {
           className="text-2xl font-bold text-indigo-600 dark:text-indigo-400"
           whileHover={{ scale: 1.05 }}
         >
-          AuthSystem
+          <Link to="/">AuthSystem</Link>
         </motion.div>
 
         {/* Hamburger Icon (visible on small screens only) */}

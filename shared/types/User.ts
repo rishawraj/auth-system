@@ -42,6 +42,7 @@ export interface UserAuthData extends User {
   verification_code_expiry_time: string | null;
   reset_password_token: string | null;
   reset_passsword_token_expiry_time: string | null;
+  last_code_sent_at: string | null;
 
   // OAuth specific
   oauth_provider: string | null;

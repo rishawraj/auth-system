@@ -197,19 +197,19 @@ function RouteComponent() {
 
   return (
     <>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="bg-background text-text flex min-h-screen w-full items-center">
         <NavBar />
 
-        <div className="container mx-auto flex flex-col justify-center bg-red-50 px-4 py-24">
-          <div className="bg-purple-70 m-5 flex justify-center p-4">
-            <div className="bg-red-40 relative inline-block">
+        <div className="mx-4 flex w-full max-w-4xl flex-col items-center justify-center px-4 py-10 md:mx-auto">
+          <div className="flex justify-center p-4">
+            <div className="relative inline-block">
               <img
                 src={imageSrc}
                 alt="avatar"
-                className="h-24 w-24 rounded-full object-cover ring-2 ring-purple-500"
+                className="ring-secondary size-[clamp(5rem,15vw,8rem)] rounded-full object-cover ring-2"
               />
               <button
-                className="absolute -right-1 -bottom-1 cursor-pointer items-center justify-center rounded-full bg-amber-300 p-1 shadow-md"
+                className="bg-accent absolute -right-1 -bottom-1 cursor-pointer items-center justify-center rounded-full p-1 shadow-md"
                 onClick={handleImageEditClick}
               >
                 <PenIcon />
@@ -226,66 +226,100 @@ function RouteComponent() {
           </div>
 
           {/*  */}
-          <div className="flex bg-amber-50 p-3">
-            <form className="space-y-6" onSubmit={handleSubmit}>
-              <div>
-                <label htmlFor="name">Name</label>
+          <div className="flex p-3">
+            <form className="w-full max-w-lg space-y-5" onSubmit={handleSubmit}>
+              <div className="space-y-2">
+                <label
+                  htmlFor="name"
+                  className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  Name
+                </label>
                 <input
                   type="text"
                   id="name"
                   name="name"
-                  onChange={handleChange}
-                  placeholder={profile?.user.name}
                   value={formData.name}
+                  placeholder={profile?.user.name}
+                  onChange={handleChange}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm shadow-sm transition outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:placeholder:text-gray-500"
                 />
               </div>
-              <div>
-                <label htmlFor="email">Email</label>
+
+              <div className="space-y-2">
+                <label
+                  htmlFor="email"
+                  className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  Email
+                </label>
                 <input
-                  type="text"
+                  type="email"
                   id="email"
                   name="email"
-                  onChange={handleChange}
                   value={formData.email}
                   placeholder={profile?.user.email}
+                  onChange={handleChange}
                   disabled={isOauthUser}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm shadow-sm transition outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:disabled:bg-gray-800"
                 />
               </div>
+
               {!isOauthUser && (
                 <>
-                  <div>
-                    <label htmlFor="name">Password</label>
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="password"
+                      className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                    >
+                      Current Password
+                    </label>
                     <input
-                      type="text"
+                      type="password"
                       id="password"
-                      value={formData.password}
                       name="password"
+                      value={formData.password}
                       onChange={handleChange}
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm shadow-sm transition outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
                     />
                   </div>
 
-                  <div>
-                    <label htmlFor="name">New Password</label>
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="newPassword"
+                      className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                    >
+                      New Password
+                    </label>
                     <input
-                      type="text"
+                      type="password"
                       id="newPassword"
-                      value={formData.newPassword}
                       name="newPassword"
+                      value={formData.newPassword}
                       onChange={handleChange}
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm shadow-sm transition outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
                     />
                   </div>
-                  <div>
-                    <label htmlFor="name">Confirm New Password</label>
+
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="confirmNewPassword"
+                      className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                    >
+                      Confirm New Password
+                    </label>
                     <input
-                      type="text"
+                      type="password"
                       id="confirmNewPassword"
                       name="confirmNewPassword"
                       value={formData.confirmNewPassword}
                       onChange={handleChange}
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm shadow-sm transition outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
                     />
                   </div>
                 </>
               )}
+
               {/* action buttons*/}
 
               {error && <p className="text-sm text-red-500">{error}</p>}

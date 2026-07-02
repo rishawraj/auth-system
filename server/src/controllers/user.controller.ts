@@ -49,6 +49,8 @@ const verifySchema = z.object({
   code: z.string().min(6, "invalid code"),
 });
 
+const RESEND_COOLDOWN_SECONDS = 60;
+
 export async function handleRegister(
   req: IncomingMessage,
   res: ServerResponse
@@ -912,7 +914,7 @@ export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
     // Check if verification code is valid and not expired
     if (!user || user.verification_code !== code) {
       await client.query("ROLLBACK");
-      return send(res, 400, { error: "Invalid verification code" });
+      return send(res, 400, { message: "Invalid verification code" });
     }
 
     if (
@@ -920,7 +922,7 @@ export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
       new Date(user.verification_code_expiry_time) < new Date()
     ) {
       await client.query("ROLLBACK");
-      return send(res, 400, { error: "Verification code has expired" });
+      return send(res, 400, { message: "Verification code has expired" });
     }
 
     // Update user account to active status
@@ -1002,6 +1004,87 @@ export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
     await client.query("ROLLBACK");
     console.error("Verification error: ", error);
     send(res, 500, { error: "Internal server error duing verification" });
+  } finally {
+    client.release();
+  }
+}
+
+export async function handleResendCode(
+  req: IncomingMessage,
+  res: ServerResponse
+) {
+  const body = await readBody<{ email: string }>(req);
+  const { email } = body;
+  if (!email) {
+    return send(res, 400, { message: "Email is required" });
+  }
+
+  console.log(email);
+
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const { rows } = await client.query(
+      `SELECT id, verification_code_expiry_time, last_code_sent_at
+       FROM users
+       WHERE pending_email = $1
+       FOR UPDATE
+      `,
+      [email]
+    );
+
+    if (rows.length === 0) {
+      await client.query("ROLLBACK");
+      return send(res, 200, {
+        message:
+          "If that email is pending verification, a new code has been sent.",
+      });
+    }
+
+    const user = rows[0];
+    console.log({ user });
+
+    // ! add last_code_sent_at
+
+    if (user.last_code_sent_at) {
+      const secondsSinceLastSend =
+        (Date.now() - new Date(user.last_code_sent_at).getTime()) / 1_000;
+
+      if (secondsSinceLastSend < RESEND_COOLDOWN_SECONDS) {
+        await client.query("ROLLBACK");
+        return send(res, 429, {
+          message: `Please wait ${Math.ceil(RESEND_COOLDOWN_SECONDS - secondsSinceLastSend)}s before requesting another code.`,
+        });
+      }
+    }
+
+    const MINUTES_VALID = 15;
+    const result = generateSixDigitCodeWithExpiry(MINUTES_VALID);
+
+    await client.query(
+      `UPDATE users
+      SET verification_code = $1,
+          verification_code_expiry_time = $2,
+          last_code_sent_at = NOW()
+      WHERE id = $3`,
+      [result.code, result.expiresAt, user.id]
+    );
+
+    await client.query("COMMIT");
+    setImmediate(() =>
+      sendVerificationEmailWorker(user.pending_email, result.code)
+    );
+
+    return send(res, 200, {
+      message:
+        "If that email is pending verification, a new code has been sent.",
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error resending verification code: ", error);
+    return send(res, 500, { message: "Failed to resend code" });
   } finally {
     client.release();
   }

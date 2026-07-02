@@ -25,9 +25,21 @@ function VerifyComponent() {
   const [verificationCode, setVerificationCode] = useState<string[]>(
     Array(6).fill(""),
   );
-  const inputRefs = Array(6)
-    .fill(0)
-    .map(() => React.createRef<HTMLInputElement>());
+  const [showResend, setShowresend] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendMessage, setResendMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // const inputRefs = Array(6)
+  //   .fill(0)
+  //   .map(() => React.createRef<HTMLInputElement>());
+
+  // Stable refs — created once, not on every render
+  const inputRefs = React.useRef<React.RefObject<HTMLInputElement | null>[]>(
+    Array(6)
+      .fill(0)
+      .map(() => React.createRef<HTMLInputElement>()),
+  ).current;
 
   const handleChange = (
     index: number,
@@ -39,6 +51,9 @@ function VerifyComponent() {
     const newCode = [...verificationCode];
     newCode[index] = value.slice(-1);
     setVerificationCode(newCode);
+
+    // reset error
+    if (error) setError(null);
 
     // Auto-focus next input
     if (value && index < 5) {
@@ -52,6 +67,80 @@ function VerifyComponent() {
   ) => {
     if (event.key === "Backspace" && !verificationCode[index] && index > 0) {
       inputRefs[index - 1].current?.focus();
+    }
+  };
+
+  const handlePaste = (
+    index: number,
+    event: React.ClipboardEvent<HTMLInputElement>,
+  ) => {
+    event.preventDefault();
+    const pasted = event.clipboardData
+      .getData("text")
+      .replace(/\D/g, "") // strip non-digits
+      .slice(0, 6 - index); // only take as many digits as remaining boxes
+
+    if (!pasted) return;
+
+    console.log({ pasted }); // 123456
+
+    const newCode = [...verificationCode];
+    let lastFilledIndex = index;
+    console.log({ newCode });
+
+    for (let i = 0; i < pasted.length; i++) {
+      newCode[index + i] = pasted[i];
+      lastFilledIndex = index + i;
+      console.log({ i, newCode, lastFilledIndex });
+    }
+    // reset error
+    if (error) setError(null);
+
+    console.log({ newCode });
+
+    setVerificationCode(newCode); // but this is ["","","6","","",""]
+    // when i paste into the last box a new empty box appears
+
+    // focus the next empty box, or last filled one if all filled
+    const nextIndex = Math.min(lastFilledIndex + 1, 5);
+    inputRefs[nextIndex].current?.focus();
+  };
+
+  const handleResend = async () => {
+    if (!pending_email) {
+      navigate({ to: "/register" });
+    }
+
+    setResending(true);
+    setResendMessage(null);
+
+    try {
+      const response = await fetch(`${API_URL}/resend-code`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ email: pending_email }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(
+          errorData?.message ?? `Server error: ${response.status}`,
+        );
+      }
+
+      setResendMessage("A new code has been sent to your email");
+    } catch (error) {
+      console.error("Erorr resending code:", error);
+      setResendMessage(
+        error instanceof Error
+          ? error.message
+          : "Failed to resend code. Please try again.",
+      );
+    } finally {
+      setResending(false);
     }
   };
 
@@ -84,13 +173,25 @@ function VerifyComponent() {
         to: "/2FAEnable",
       });
     } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "verification failed. Please try again.";
+
       console.error("Error during verification:", error);
+      setError(message);
+      setVerificationCode(Array(6).fill(""));
+      inputRefs[0].current?.focus();
+
+      if (message.toLowerCase().includes("expired")) {
+        setShowresend(true);
+      }
     }
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-100">
-      <div className="rounded-lg bg-white p-8 shadow-md">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-100 dark:bg-gray-800">
+      <div className="flex flex-col items-center rounded-lg border bg-white p-8 shadow-md dark:bg-gray-800">
         <h1 className="mb-6 text-center text-2xl font-bold">
           Verify your email
         </h1>
@@ -101,17 +202,43 @@ function VerifyComponent() {
         <div className="mb-6 flex gap-2">
           {verificationCode.map((digit, index) => (
             <input
-              key={`verify-input-${index + Math.random()}`}
+              key={`verify-input-${index}`}
               type="text"
               maxLength={1}
               value={digit}
               ref={inputRefs[index]}
               onChange={(e) => handleChange(index, e)}
               onKeyDown={(e) => handleKeyDown(index, e)}
-              className="h-12 w-12 rounded-md border text-center text-xl font-bold focus:border-blue-500 focus:outline-none"
+              onPaste={(e) => handlePaste(index, e)}
+              className={`h-12 w-12 rounded-md border text-center text-xl font-bold focus:outline-none ${
+                error
+                  ? "border-red-500 focus:border-red-500"
+                  : "focus:border-blue-500"
+              }`}
             />
           ))}
         </div>
+
+        {error && (
+          <p className="mb-4 text-center text-sm text-red-500">{error}</p>
+        )}
+
+        {showResend && (
+          <div className="mb-4 flex flex-col items-center gap-2">
+            <button
+              onClick={handleResend}
+              disabled={resending}
+              className="text-sm font-medium text-blue-500 underline hover:text-blue-600 disabled:opacity-50"
+            >
+              {resending ? "Sending..." : "Resend code"}
+            </button>
+            {resendMessage && (
+              <p className="text-center text-sm text-gray-600">
+                {resendMessage}
+              </p>
+            )}
+          </div>
+        )}
 
         <button
           onClick={handleSubmit}

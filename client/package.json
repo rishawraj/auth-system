@@ -13,6 +13,7 @@
     "format": "prettier --write \"**/*.{ts,tsx}\""
   },
   "dependencies": {
+    "@fontsource/poppins": "^5.2.7",
     "@heroicons/react": "^2.2.0",
     "@tailwindcss/vite": "^4.1.4",
     "@tanstack/react-query": "^5.90.16",
