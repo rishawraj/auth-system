@@ -2,67 +2,67 @@
 
 import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query";
 
-import { getToken } from "../utils/authToken";
+import { fetchWithAuth } from "../utils/api";
+
+interface AdminLogsPage {
+  data: {
+    hasMore: boolean;
+    nextCursor: string | null;
+  };
+}
 
 export const statsQuery = queryOptions({
   queryKey: ["stats"],
-  queryFn: () => {
-    const API_URL = import.meta.env.VITE_API_BASE_URL;
-    const token = getToken();
-    const response = fetch(`${API_URL}/admin/stats/overview`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    }).then((res) => res.json());
+  queryFn: () => fetchWithAuth("/admin/stats/overview"),
+  // queryFn: () => {
+  //   const API_URL = import.meta.env.VITE_API_BASE_URL;
+  //   const token = getToken();
+  //   const response = fetch(`${API_URL}/admin/stats/overview`, {
+  //     method: "GET",
+  //     headers: {
+  //       "Content-Type": "application/json",
+  //       Authorization: `Bearer ${token}`,
+  //     },
+  //   }).then((res) => res.json());
 
-    return response;
-  },
+  //   return response;
+  // },
 });
 
 export const recentActivityQuery = queryOptions({
   queryKey: ["recent-activity"],
-  queryFn: () => {
-    const API_URL = import.meta.env.VITE_API_BASE_URL;
-    const token = getToken();
-    const response = fetch(`${API_URL}/admin/recent-activity`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    }).then((res) => res.json());
-    return response;
-  },
+  queryFn: () => fetchWithAuth("/admin/recent-activity"),
+
+  // queryFn: () => {
+  //   const API_URL = import.meta.env.VITE_API_BASE_URL;
+  //   const token = getToken();
+  //   const response = fetch(`${API_URL}/admin/recent-activity`, {
+  //     method: "GET",
+  //     headers: {
+  //       "Content-Type": "application/json",
+  //       Authorization: `Bearer ${token}`,
+  //     },
+  //   }).then((res) => res.json());
+  //   return response;
+  // },
 });
 
 export const adminLogsQuery = infiniteQueryOptions({
   queryKey: ["admin-logs"],
   initialPageParam: null as string | null,
   queryFn: ({ pageParam }) => {
-    const API_URL = import.meta.env.VITE_API_BASE_URL;
-    const token = getToken();
+    const params = new URLSearchParams({
+      limit: "10",
+    });
 
-    // construct URL
-    const url = new URL(`${API_URL}/admin/admin-audit-logs`);
-    url.searchParams.set("limit", "10");
     if (pageParam) {
-      url.searchParams.set("cursor", pageParam);
+      params.set("cursor", pageParam);
     }
 
-    const response = fetch(url.toString(), {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    }).then((res) => res.json());
-
-    return response;
+    return fetchWithAuth<AdminLogsPage>(`/admin/admin-audit-logs?${params}`);
   },
+
   getNextPageParam: (lastPage) => {
-    console.log("last page response: ", lastPage);
     return lastPage.data.hasMore ? lastPage.data.nextCursor : undefined;
   },
 });
@@ -74,19 +74,12 @@ export const adminDashboardPaginatedUsersQuery = (
   queryOptions({
     queryKey: ["admin-dashboard-users", page, search],
     queryFn: () => {
-      const API_URL = import.meta.env.VITE_API_BASE_URL;
-      const token = getToken();
-      const response = fetch(
-        `${API_URL}/admin/paginated-users?page=${page}&limit=10&search=${encodeURIComponent(search)}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      ).then((res) => res.json());
-      return response;
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: "10",
+        search,
+      });
+      return fetchWithAuth(`/admin/paginated-users?${params}`);
     },
     placeholderData: (previousData) => previousData,
   });

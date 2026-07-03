@@ -10,6 +10,8 @@ import { z } from "zod";
 
 import { setToken, setType } from "../../utils/authToken";
 
+const API_URL = import.meta.env.VITE_API_BASE_URL;
+
 const authLoginSchema = z.object({
   token: z.string().optional().default(""),
   type: z.string().optional().default(""),
@@ -39,7 +41,7 @@ function RouteComponent() {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:3000/2fa/validate", {
+      const response = await fetch(`${API_URL}/2fa/validate`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

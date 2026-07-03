@@ -120,7 +120,16 @@ export async function fetchWithAuth<T>(
     }
 
     if (!response.ok) {
-      throw new ApiError(response.status, "Request failed");
+      let message = "Request failed";
+
+      try {
+        const errorData = await response.json();
+        message = errorData.message ?? errorData.error ?? message;
+      } catch (err) {
+        console.error(err);
+      }
+
+      throw new ApiError(response.status, message);
     }
 
     return response.json();

@@ -621,11 +621,14 @@ export async function handleLogout(req: IncomingMessage, res: ServerResponse) {
 }
 
 async function handleEmailLogout(req: IncomingMessage, res: ServerResponse) {
+  console.log("in here email logout");
   const cookies = parseCookies(req);
   const refreshToken = cookies["refreshToken"];
 
   if (!refreshToken) {
-    return send(res, 204, { message: "no token to logout" });
+    return send(res, 200, {
+      message: "Already logged out",
+    });
   }
 
   let decoded;

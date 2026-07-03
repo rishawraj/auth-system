@@ -1,21 +1,19 @@
 import { useNavigate } from "@tanstack/react-router";
 
-import { getToken, getType, removeToken } from "../utils/authToken";
+import { fetchWithAuth } from "../utils/api";
+import { getType, removeToken } from "../utils/authToken";
 
 export function LogoutButton() {
   const navigate = useNavigate();
-  const API_URL = import.meta.env.VITE_API_BASE_URL;
+  // const API_URL = import.meta.env.VITE_API_BASE_URL;
   const type = getType();
 
   const handleLogout = async () => {
     try {
-      // Call the server-side logout endpoint
-      const token = getToken();
-      await fetch(`${API_URL}/logout`, {
+      await fetchWithAuth(`/logout`, {
         method: "POST",
         credentials: "include", // Include cookies in the request
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ type }),

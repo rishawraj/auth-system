@@ -329,6 +329,7 @@ export async function ValidateTwoFactorAuth(
     }
 
     const { code, type } = result.data;
+    console.log({ code, type, token });
 
     if (!code) {
       return send(res, 400, { error: "Invalid 2fa code" });
