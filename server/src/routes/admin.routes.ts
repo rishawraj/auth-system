@@ -144,7 +144,7 @@ export default async (
     send(res, 200, {
       status: "OK",
       message: "Users fetched successfully",
-      data: usersList,
+      data: usersList.rows,
     });
 
     return true; // Add this line to indicate the route was handled

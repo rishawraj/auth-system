@@ -197,7 +197,7 @@ function RouteComponent() {
 
   return (
     <>
-      <div className="bg-background text-text flex min-h-screen w-full items-center">
+      <div className="bg-background text-text flex min-h-screen w-full flex-col items-center">
         <NavBar />
 
         <div className="mx-4 flex w-full max-w-4xl flex-col items-center justify-center px-4 py-10 md:mx-auto">

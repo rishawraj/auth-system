@@ -1,12 +1,13 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 
-@theme {
+/* @theme {
   --color-text: oklch(20% 0.03 260);
   --color-background: oklch(98% 0.004 260);
   --color-primary: oklch(35% 0.08 260);
   --color-secondary: oklch(90% 0.015 260);
   --color-accent: oklch(72% 0.11 80);
+  --font-serif: "Fraunces", ui-serif, Georgia, serif;
 }
 
 .dark {
@@ -15,10 +16,30 @@
   --color-primary: oklch(60% 0.09 260);
   --color-secondary: oklch(28% 0.03 260);
   --color-accent: oklch(75% 0.12 80);
+} */
+
+/* green muted */
+
+/* low-contrast purple */
+
+@theme {
+  --color-text: oklch(25% 0.03 300);
+  --color-background: oklch(95.5% 0.006 300); /* Frosted lavender */
+  --color-primary: oklch(45% 0.09 300);
+  --color-secondary: oklch(88% 0.02 300);
+  --color-accent: oklch(75% 0.14 110); /* Chartreuse accent */
+}
+
+.dark {
+  --color-text: oklch(90% 0.015 300);
+  --color-background: oklch(14% 0.03 300); /* Deep twilight purple */
+  --color-primary: oklch(70% 0.09 300);
+  --color-secondary: oklch(26% 0.04 300);
+  --color-accent: oklch(80% 0.14 110);
 }
 
 /* poppins-latin-400-normal */
-@font-face {
+/* @font-face {
   font-family: "Poppins";
   font-style: normal;
   font-display: swap;
@@ -31,8 +52,42 @@
     U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
     U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
     U+2215, U+FEFF, U+FFFD;
+} */
+
+/* fraunces-latin-500-normal (wordmark weight) */
+@font-face {
+  font-family: "Fraunces";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 500;
+  src:
+    url(@fontsource/fraunces/files/fraunces-latin-500-normal.woff2)
+      format("woff2"),
+    url(@fontsource/fraunces/files/fraunces-latin-500-normal.woff)
+      format("woff");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
+}
+
+/* fraunces-latin-500-italic (optional — nice for an emphasis word somewhere) */
+@font-face {
+  font-family: "Fraunces";
+  font-style: italic;
+  font-display: swap;
+  font-weight: 500;
+  src:
+    url(@fontsource/fraunces/files/fraunces-latin-500-italic.woff2)
+      format("woff2"),
+    url(@fontsource/fraunces/files/fraunces-latin-500-italic.woff)
+      format("woff");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
 }
 
 body {
-  font-family: "Poppins", sans-serif;
+  font: "Fraunces", ui-serif, Georgia, serif;
 }

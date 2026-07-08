@@ -8,20 +8,6 @@ export const toggleUserStatus = async ({
   id: string;
   is_active: boolean;
 }) => {
-  // const API_URL = import.meta.env.VITE_API_BASE_URL;
-  // const token = getToken();
-  // const response = await fetch(`${API_URL}/admin/users/${id}`, {
-  //   method: "PATCH",
-  //   headers: {
-  //     "Content-Type": "application/json",
-  //     Authorization: `Bearer ${token}`,
-  //   },
-  //   body: JSON.stringify({ is_active }),
-  // });
-  // if (!response.ok) throw new Error("failed to update user status");
-
-  // return response;
-
   return fetchWithAuth(`/admin/users/${id}`, {
     method: "PATCH",
     headers: {
@@ -32,19 +18,6 @@ export const toggleUserStatus = async ({
 };
 
 export const deleteUser = async ({ id }: { id: string }) => {
-  // const API_URL = import.meta.env.VITE_API_BASE_URL;
-  // const token = getToken();
-  // const response = await fetch(`${API_URL}/admin/users/${id}`, {
-  //   method: "DELETE",
-  //   headers: {
-  //     "Content-Type": "application/json",
-  //     Authorization: `Bearer ${token}`,
-  //   },
-  // });
-  // if (!response.ok) throw new Error("failed to update user status");
-
-  // return response;
-
   return fetchWithAuth(`/admin/users/${id}`, {
     method: "DELETE",
   });

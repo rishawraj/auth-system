@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import NavBar from "../components/NavBar-test";
 import { getToken } from "../utils/authToken";
 
+const API_URL = import.meta.env.VITE_API_BASE_URL;
+
 export const Route = createFileRoute("/test")({
   component: ThemeShowcase,
 });
@@ -22,7 +24,7 @@ function RouteComponent() {
         onClick={async () => {
           // include token from getToken
           const token = getToken();
-          const res = await fetch("http://localhost:3000/test-refresh-token", {
+          const res = await fetch(`${API_URL}/test-refresh-token`, {
             credentials: "include",
             headers: {
               Authorization: `Bearer ${token}`,
@@ -51,9 +53,9 @@ export default function ThemeShowcase() {
 
   return (
     // bg-background and text-text set the foundation for the whole page
-    <div className="flex">
+    <div className="flex min-h-screen flex-col">
       <NavBar />
-      <div className="bg-background text-text mt-10 min-h-screen p-6 transition-colors duration-300 md:p-12">
+      <div className="bg-background text-text p-6 transition-colors duration-300 md:p-12">
         <div className="mx-auto max-w-4xl space-y-10">
           {/* Header */}
           <header className="border-secondary flex flex-col items-start justify-between gap-4 border-b pb-6 sm:flex-row sm:items-center">

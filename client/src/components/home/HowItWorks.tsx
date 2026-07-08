@@ -1,0 +1,68 @@
+// src/components/home/HowItWorks.tsx
+import { motion } from "framer-motion";
+
+const STEPS = [
+  {
+    number: "01",
+    title: "Create your account",
+    description:
+      "Sign up with your email and password, or continue with Google. Either way, you're in within seconds.",
+  },
+  {
+    number: "02",
+    title: "Verify your email",
+    description:
+      "We'll send a code to confirm it's really you. This one step closes off most of the account-takeover attempts we see.",
+  },
+  {
+    number: "03",
+    title: "Secure it with 2FA",
+    description:
+      "Turn on two-factor authentication and save your backup codes somewhere safe. From here, your account stays yours even if your password doesn't.",
+  },
+] as const;
+
+export const HowItWorks = () => {
+  return (
+    <section className="bg-[var(--color-secondary)]/25 px-4 py-20 md:py-28">
+      <div className="container mx-auto max-w-5xl">
+        <p className="mb-3 text-center text-[11px] font-medium tracking-[0.25em] text-[var(--color-accent)] uppercase">
+          Getting started
+        </p>
+        <h2 className="mb-14 text-center font-serif text-2xl text-[var(--color-text)] md:text-3xl">
+          Three steps. That's it.
+        </h2>
+
+        <div className="grid gap-10 md:grid-cols-3 md:gap-8">
+          {STEPS.map((step, i) => (
+            <motion.div
+              key={step.number}
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-80px" }}
+              transition={{ duration: 0.5, delay: i * 0.1 }}
+              className="relative"
+            >
+              <span className="font-serif text-4xl text-[var(--color-accent)]/40">
+                {step.number}
+              </span>
+              <h3 className="mt-3 text-lg font-medium text-[var(--color-text)]">
+                {step.title}
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-[var(--color-text)]/65">
+                {step.description}
+              </p>
+
+              {i < STEPS.length - 1 && (
+                <div
+                  aria-hidden
+                  className="absolute top-6 left-[calc(100%+1rem)] hidden h-px w-8 bg-[var(--color-secondary)] md:block"
+                />
+              )}
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};

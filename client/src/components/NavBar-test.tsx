@@ -17,99 +17,118 @@ const NavBar = () => {
 
   return (
     <motion.nav
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      className="fixed top-0 z-50 w-full bg-white shadow-md dark:bg-gray-800"
+      initial={{ y: -12, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ type: "spring", stiffness: 300, damping: 28 }}
+      className="sticky top-0 z-50 mx-auto w-full border-b border-[var(--color-secondary)] bg-[var(--color-background)]"
     >
-      <div className="container m-auto flex items-center justify-between px-4 py-4">
-        {/* Brand or logo */}
-        <motion.div
-          className="text-2xl font-bold text-indigo-600 dark:text-indigo-400"
-          whileHover={{ scale: 1.05 }}
+      <div className="container mx-auto flex max-w-5xl items-center justify-between px-4 py-3.5 md:px-6">
+        {/* Brand */}
+        <Link
+          to="/"
+          className="group flex items-center gap-2.5 focus-visible:outline-none"
         >
-          <Link to="/">AuthSystem</Link>
-        </motion.div>
+          <motion.span
+            className="block h-2 w-2 shrink-0 rotate-45 bg-[var(--color-accent)]"
+            whileHover={{ rotate: 90 }}
+            transition={{ type: "spring", stiffness: 260, damping: 15 }}
+          />
+          <span className="font-serif text-[1.35rem] tracking-tight text-[var(--color-primary)]">
+            AuthSystem
+          </span>
+        </Link>
 
-        {/* Hamburger Icon (visible on small screens only) */}
+        {/* Hamburger (mobile only) */}
         <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
-          className="cursor-pointer text-gray-600 md:hidden dark:text-gray-300"
+          whileHover={{ scale: 1.08 }}
+          whileTap={{ scale: 0.94 }}
+          className="cursor-pointer text-[var(--color-primary)] focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:outline-none md:hidden"
           onClick={() => setMenuOpen(!menuOpen)}
-          aria-label="Toggle Menu"
+          aria-label="Toggle menu"
+          aria-expanded={menuOpen}
         >
-          {menuOpen ? <X size={24} /> : <Menu size={24} />}
+          {menuOpen ? <X size={22} /> : <Menu size={22} />}
         </motion.button>
 
-        {/* Desktop Menu */}
-        <div className="hidden items-center space-x-8 md:flex">
-          <NavLink to="/">Home</NavLink>
+        {/* Desktop nav */}
+        <div className="hidden items-center gap-9 md:flex">
+          <NavLink to="/" activeOptions={{ exact: true }}>
+            Home
+          </NavLink>
           <NavLink to="/about">About</NavLink>
-          <NavLink to="/services">Services</NavLink>
+          <NavLink to="/features">Features</NavLink>
+
           {isAuthenticated ? (
-            <div className="flex items-center gap-4">
-              <motion.div whileHover={{ scale: 1.05 }}>
-                <Link
-                  to="/profile"
-                  className="rounded-full bg-indigo-600 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+            <Link to="/profile" className="focus-visible:outline-none">
+              {({ isActive }) => (
+                <span
+                  className={`inline-block rounded-full border border-[var(--color-primary)] px-5 py-1.5 text-[11px] font-medium tracking-[0.14em] uppercase transition-colors focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 ${
+                    isActive
+                      ? "bg-[var(--color-primary)] text-[var(--color-background)]"
+                      : "text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-[var(--color-background)]"
+                  }`}
+                  aria-current={isActive ? "page" : undefined}
                 >
                   Profile
-                </Link>
-              </motion.div>
-            </div>
+                </span>
+              )}
+            </Link>
           ) : (
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-5">
               <NavLink to="/login">Login</NavLink>
-              <motion.div whileHover={{ scale: 1.05 }}>
-                <Link
-                  to="/register"
-                  className="rounded-full bg-indigo-600 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
-                >
-                  Sign Up
-                </Link>
-              </motion.div>
+              <Link
+                to="/register"
+                className="rounded-full bg-[var(--color-primary)] px-5 py-1.5 text-[11px] font-medium tracking-[0.14em] text-[var(--color-background)] uppercase transition-colors hover:bg-[var(--color-accent)] hover:text-[var(--color-text)] focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:outline-none"
+              >
+                Sign Up
+              </Link>
             </div>
           )}
           <ThemeToggle />
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile menu */}
       <motion.div
-        initial={{ opacity: 0, height: 0 }}
-        animate={{
-          opacity: menuOpen ? 1 : 0,
-          height: menuOpen ? "auto" : 0,
-        }}
-        className="overflow-hidden md:hidden"
+        initial={false}
+        animate={{ height: menuOpen ? "auto" : 0, opacity: menuOpen ? 1 : 0 }}
+        transition={{ duration: 0.25, ease: "easeInOut" }}
+        className="overflow-hidden border-t border-transparent data-[open=true]:border-[var(--color-secondary)] md:hidden"
+        data-open={menuOpen}
       >
-        <div className="flex flex-col space-y-4 px-4 pt-2 pb-6">
-          <NavLink mobile to="/" onClick={() => setMenuOpen(false)}>
+        <div className="flex flex-col gap-1 px-4 pt-3 pb-5">
+          <MobileNavLink
+            to="/"
+            activeOptions={{ exact: true }}
+            onClick={() => setMenuOpen(false)}
+          >
             Home
-          </NavLink>
-          <NavLink mobile to="/about" onClick={() => setMenuOpen(false)}>
+          </MobileNavLink>
+          <MobileNavLink to="/about" onClick={() => setMenuOpen(false)}>
             About
-          </NavLink>
-          <NavLink mobile to="/services" onClick={() => setMenuOpen(false)}>
-            Services
-          </NavLink>
-          <div className="flex flex-col gap-4 border-t pt-4">
+          </MobileNavLink>
+          <MobileNavLink to="/features" onClick={() => setMenuOpen(false)}>
+            Features
+          </MobileNavLink>
+
+          <div className="mt-3 flex flex-col gap-3 border-t border-[var(--color-secondary)] pt-4">
             {isAuthenticated ? (
               <Link
                 to="/profile"
-                className="rounded-full bg-indigo-600 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+                onClick={() => setMenuOpen(false)}
+                className="rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-center text-sm font-medium text-[var(--color-background)]"
               >
                 Profile
               </Link>
             ) : (
               <>
-                <NavLink mobile to="/login" onClick={() => setMenuOpen(false)}>
+                <MobileNavLink to="/login" onClick={() => setMenuOpen(false)}>
                   Login
-                </NavLink>
+                </MobileNavLink>
                 <Link
                   to="/register"
                   onClick={() => setMenuOpen(false)}
-                  className="w-full rounded-full bg-indigo-600 px-6 py-2 text-center text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+                  className="rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-center text-sm font-medium text-[var(--color-background)]"
                 >
                   Sign Up
                 </Link>
@@ -123,29 +142,82 @@ const NavBar = () => {
   );
 };
 
-// NavLink component with animation and styling
+// Desktop nav link — small-caps label with a sliding underline on the active route
 const NavLink = ({
   to,
   children,
-  mobile = false,
-  onClick,
+  activeOptions,
 }: {
   to: string;
   children: React.ReactNode;
-  mobile?: boolean;
-  onClick?: () => void;
+  activeOptions?: { exact?: boolean };
 }) => (
-  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-    <Link
-      to={to}
-      onClick={onClick}
-      className={`${
-        mobile ? "block text-base" : "text-sm"
-      } font-medium text-gray-600 transition-colors hover:text-indigo-600 dark:text-gray-300 dark:hover:text-indigo-400`}
-    >
-      {children}
-    </Link>
-  </motion.div>
+  <Link
+    to={to}
+    activeOptions={activeOptions}
+    activeProps={{ "aria-current": "page" }}
+    className="group focus-visible:outline-none"
+  >
+    {({ isActive }) => (
+      <motion.span
+        whileHover={{ y: -1 }}
+        whileTap={{ scale: 0.96 }}
+        className={`relative inline-flex items-center text-[11px] font-medium tracking-[0.14em] uppercase transition-colors ${
+          isActive
+            ? "text-[var(--color-primary)]"
+            : "text-[var(--color-text)]/60 group-hover:text-[var(--color-primary)]"
+        }`}
+      >
+        {children}
+        {isActive && (
+          <motion.span
+            layoutId="nav-underline"
+            className="absolute right-0 -bottom-2 left-0 h-px bg-[var(--color-accent)]"
+            transition={{ type: "spring", stiffness: 380, damping: 32 }}
+          />
+        )}
+      </motion.span>
+    )}
+  </Link>
+);
+
+// Mobile nav link — active route gets a left accent bar + tinted background
+const MobileNavLink = ({
+  to,
+  children,
+  onClick,
+  activeOptions,
+}: {
+  to: string;
+  children: React.ReactNode;
+  onClick?: () => void;
+  activeOptions?: { exact?: boolean };
+}) => (
+  <Link
+    to={to}
+    onClick={onClick}
+    activeOptions={activeOptions}
+    activeProps={{ "aria-current": "page" }}
+  >
+    {({ isActive }) => (
+      <span
+        className={`relative block rounded-md py-2.5 pl-4 text-base transition-colors ${
+          isActive
+            ? "bg-[var(--color-secondary)]/50 font-medium text-[var(--color-primary)]"
+            : "text-[var(--color-text)]/70"
+        }`}
+      >
+        {isActive && (
+          <motion.span
+            layoutId="nav-underline-mobile"
+            className="absolute top-1/2 left-0 h-4 w-[3px] -translate-y-1/2 rounded-full bg-[var(--color-accent)]"
+            transition={{ type: "spring", stiffness: 380, damping: 32 }}
+          />
+        )}
+        {children}
+      </span>
+    )}
+  </Link>
 );
 
 export default NavBar;

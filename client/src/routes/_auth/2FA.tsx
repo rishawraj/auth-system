@@ -10,6 +10,8 @@ import BackupCodesModal from "../../components/ShowBackUpCodes-new";
 import { fetchWithAuth } from "../../utils/api";
 import { getToken } from "../../utils/authToken";
 
+const API_URL = import.meta.env.VITE_API_BASE_URL;
+
 interface TwoFactorData {
   id: string;
   is_two_factor_enabled: boolean;
@@ -32,7 +34,7 @@ interface VerifyResponse {
 export const Route = createFileRoute("/_auth/2FA")({
   loader: async (): Promise<LoaderResult> => {
     try {
-      const data = await fetch("http://localhost:3000/2fa/enable", {
+      const data = await fetch(`${API_URL}/2fa/enable`, {
         headers: {
           Authorization: `Bearer ${getToken()}`,
           "Content-Type": "application/json",

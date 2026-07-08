@@ -1,13 +1,20 @@
 import {
   useLoaderData,
   createFileRoute,
-  useNavigate,
   redirect,
 } from "@tanstack/react-router";
-import Cookies from "js-cookie";
 
-import { User } from "../../../../../types/auth";
+import AdminUsersTable from "../../../../../components/admin/AdminUsersTable";
+import NavBar from "../../../../../components/NavBar-test";
+import { User } from "../../../../../types/types";
+import { fetchWithAuth } from "../../../../../utils/api";
 import { getToken } from "../../../../../utils/authToken";
+
+interface ApiResponse<T> {
+  status: string;
+  message: string;
+  data: T;
+}
 
 export const Route = createFileRoute("/_auth/_isAdmin/admin/users/")({
   beforeLoad: async () => {
@@ -20,66 +27,28 @@ export const Route = createFileRoute("/_auth/_isAdmin/admin/users/")({
 
   loader: async () => {
     const token = getToken();
-    const API_URL = import.meta.env.VITE_API_BASE_URL;
+    // const API_URL = import.meta.env.VITE_API_BASE_URL;
     console.log({ token });
     if (!token) {
       throw new Error("Authentication token not found.");
     }
-    const response = await fetch(`${API_URL}/admin/users`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    if (!response.ok) {
-      if (response.status === 401) {
-        // Token expired or invalid
-        Cookies.remove("token");
-        throw redirect({ to: "/login" });
-      }
-      throw new Error("Failed to fetch profile data");
-    }
-
-    return response.json();
+    const response = await fetchWithAuth<ApiResponse<User[]>>(`/admin/users`);
+    console.log({ response });
+    return response;
   },
   component: RouteComponent,
   errorComponent: () => <div>Something went wrong</div>,
 });
 
 function RouteComponent() {
-  const data = useLoaderData({ from: "/_auth/_isAdmin/admin/users/" });
-  console.log("Admin Health Data:", data.data.rows);
-  const navigate = useNavigate();
-
-  const handleUserClick = (userId: string) => {
-    navigate({ to: `/admin/users/${userId}` });
-  };
+  const loaderData = useLoaderData({ from: "/_auth/_isAdmin/admin/users/" });
+  const users = loaderData.data;
 
   return (
-    <div>
-      <h1>Admin</h1>
-      <p>This is the admin page.</p>
-      <div>
-        <h3>All users</h3>
-        {data.data.rows.length > 0 ? (
-          <ul>
-            {data.data.rows.map((user: User) => (
-              <li className="m-2 flex gap-2 bg-amber-500 p-2" key={user.id}>
-                <p>{user.id}</p>
-                <p>{user.name}</p>
-                <p>{user.email}</p>
-                <button
-                  className="m-2 cursor-pointer rounded-md border-2 border-black bg-green-400 p-2"
-                  onClick={() => handleUserClick(user.id)}
-                >
-                  go to user
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>No users found.</p>
-        )}
+    <div className="flex flex-col gap-5">
+      <NavBar />
+      <div className="mx-auto max-w-5xl">
+        <AdminUsersTable users={users} />
       </div>
     </div>
   );
