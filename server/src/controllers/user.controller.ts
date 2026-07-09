@@ -29,6 +29,7 @@ import qrcode from "qrcode";
 import { env } from "../config/env.js";
 import busboy from "busboy";
 import { uploadToR2 } from "../utils/uploadToR2.js";
+import { PoolClient } from "pg";
 
 // const SECRET = env.ACCESS_TOKEN_SECRET;
 // const FRONTEND_URL = env.FRONTEND_URL;
@@ -55,8 +56,11 @@ export async function handleRegister(
   req: IncomingMessage,
   res: ServerResponse
 ): Promise<void> {
+  let client: PoolClient | undefined;
+
   try {
     const body = await readBody<{ token: string; code: string }>(req);
+
     const result = registerSchema.safeParse(body);
 
     if (!result.success) {
@@ -64,38 +68,37 @@ export async function handleRegister(
       return send(res, 400, { errors });
     }
 
-    const { name, email, password } = result.data;
+    const { name, password } = result.data;
+    const email = result.data.email.toLocaleLowerCase().trim();
 
-    if (!email || !password) {
-      return send(res, 400, { error: "Email and password are required" });
-    }
+    client = await pool.connect();
 
-    const existingUserResult = await pool.query(
-      "SELECT id FROM users where email = $1",
+    const existingUserResult = await client.query(
+      "SELECT id, oauth_provider FROM users where email = $1",
       [email]
     );
 
-    const existingOauthUserResult = await pool.query(
-      "SELECT id FROM users where email = $1 and oauth_provider is not null",
-      [email]
-    );
+    const existingUser = existingUserResult.rows[0];
 
-    if (existingOauthUserResult.rows.length > 0) {
-      return send(res, 400, {
-        message:
-          "This account was created with Google. Please use Google login instead.",
-      });
-    }
-
-    if (existingUserResult.rows.length > 0) {
-      console.error("email already exists!");
-      return send(res, 400, { error: "User with this email already exists" });
+    if (existingUser) {
+      if (existingUser.oauth_provider) {
+        return send(res, 400, {
+          message:
+            "This account was created with Google. Please use Google login instead.",
+        });
+      } else {
+        return send(res, 400, {
+          message: "User with this email already exists",
+        });
+      }
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const CodeWithExpiry = generateSixDigitCodeWithExpiry();
-    const verificationCode = CodeWithExpiry.code;
-    const verification_code_expiry_time = CodeWithExpiry.expiresAt;
+    const { code: verificationCode, expiresAt: verification_code_expiry_time } =
+      generateSixDigitCodeWithExpiry();
+
+    // const verificationCode = CodeWithExpiry.code;
+    // const verification_code_expiry_time = CodeWithExpiry.expiresAt;
 
     const ua = new UAParser(req.headers["user-agent"] || "");
     const ip =
@@ -105,69 +108,87 @@ export async function handleRegister(
     const browser = ua.getBrowser().name || null;
     const os = ua.getOS().name || null;
     const device = ua.getDevice().model || "unknown";
-
     const last_login = new Date();
 
     const hashedEmail = crypto
       .createHash("sha256")
       .update(email.toLowerCase().trim())
       .digest("hex");
+
     const profile_pic = `https://api.dicebear.com/7.x/adventurer/png?seed=${hashedEmail}`;
 
     // 2fa
     const secret = new Secret({ size: 20 });
     const secretBase32 = secret.base32;
 
-    const newUserResult = await pool.query(
-      `INSERT INTO users (
-    name, pending_email, password, verification_code, verification_code_expiry_time,
-    last_login, last_ip, last_browser, last_os, last_device,
-    profile_pic, tmp_two_factor_secret
-  ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+    try {
+      await client.query("BEGIN");
+
+      const newUserResult = await client.query(
+        `INSERT INTO users (
+         name, pending_email, password, verification_code, verification_code_expiry_time,
+         last_login, last_ip, last_browser, last_os, last_device,
+         profile_pic, tmp_two_factor_secret
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
    RETURNING id, name, pending_email, is_active, registration_date`,
-      [
-        name,
-        email,
-        hashedPassword,
-        verificationCode,
-        verification_code_expiry_time,
-        last_login,
-        ip,
-        browser,
-        os,
-        device,
-        profile_pic,
-        secretBase32,
-      ]
-    );
+        [
+          name,
+          email,
+          hashedPassword,
+          verificationCode,
+          verification_code_expiry_time,
+          last_login,
+          ip,
+          browser,
+          os,
+          device,
+          profile_pic,
+          secretBase32,
+        ]
+      );
 
-    const newUser = newUserResult.rows[0];
+      const newUser = newUserResult.rows[0];
 
-    // generate QRCode 2fa
-    const totp = new TOTP({
-      issuer: "auth-system",
-      label: newUser.pending_email,
-      secret: secretBase32,
-      digits: 6,
-      period: 30,
-    });
+      // generate QRCode 2fa
+      const totp = new TOTP({
+        issuer: "auth-system",
+        label: newUser.pending_email,
+        secret: secretBase32,
+        digits: 6,
+        period: 30,
+      });
 
-    const OtpAuthUri = totp.toString();
-    const qrcodeImageUrl = await qrcode.toDataURL(OtpAuthUri);
+      const OtpAuthUri = totp.toString();
+      const qrcodeImageUrl = await qrcode.toDataURL(OtpAuthUri);
 
-    setImmediate(() => sendVerificationEmailWorker(email, verificationCode));
+      await client.query(
+        `INSERT INTO email_outbox (to_email, template, payload)
+         VALUES ($1, $2, $3)
+      `,
+        [email, "verification_code", JSON.stringify({ code: verificationCode })]
+      );
 
-    const response = {
-      message: "User registered successfully",
-      user: newUser,
-      // accessToken,
-      qrcodeImageUrl,
-    };
+      await client.query("COMMIT");
 
-    send(res, 201, response);
+      send(res, 201, {
+        message: "User registered successfully",
+        user: newUser,
+        qrcodeImageUrl,
+      });
+    } catch (error) {
+      await client.query("ROLLBACK");
+
+      if (error.code === "23505") {
+        return send(res, 409, { error: "User with this email alread exists" });
+      }
+      console.error("Registration error:", error);
+      send(res, 500, { error: "Internal server error" });
+    }
   } catch (error) {
-    console.error("Registration error:", error);
+    console.error(error);
     send(res, 500, { error: "Internal server error" });
+  } finally {
+    client.release();
   }
 }
 

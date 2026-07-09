@@ -30,10 +30,6 @@ export async function sendDisable2FAOtpEmail(to: string, code: string) {
     `,
   };
 
-  try {
-    const info = await transporter.sendMail(mailOptions);
-    console.log("Disable 2FA OTP email sent: " + info.response);
-  } catch (error) {
-    console.error("Error sending disable 2FA OTP email:", error);
-  }
+  const info = await transporter.sendMail(mailOptions);
+  console.log("Disable 2FA OTP email sent: " + info.response);
 }

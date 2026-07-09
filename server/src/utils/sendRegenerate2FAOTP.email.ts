@@ -36,13 +36,6 @@ export async function sendRegenerate2FABackupCodesOTPEmail(
     `,
   };
 
-  try {
-    const info = await transporter.sendMail(mailOptions);
-    console.log("Regenerate 2FA backup codes OTP email sent: " + info.response);
-  } catch (error) {
-    console.error(
-      "Error sending regenerate 2FA backup codes OTP email:",
-      error
-    );
-  }
+  const info = await transporter.sendMail(mailOptions);
+  console.log("Regenerate 2FA backup codes OTP email sent: " + info.response);
 }

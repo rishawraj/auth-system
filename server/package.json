@@ -10,7 +10,9 @@
     "test": "vitest",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
     "seed": "tsx scripts/seedUsers.ts",
-    "migrate": "tsx scripts/migrate.ts"
+    "migrate": "tsx scripts/migrate.ts",
+    "worker": "tsx watch ./src/workers/emailOutbox.worker.ts",
+    "start:worker": "node dist/workers/emailOutbox.worker.js"
   },
   "author": "",
   "license": "ISC",

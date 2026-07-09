@@ -76,6 +76,7 @@ async function seedUsers(count: number = 50) {
         regenerate_2fa_otp: null,
         regenerate_2fa_otp_expiry: null,
         pending_email: null,
+        last_code_sent_at: null,
       };
 
       const query = `
