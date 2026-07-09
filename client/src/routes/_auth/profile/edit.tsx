@@ -125,6 +125,10 @@ function RouteComponent() {
     setError("");
 
     if (!isOauthUser) {
+      if (formData.password && !formData.newPassword) {
+        setError("Please enter the new password.");
+        return;
+      }
       if (formData.newPassword && !formData.password) {
         setError("Please enter you current password to set a new one.");
         return;

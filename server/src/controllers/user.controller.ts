@@ -13,10 +13,6 @@ import {
 } from "../utils/helpers.js";
 import { z } from "zod";
 import { pool } from "../config/db.config.js";
-import {
-  sendResetPasswordEmailWorker,
-  sendVerificationEmailWorker,
-} from "../workers/sendEmail.Worker.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import "dotenv/config";
@@ -351,11 +347,9 @@ export async function handleProfile(
 ): Promise<void> {
   try {
     const authHeader = req.headers.authorization;
-
     if (!authHeader) return send(res, 401, { error: "No token provided" });
 
     const token = authHeader.split(" ")[1];
-
     if (!token) {
       return send(res, 401, { error: "Invalid authorization format" });
     }
@@ -393,117 +387,145 @@ export async function updateProfile(
   req: IncomingMessage,
   res: ServerResponse
 ): Promise<void> {
-  let emailVerificationPending = false;
-
-  const authHeader = req.headers.authorization;
-  if (!authHeader) return send(res, 401, { error: "No token provided" });
-
-  const token = authHeader.split(" ")[1];
-  if (!token) return send(res, 401, { error: "Invalid authorization format" });
-
-  let userEmail: string;
+  let client: PoolClient | undefined;
 
   try {
-    const decoded = jwt.verify(token, env.ACCESS_TOKEN_SECRET);
-    if (typeof decoded === "object" && decoded !== null && "email" in decoded) {
-      userEmail = decoded.email as string;
-    } else {
-      return send(res, 400, { error: "Invalid token payload" });
-    }
-  } catch {
-    return send(res, 401, { error: "Invalid token" });
-  }
+    // ---- auth ----
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return send(res, 401, { error: "No token provided" });
 
-  // fetch current user
-  const userResult = await pool.query(
-    "SELECT * FROM users WHERE email = $1 AND is_deleted = false",
-    [userEmail]
-  );
+    const token = authHeader.split(" ")[1];
+    if (!token)
+      return send(res, 401, { error: "Invalid authorization format" });
 
-  if (userResult.rows.length === 0) {
-    return send(res, 404, { error: "User not found" });
-  }
-
-  const user = userResult.rows[0];
-  const isOauthUser = !!user.oauth_provider;
-  // !
-
-  const fields: Record<string, string> = {};
-  let profilePicUrl: string | null = null;
-
-  let uploadPromise: Promise<void>;
-
-  await new Promise<void>((resolve, reject) => {
-    const bb = busboy({ headers: req.headers });
-
-    bb.on("field", (name, value) => {
-      fields[name] = value;
-    });
-
-    // file upload
-    bb.on("file", (fieldname, stream, info) => {
-      if (fieldname !== "profile_pic") {
-        stream.resume();
-        return;
+    let userEmail: string;
+    try {
+      const decoded = jwt.verify(token, env.ACCESS_TOKEN_SECRET);
+      if (
+        typeof decoded === "object" &&
+        decoded !== null &&
+        "email" in decoded
+      ) {
+        userEmail = decoded.email as string;
+      } else {
+        return send(res, 400, { error: "Invalid token payload" });
       }
+    } catch {
+      return send(res, 401, { error: "Invalid token" });
+    }
 
-      const chunks: Buffer[] = [];
+    client = await pool.connect();
 
-      stream.on("data", (chunk) => chunks.push(chunk));
-      // store the promise
-      uploadPromise = new Promise<void>((res, rej) => {
-        stream.on("end", async () => {
-          try {
-            const buffer = Buffer.concat(chunks);
-            const ext = info.mimeType.split("/")[1] ?? "png";
-            //todo
-            const key = `avatar/user-${user.id}.${ext}`;
-            profilePicUrl = await uploadToR2(buffer, key, info.mimeType);
-            res();
-          } catch (error) {
-            rej(error);
-          }
-        });
+    const userResult = await client.query(
+      "SELECT * FROM users WHERE email = $1 AND is_deleted = false",
+      [userEmail]
+    );
+    if (userResult.rows.length === 0) {
+      return send(res, 404, { error: "User not found" });
+    }
+    const user = userResult.rows[0];
+    const isOauthUser = !!user.oauth_provider;
+
+    // ---- parse multipart body ----
+    const fields: Record<string, string> = {};
+    let profilePicUrl: string | null = null;
+    let uploadError: Error | null = null;
+
+    const MAX_FILE_SIZE = 5 * 1024 * 1024;
+    const ALLOWED_MIME: Record<string, string> = {
+      "image/png": "png",
+      "image/jpeg": "jpg",
+      "image/webp": "webp",
+    };
+
+    await new Promise<void>((resolve, reject) => {
+      const bb = busboy({
+        headers: req.headers,
+        limits: { fileSize: MAX_FILE_SIZE, files: 1 },
       });
+
+      const filePromises: Promise<void>[] = [];
+
+      bb.on("field", (name, value) => {
+        fields[name] = value;
+      });
+
+      bb.on("file", (fieldname, stream, info) => {
+        if (fieldname !== "profile_pic") {
+          stream.resume();
+          return;
+        }
+
+        if (!ALLOWED_MIME[info.mimeType]) {
+          uploadError = new Error("Unsupported image type");
+          stream.resume();
+          return;
+        }
+
+        const chunks: Buffer[] = [];
+        stream.on("data", (chunk) => chunks.push(chunk));
+
+        filePromises.push(
+          new Promise<void>((resolveFile, rejectFile) => {
+            stream.on("limit", () => {
+              uploadError = new Error("Profile picture exceeds 5MB limit");
+              rejectFile(uploadError);
+            });
+            stream.on("end", async () => {
+              try {
+                if (uploadError) return resolveFile();
+                const buffer = Buffer.concat(chunks);
+                const ext = ALLOWED_MIME[info.mimeType];
+                const key = `avatar/user-${user.id}.${ext}`;
+                profilePicUrl = await uploadToR2(buffer, key, info.mimeType);
+                resolveFile();
+              } catch (error) {
+                rejectFile(error as Error);
+              }
+            });
+          })
+        );
+      });
+
+      bb.on("finish", () => {
+        Promise.all(filePromises)
+          .then(() => resolve())
+          .catch(reject);
+      });
+      bb.on("error", reject);
+
+      req.pipe(bb);
     });
 
-    bb.on("finish", resolve);
-    bb.on("error", reject);
-    req.pipe(bb);
-  });
+    if (uploadError) {
+      return send(res, 400, { error: uploadError.message });
+    }
 
-  await uploadPromise;
+    // ============================================================
+    // PHASE 1 — validate every requested field, write nothing yet
+    // ============================================================
 
-  //todo save fields + profilePic URL to db
+    let wantsEmailChange = false;
+    let newEmail = "";
 
-  // build dynamic update
-  const updates: string[] = [];
-  const values: unknown[] = [];
-  let idx = 1;
+    let wantsPasswordChange = false;
+    let hashedNewPassword = "";
 
-  const append = (col: string, val: unknown) => {
-    updates.push(`${col} = $${idx++}`);
-    values.push(val);
-  };
+    let wantsNameChange = false;
+    const trimmedName = fields.name?.trim();
 
-  if (fields.name?.trim()) {
-    append("name", fields.name.trim());
-  }
+    if (trimmedName) wantsNameChange = true;
 
-  if (!isOauthUser) {
-    // update email
-    if (fields.email?.trim()) {
-      const newEmail = fields.email.trim();
+    if (!isOauthUser && fields.email?.trim()) {
+      newEmail = fields.email.trim().toLowerCase();
 
-      // not changed
-      if (newEmail === user.email) {
+      if (newEmail === user.email?.toLowerCase()) {
         return send(res, 400, {
           error: "New email is the same as current email.",
         });
       }
 
-      // already in use
-      const emailTaken = await pool.query(
+      const emailTaken = await client.query(
         "SELECT id FROM users WHERE email = $1 AND id != $2",
         [newEmail, user.id]
       );
@@ -511,32 +533,10 @@ export async function updateProfile(
         return send(res, 400, { error: "Email is already in use." });
       }
 
-      const { code, expiresAt } = generateSixDigitCodeWithExpiry();
-
-      await pool.query(
-        `UPDATE users
-        SET pending_email = $1,
-          verification_code = $2,
-          verification_code_expiry_time = $3
-        WHERE id = $4`,
-        [newEmail, code, expiresAt, user.id]
-      );
-
-      setImmediate(() => sendVerificationEmailWorker(newEmail, code));
-
-      if (updates.length === 0 && !profilePicUrl) {
-        return send(res, 200, {
-          status: "email_verification_required",
-          message: "Verification email sent to your new address.",
-        });
-      }
-
-      // append("email", fields.email.trim());
-      emailVerificationPending = true;
+      wantsEmailChange = true;
     }
 
-    // update password
-    if (fields.new_password) {
+    if (!isOauthUser && fields.new_password) {
       if (!fields.password) {
         return send(res, 400, {
           error: "Current password is required to set a new one.",
@@ -549,34 +549,99 @@ export async function updateProfile(
       if (!passwordMatch) {
         return send(res, 400, { error: "Current password is incorrect." });
       }
-      const hashed = await bcrypt.hash(fields.new_password, 10);
-      append("password", hashed);
+      hashedNewPassword = await bcrypt.hash(fields.new_password, 10);
+      wantsPasswordChange = true;
     }
+
+    const hasAnyChange =
+      wantsNameChange ||
+      wantsEmailChange ||
+      wantsPasswordChange ||
+      !!profilePicUrl;
+
+    if (!hasAnyChange) {
+      console.log("no valid changes!");
+      return send(res, 400, { error: "No valid fields to update." });
+    }
+
+    console.log({ hasAnyChange });
+
+    // ============================================================
+    // PHASE 2 — everything validated, now write it all atomically
+    // ============================================================
+
+    let emailVerificationPending = false;
+
+    try {
+      await client.query("BEGIN");
+
+      // direct fields on `users` — only built from what actually changed
+      const updates: string[] = [];
+      const values: unknown[] = [];
+      let idx = 1;
+      const append = (col: string, val: unknown) => {
+        updates.push(`${col} = $${idx++}`);
+        values.push(val);
+      };
+
+      if (wantsNameChange) append("name", trimmedName);
+      if (wantsPasswordChange) append("password", hashedNewPassword);
+      if (profilePicUrl) append("profile_pic", profilePicUrl);
+
+      let updatedUser = user;
+
+      if (updates.length > 0) {
+        values.push(user.id);
+        const result = await client.query(
+          `UPDATE users
+           SET ${updates.join(", ")}
+           WHERE id = $${idx}
+           RETURNING id, name, email, profile_pic, oauth_provider`,
+          values
+        );
+        updatedUser = result.rows[0];
+      }
+
+      if (wantsEmailChange) {
+        const { code, expiresAt } = generateSixDigitCodeWithExpiry();
+
+        await client.query(
+          `UPDATE users
+           SET pending_email = $1,
+               verification_code = $2,
+               verification_code_expiry_time = $3
+           WHERE id = $4`,
+          [newEmail, code, expiresAt, user.id]
+        );
+
+        await client.query(
+          `INSERT INTO email_outbox (to_email, template, payload)
+           VALUES ($1, $2, $3)`,
+          [newEmail, "verification_code", JSON.stringify({ code })]
+        );
+
+        emailVerificationPending = true;
+      }
+
+      await client.query("COMMIT");
+
+      return send(res, 200, {
+        message: "Profile updated successfully.",
+        user: updatedUser,
+        ...(emailVerificationPending && {
+          status: "email_verification_required",
+        }),
+      });
+    } catch (err) {
+      await client.query("ROLLBACK");
+      throw err;
+    }
+  } catch (error) {
+    console.error(error);
+    return send(res, 500, { message: "Internal Server Error" });
+  } finally {
+    client?.release();
   }
-
-  if (profilePicUrl) {
-    append("profile_pic", profilePicUrl);
-  }
-
-  if (updates.length === 0) {
-    return send(res, 400, { error: "No valid fields to update." });
-  }
-
-  values.push(user.id);
-
-  const query = `
-    UPDATE users
-    SET ${updates.join(", ")}
-    WHERE id = $${idx}
-    RETURNING id, name, email, profile_pic, oauth_provider
-  `;
-
-  const updated = await pool.query(query, values);
-  return send(res, 200, {
-    message: "Profile updated successfully.",
-    user: updated.rows[0],
-    ...(emailVerificationPending && { satus: "email_verification_required" }),
-  });
 }
 
 export async function handleMe(req: IncomingMessage, res: ServerResponse) {
@@ -1043,7 +1108,7 @@ export async function handleResendCode(
     return send(res, 400, { message: "Email is required" });
   }
 
-  console.log(email);
+  console.log({ email });
 
   const client = await pool.connect();
 
@@ -1096,10 +1161,15 @@ export async function handleResendCode(
       [result.code, result.expiresAt, user.id]
     );
 
-    await client.query("COMMIT");
-    setImmediate(() =>
-      sendVerificationEmailWorker(user.pending_email, result.code)
+    console.log({ deadpool: email });
+
+    await client.query(
+      `INSERT INTO email_outbox (to_email, template, payload)
+           VALUES ($1, $2, $3)`,
+      [email, "verification_code", JSON.stringify({ code: result.code })]
     );
+
+    await client.query("COMMIT");
 
     return send(res, 200, {
       message:
@@ -1118,21 +1188,31 @@ export async function handleForgotPassword(
   req: IncomingMessage,
   res: ServerResponse
 ) {
+  let client: PoolClient | undefined;
+
   try {
     const body = await readBody<{ email: string }>(req);
-    const { email } = body;
+    const email = body.email.trim().toLowerCase();
+
     if (!email) {
       return send(res, 400, { error: "Email is required" });
     }
 
-    const userResult = await pool.query<User>(
+    client = await pool.connect();
+
+    const userResult = await client.query<User>(
       "SELECT * FROM users WHERE email = $1",
       [email]
     );
     const user = userResult.rows[0];
+
+    const genericResponse = {
+      message:
+        "If an account exists for that email, a reset link has been sent.",
+    };
+
     if (!user) {
-      console.log("user not found");
-      return send(res, 404, { error: "User not found" });
+      return send(res, 404, genericResponse);
     }
 
     //  send email with token
@@ -1140,31 +1220,43 @@ export async function handleForgotPassword(
     //  send email with token
 
     const token = jwt.sign({ email: user.email }, env.RESET_PASSWORD_SECRET);
-    // hash the token
+    //todo hash the token
     const resetEmailLink = `${env.FRONTEND_URL}/reset-password?token=${token}`;
 
     // const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1hr
     const expiresAt = new Date(Date.now() + env.RESET_PASSWORD_EXPIRY * 1000);
 
-    const passWordResetResult = await pool.query(
-      `UPDATE users 
-        SET reset_password_token = $1, reset_passsword_token_expiry_time = $2
-        WHERE email = $3 RETURNING *`,
-      [token, expiresAt, email]
-    );
+    try {
+      await client.query("BEGIN");
 
-    const userId = passWordResetResult.rows[0];
+      await client.query(
+        `UPDATE users 
+         SET reset_password_token = $1, reset_password_token_expiry_time = $2
+         WHERE email = $3 RETURNING *`,
+        [token, expiresAt, email]
+      );
 
-    // fire and forget
-    setImmediate(() => sendResetPasswordEmailWorker(email, resetEmailLink));
-
-    send(res, 200, {
-      message: "Password reset email sent successfully",
-      userId: userId,
-    });
+      await client.query(
+        `INSERT INTO email_outbox (to_email, template, payload, expires_at)
+         VALUES ($1, $2, $3, $4)`,
+        [
+          email,
+          "reset_password",
+          JSON.stringify({ resetLink: resetEmailLink }),
+          expiresAt,
+        ]
+      );
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    }
+    send(res, 200, genericResponse);
   } catch (error) {
     console.error("Error in forgot password:", error);
     send(res, 500, { error: "Internal server error" });
+  } finally {
+    client.release();
   }
 }
 
@@ -1194,7 +1286,7 @@ export async function handleResetPassword(
 
     // Query the database to check reset password token
     const userQuery =
-      "SELECT id, reset_password_token, reset_passsword_token_expiry_time FROM users WHERE email = $1";
+      "SELECT id, reset_password_token, reset_password_token_expiry_time FROM users WHERE email = $1";
     const userResult = await pool.query(userQuery, [email]);
 
     if (userResult.rows.length === 0) {
@@ -1209,8 +1301,8 @@ export async function handleResetPassword(
     }
 
     if (
-      user.reset_passsword_token_expiry_time &&
-      new Date(user.reset_passsword_token_expiry_time) < currentTime
+      user.reset_password_token_expiry_time &&
+      new Date(user.reset_password_token_expiry_time) < currentTime
     ) {
       return send(res, 400, { error: "Reset password token has expired" });
     }
@@ -1223,7 +1315,7 @@ export async function handleResetPassword(
       UPDATE users 
       SET password = $1, 
           reset_password_token = NULL, 
-          reset_passsword_token_expiry_time = NULL 
+          reset_password_token_expiry_time = NULL 
       WHERE id = $2
     `;
 

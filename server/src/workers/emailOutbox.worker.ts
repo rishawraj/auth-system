@@ -1,4 +1,5 @@
 import { pool } from "../config/db.config.js";
+import { env } from "../config/env.js";
 import { dispatchEmail } from "../utils/dsipatchEmail.js";
 
 const BATCH_SIZE = 20;
@@ -32,13 +33,12 @@ export async function processEmailOutbox() {
         console.error(error);
         const attempts = row.attempts + 1;
         const exhausted = attempts >= row.max_attempts;
-        // const backofffSeconds = Math.min(60 * 2 ** attempts, 3600);
 
         const backoffConfig = {
           baseDelaySeconds: 60,
           multiplier: 2,
           maxDelaySeconds: 3600,
-          isTestMode: true, // ⚡ Set to false for production
+          isTestMode: env.NODE_ENV !== "production",
         };
 
         const getBackoff = (attempts, config) => {

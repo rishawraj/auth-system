@@ -33,7 +33,6 @@
     "qrcode": "^1.5.4",
     "typescript": "^5.8.3",
     "ua-parser-js": "^2.0.3",
-    "uploadthing": "^7.6.0",
     "zod": "^3.24.3"
   },
   "devDependencies": {

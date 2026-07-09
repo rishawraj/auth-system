@@ -10,6 +10,7 @@ CREATE TABLE email_outbox (
   max_attempts INT NOT NULL DEFAULT 5,
   last_error TEXT,
   next_attempt_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  expires_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );

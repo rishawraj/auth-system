@@ -107,8 +107,10 @@ function VerifyComponent() {
   };
 
   const handleResend = async () => {
+    console.log("spidermanaaaa");
     if (!pending_email) {
       navigate({ to: "/register" });
+      return;
     }
 
     setResending(true);
@@ -223,7 +225,7 @@ function VerifyComponent() {
           <p className="mb-4 text-center text-sm text-red-500">{error}</p>
         )}
 
-        {showResend && (
+        {!showResend && (
           <div className="mb-4 flex flex-col items-center gap-2">
             <button
               onClick={handleResend}
