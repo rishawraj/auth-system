@@ -61,7 +61,7 @@ async function migrate() {
     console.error("Migrations failed: ", error);
     failed = true;
   } finally {
-    client.release();
+    client?.release();
   }
 
   // pool.end() can hang 3s

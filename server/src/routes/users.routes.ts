@@ -50,7 +50,7 @@ export default async (req: IncomingMessage, res: ServerResponse) => {
   }
 
   if (req.method === "POST" && pathname === "/resend-code") {
-    handleResendCode(req, res);
+    await handleResendCode(req, res);
     return true;
   }
 
@@ -60,50 +60,75 @@ export default async (req: IncomingMessage, res: ServerResponse) => {
   }
 
   if (req.method === "POST" && pathname === "/logout") {
-    handleLogout(req, res);
+    await handleLogout(req, res);
     return true;
   }
 
   if (req.method === "POST" && pathname === "/verify") {
-    handleVerify(req, res);
+    await handleVerify(req, res);
     return true;
   }
 
   if (req.method === "POST" && pathname === "/forgot-password") {
-    handleForgotPassword(req, res);
+    await handleForgotPassword(req, res);
     return true;
   }
 
   if (req.method === "POST" && pathname === "/reset-password") {
-    handleResetPassword(req, res);
+    await handleResetPassword(req, res);
     return true;
   }
 
   if (req.method === "GET" && pathname === "/auth/google") {
-    handleGoogleAuth(req, res);
+    await handleGoogleAuth(req, res);
     return true;
   }
 
   if (req.method === "GET" && pathname === "/auth/google/callback") {
-    handleGoogleCallback(req, res);
+    await handleGoogleCallback(req, res);
     return true;
   }
 
   if (req.method === "GET" && pathname === "/auth/google/refresh-token") {
     console.log("google refresh token");
-    handleGoogleRefreshToken(req, res);
+    await handleGoogleRefreshToken(req, res);
     return true;
   }
 
   if (req.method === "GET" && pathname === "/refresh-token") {
-    handleTokenRefresh(req, res);
+    await handleTokenRefresh(req, res);
     return true;
   }
 
   if (req.method === "GET" && pathname === "/test-refresh-token") {
-    testRefreshToken(req, res);
+    await testRefreshToken(req, res);
     return true;
   }
 
   return false;
 };
+
+//todo
+// A much cleaner users.routes.ts
+// const routes: Record<string, Function> = {
+//   "POST:/register": handleRegister,
+//   "POST:/login": handleLogin,
+//   "GET:/profile": handleProfile,
+//   "PATCH:/profile": updateProfile,
+//   "POST:/logout": handleLogout, // Make sure all these are actually async in the controller
+//   // ... etc
+// };
+
+// export default async (req: IncomingMessage, res: ServerResponse) => {
+//   const parsedUrl = new URL(req.url || "", `http://${req.headers.host}`);
+//   const routeKey = `${req.method}:${parsedUrl.pathname}`;
+
+//   const handler = routes[routeKey];
+
+//   if (handler) {
+//     await handler(req, res);
+//     return true; // Handled
+//   }
+
+//   return false; // Not handled, falls back to 404 in server.ts
+// };

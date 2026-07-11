@@ -2,7 +2,7 @@
 
 - [ ] Improve code | cleanup
 
-  - [ ] login/signup UI update
+  - [x] login/signup UI update
   - [ ] resend code option at /profile/verify-email
   - [ ] resend code option at /verify?pending_email with a timer 60sec
 

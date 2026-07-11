@@ -15,12 +15,13 @@ import { Secret, TOTP } from "otpauth";
 import qrcode from "qrcode";
 import { z } from "zod";
 import bcrypt from "bcrypt";
-import {
-  sendDisable2FAOtpEmailWorker,
-  sendRegenerate2FABackupCodesOTPEmailWorker,
-} from "../workers/sendEmail.Worker.js";
 import { User } from "../models/user.model.js";
 import crypto from "crypto";
+import { PoolClient } from "pg";
+
+interface JwtPayload {
+  email: string;
+}
 
 const SECRET = env.ACCESS_TOKEN_SECRET;
 
@@ -416,6 +417,7 @@ export async function DisableTwoFactorAuthSendOTP(
   req: IncomingMessage,
   res: ServerResponse
 ) {
+  let client: PoolClient | undefined;
   try {
     const authHeader = req.headers.authorization;
 
@@ -427,56 +429,60 @@ export async function DisableTwoFactorAuthSendOTP(
       return send(res, 401, { error: "Invalid authorization format" });
     }
 
+    let decoded;
+
     try {
-      const decoded = jwt.verify(token, SECRET);
-
-      if (
-        typeof decoded === "object" &&
-        decoded !== null &&
-        "email" in decoded
-      ) {
-        const userResult = await pool.query(
-          "SELECT * FROM users WHERE email = $1",
-          [decoded.email]
-        );
-
-        const user = userResult.rows[0];
-
-        if (!user) {
-          return send(res, 404, { error: "User not found" });
-        }
-
-        const { code, expiresAt } = generateSixDigitCodeWithExpiry();
-
-        await pool.query(
-          `
-          UPDATE users
-          SET disable_2fa_otp = $1,
-              disable_2fa_otp_expiry_time = $2
-          WHERE id = $3
-          `,
-          [code, expiresAt, user.id]
-        );
-
-        // send email
-        setImmediate(() => sendDisable2FAOtpEmailWorker(user.email, code));
-      } else {
-        return send(res, 401, { error: "Invalid token" });
-      }
+      decoded = jwt.verify(token, SECRET) as JwtPayload;
     } catch (error) {
       console.log(error);
       return send(res, 401, { error: "Invalid token" });
     }
 
-    // generate 6 digit code
+    client = await pool.connect();
+    const userResult = await client.query(
+      "SELECT id, email FROM users WHERE email = $1",
+      [decoded.email]
+    );
+
+    const user = userResult.rows[0];
+
+    if (!user) {
+      return send(res, 404, { error: "User not found" });
+    }
+
+    const { code, expiresAt } = generateSixDigitCodeWithExpiry();
+
+    await client.query("BEGIN");
+
+    await client.query(
+      `
+          UPDATE users
+          SET disable_2fa_otp = $1,
+              disable_2fa_otp_expiry_time = $2
+          WHERE id = $3
+          `,
+      [code, expiresAt, user.id]
+    );
+
+    await client.query(
+      `INSERT INTO email_outbox (to_email, template, payload, expires_at)
+       VALUES ($1, $2, $3, $4)
+      `,
+      [user.email, "disable_2fa_otp", JSON.stringify({ code: code }), expiresAt]
+    );
+
+    await client.query("COMMIT");
+
+    return send(res, 200, {
+      message: "A verification code has been sent to your email.",
+    });
   } catch (error) {
     console.log(error);
-    send(res, 500, { error: "Internal server error" });
+    await client.query("ROLLBACK");
+    return send(res, 500, { error: "Internal server error" });
+  } finally {
+    client?.release();
   }
-
-  send(res, 200, {
-    message: "email sent",
-  });
 }
 
 export async function DisableTwoFactorAuthVerifyOTP(
@@ -742,7 +748,7 @@ export async function RegenerateBackupCodesEmailUser(
         console.error("Transaction error:", error);
         throw error;
       } finally {
-        client.release();
+        client?.release();
       }
     } catch (error) {
       console.error("Token verification error:", error);
@@ -759,6 +765,7 @@ export async function RegenerateBackupCodesSendOTPGoogleUser(
   res: ServerResponse
 ) {
   console.log("[CONTROLLER] regenerate backup codes sms");
+  let client: PoolClient | undefined;
 
   try {
     const authHeader = req.headers.authorization;
@@ -768,7 +775,14 @@ export async function RegenerateBackupCodesSendOTPGoogleUser(
     if (!token)
       return send(res, 401, { error: "Invalid authorization format" });
 
-    const decoded = jwt.verify(token, SECRET);
+    let decoded;
+    try {
+      decoded = jwt.verify(token, SECRET);
+    } catch (error) {
+      console.log(error);
+      return send(res, 401, { error: "Invalid token" });
+    }
+
     if (
       typeof decoded !== "object" ||
       decoded === null ||
@@ -777,7 +791,9 @@ export async function RegenerateBackupCodesSendOTPGoogleUser(
       return send(res, 401, { error: "Invalid token payload" });
     }
 
-    const userResult = await pool.query(
+    client = await pool.connect();
+
+    const userResult = await client.query(
       "SELECT * FROM users WHERE email = $1",
       [decoded.email]
     );
@@ -795,8 +811,8 @@ export async function RegenerateBackupCodesSendOTPGoogleUser(
     // send otp
 
     const { code, expiresAt } = generateSixDigitCodeWithExpiry(10); // 10 minutes
-
-    await pool.query(
+    await client.query("BEGIN");
+    await client.query(
       `
           UPDATE users
           SET regenerate_2fa_otp = $1,
@@ -806,16 +822,30 @@ export async function RegenerateBackupCodesSendOTPGoogleUser(
       [code, expiresAt, user.id]
     );
 
-    // send email
-    setImmediate(() =>
-      sendRegenerate2FABackupCodesOTPEmailWorker(user.email, code)
+    await client.query(
+      `INSERT INTO email_outbox (to_email, template, payload, expires_at)
+         VALUES ($1, $2, $3, $4)
+      `,
+      [
+        user.email,
+        "regenerate_2fa_backup_codes_otp",
+        JSON.stringify({ code: code }),
+        expiresAt,
+      ]
     );
-    send(res, 200, { message: "OTP sent successfully" });
+
+    await client.query("COMMIT");
+
+    return send(res, 200, { message: "OTP sent successfully" });
   } catch (error) {
+    await client.query("ROLLBACK");
     console.error("Server error:", error);
     return send(res, 500, { error: "Internal server error" });
+  } finally {
+    client?.release();
   }
 }
+
 export async function RegenerateBackupCodesGoogleUser(
   req: IncomingMessage,
   res: ServerResponse
@@ -935,7 +965,7 @@ export async function RegenerateBackupCodesGoogleUser(
         console.error("Transaction error:", error);
         throw error;
       } finally {
-        client.release();
+        client?.release();
       }
     } catch (error) {
       console.error("Token verification error:", error);

@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+
 import { PageIntro } from "../layout/PageIntro";
 const STACK = [
   { name: "React", note: "TanStack Router & Query for routing and data" },
@@ -69,7 +70,7 @@ export const AboutPage = () => (
           Curious how a specific flow works under the hood?
         </p>
         <a
-          href="https://github.com/your-username/your-repo"
+          href="https://github.com/rishawraj/auth-system/"
           target="_blank"
           rel="noreferrer"
           className="rounded-full border border-[var(--color-secondary)] px-6 py-2 text-xs font-medium tracking-wide text-[var(--color-text)] uppercase transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:outline-none"

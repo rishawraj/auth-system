@@ -184,7 +184,7 @@ export async function handleRegister(
     console.error(error);
     send(res, 500, { error: "Internal server error" });
   } finally {
-    client.release();
+    client?.release();
   }
 }
 
@@ -1094,7 +1094,7 @@ export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
     console.error("Verification error: ", error);
     send(res, 500, { error: "Internal server error duing verification" });
   } finally {
-    client.release();
+    client?.release();
   }
 }
 
@@ -1180,7 +1180,7 @@ export async function handleResendCode(
     console.error("Error resending verification code: ", error);
     return send(res, 500, { message: "Failed to resend code" });
   } finally {
-    client.release();
+    client?.release();
   }
 }
 
@@ -1256,7 +1256,7 @@ export async function handleForgotPassword(
     console.error("Error in forgot password:", error);
     send(res, 500, { error: "Internal server error" });
   } finally {
-    client.release();
+    client?.release();
   }
 }
 

@@ -110,7 +110,7 @@ export default function UserRegistrationForm() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8 dark:bg-gray-900">
+    <div className="bg-background flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
       <motion.div
         initial="hidden"
         animate="visible"
@@ -141,7 +141,7 @@ export default function UserRegistrationForm() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
-          className="rounded-lg bg-white px-6 py-8 shadow-xl sm:px-10 dark:bg-gray-800"
+          className="bg-secondary rounded-lg px-6 py-8 shadow-xl sm:px-10"
         >
           {success ? (
             <motion.div
@@ -193,7 +193,7 @@ export default function UserRegistrationForm() {
                     required
                     value={formData.name}
                     onChange={handleChange}
-                    className="block w-full appearance-none rounded-lg border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                    className="bg-background block w-full appearance-none rounded-lg border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm dark:border-gray-600"
                   />
                 </motion.div>
                 {errors.name && (
@@ -223,7 +223,7 @@ export default function UserRegistrationForm() {
                     required
                     value={formData.email}
                     onChange={handleChange}
-                    className="block w-full appearance-none rounded-lg border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                    className="text-text bg-background block w-full appearance-none rounded-lg border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm dark:border-gray-600 dark:placeholder-gray-400"
                   />
                 </motion.div>
                 {errors.email && (
@@ -253,7 +253,7 @@ export default function UserRegistrationForm() {
                     required
                     value={formData.password}
                     onChange={handleChange}
-                    className="block w-full appearance-none rounded-lg border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                    className="text-text bg-background block w-full appearance-none rounded-lg border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm dark:border-gray-600"
                   />
                 </motion.div>
                 {errors.password && (

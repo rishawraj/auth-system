@@ -148,7 +148,7 @@ export default function UserLoginForm() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8 dark:bg-gray-900">
+    <div className="bg-background flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
       <motion.div
         initial="hidden"
         animate="visible"
@@ -179,13 +179,13 @@ export default function UserLoginForm() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
-          className="rounded-lg bg-white px-6 py-8 shadow-xl sm:px-10 dark:bg-gray-800"
+          className="bg-secondary rounded-lg px-6 py-8 shadow-xl sm:px-10"
         >
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="text-text block text-sm font-medium"
               >
                 Email
               </label>
@@ -198,7 +198,7 @@ export default function UserLoginForm() {
                   required
                   value={formData.email}
                   onChange={handleChange}
-                  className="block w-full appearance-none rounded-lg border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                  className="bg-background block w-full appearance-none rounded-lg border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
                 />
               </motion.div>
               {errors.email && (
@@ -228,7 +228,7 @@ export default function UserLoginForm() {
                   required
                   value={formData.password}
                   onChange={handleChange}
-                  className="block w-full appearance-none rounded-lg border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                  className="bg-background block w-full appearance-none rounded-lg border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
                 />
               </motion.div>
               {errors.password && (
@@ -295,7 +295,7 @@ export default function UserLoginForm() {
                 <div className="w-full border-t border-gray-300 dark:border-gray-600" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="bg-white px-2 text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+                <span className="bg-secondary px-2 text-gray-500">
                   Or continue with
                 </span>
               </div>

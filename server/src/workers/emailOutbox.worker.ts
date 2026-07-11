@@ -79,7 +79,7 @@ export async function processEmailOutbox() {
     await client.query("ROLLBACK");
     console.error("Outbox processing failed", error);
   } finally {
-    client.release();
+    client?.release();
   }
 }
 

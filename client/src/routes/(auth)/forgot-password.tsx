@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 
 export const Route = createFileRoute("/(auth)/forgot-password")({
@@ -41,7 +41,7 @@ function ForgotPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-[80vh] items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+    <div className="bg-background flex min-h-[80vh] items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
       <div className="w-full max-w-md space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-bold tracking-tight">
@@ -63,7 +63,7 @@ function ForgotPasswordPage() {
                 name="email"
                 type="email"
                 required
-                className="relative block w-full rounded-md border-0 p-3 text-gray-900 ring-1 ring-gray-300 ring-inset placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-blue-600 focus:ring-inset sm:text-sm sm:leading-6"
+                className="text-text relative block w-full rounded-md border-0 p-3 ring-1 ring-gray-300 ring-inset focus:z-10 focus:ring-2 focus:ring-blue-600 focus:ring-inset sm:text-sm sm:leading-6"
                 placeholder="Email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -82,23 +82,28 @@ function ForgotPasswordPage() {
         </form>
 
         {message && (
-          <div className="mt-4 rounded-md bg-green-50 p-4">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg
-                  className="h-5 w-5 text-green-400"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+          <div className="bg-secondary mt-4 rounded-md p-4">
+            <div className="flex flex-col gap-2">
+              <div className="ml-3 flex gap-1.5">
+                <div className="flex-shrink-0">
+                  <svg
+                    className="h-5 w-5 text-green-400"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+                <p className="text-sm font-medium text-green-800 dark:text-green-400">
+                  {"dksjfkd"}
+                </p>
               </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-green-800">{message}</p>
+              <div className="bg-background text-text ml-3">
+                <Link to={"/login"}>go back to login</Link>
               </div>
             </div>
           </div>
