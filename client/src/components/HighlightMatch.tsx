@@ -2,12 +2,15 @@ export const HighlightMatch = ({
   text,
   search,
 }: {
-  text: string;
+  text: string | null | undefined;
   search: string;
 }) => {
+  if (!text) return null;
   if (!`${search}`.trim()) return <span>{text}</span>;
 
-  const regex = new RegExp(`(${search})`, "gi");
+  const escapedSearch = search.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+  const regex = new RegExp(`(${escapedSearch})`, "gi");
+
   const parts = text.split(regex);
 
   return (

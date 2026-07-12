@@ -217,6 +217,7 @@ export default async (
         message: "Failed to fetch recent activity",
       });
     }
+    return true;
   }
 
   if (req.method === "GET" && pathname === "/admin/admin-audit-logs") {
@@ -242,6 +243,7 @@ export default async (
         message: "Failed to get admin logs",
       });
     }
+    return true;
   }
 
   return false; // Add this line to indicate no routes matched

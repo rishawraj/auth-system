@@ -1,6 +1,8 @@
 import { useNavigate } from "@tanstack/react-router";
 
-import { User } from "../../types/auth";
+import { User } from "../../types/types";
+
+// import { User } from "../../types/auth";
 
 type Props = {
   users: User[];

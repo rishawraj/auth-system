@@ -1,4 +1,8 @@
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useQuery,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
@@ -19,7 +23,7 @@ import { getUserFromToken } from "../../../../utils/authToken";
 export const Route = createFileRoute("/_auth/_isAdmin/admin/")({
   beforeLoad: async () => {
     const user = getUserFromToken();
-    console.log("User from token:", user);
+    // console.log("User from token:", user);
 
     if (!user) {
       throw redirect({ to: "/login" });
@@ -49,19 +53,16 @@ function RouteComponent() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const stats = useQuery(statsQuery);
+
+  const stats = useSuspenseQuery(statsQuery);
   const recentActivity = useQuery(recentActivityQuery);
-  // const adminLogs = useQuery(adminLogsQuery);
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery(adminLogsQuery);
-
-  const allAdminLogs = data?.pages.flatMap((page) => page.data.logs) || [];
-
-  console.log({ data, allAdminLogs, hasNextPage });
-
   const adminDashboardUsers = useQuery(
     adminDashboardPaginatedUsersQuery(page, debouncedSearch),
   );
+
+  const allAdminLogs = data?.pages.flatMap((page) => page.data.logs) || [];
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -135,9 +136,7 @@ function RouteComponent() {
           </div>
         </div>
 
-        {/* <AdminLogs data={adminLogs.data.data.rows} /> */}
-        {/* Activity */}
-        <RecentActivity data={recentActivity.data.data} />
+        <RecentActivity data={recentActivity?.data?.data} />
       </div>
     </>
   );

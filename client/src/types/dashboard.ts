@@ -1,4 +1,5 @@
-// types/dashboard.ts
+// import type { AdminLogs } from "../../../shared/types/AdminLogs";
+
 export type AdminStats = {
   totalUsers: number;
   successfulLogins: number;
@@ -12,9 +13,19 @@ export type ActivityItem = {
 };
 
 export type AdminLogItem = {
-  admin_name: string;
-  target_user_name: string;
   id: string;
-  target_user_id: string;
+
   action: string;
+
+  admin_id: string;
+  admin_name: string;
+
+  target_user_name: string;
+  target_user_id: string;
+
+  created_at: string;
+  ip_address: string;
+  log_id: string;
+  metadata: string;
+  user_agent: string;
 };

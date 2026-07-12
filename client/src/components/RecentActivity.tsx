@@ -1,8 +1,13 @@
 // components/RecentActivity.tsx
-import { ActivityItem } from "../types/dashboard";
+
+interface RecentActivity {
+  success: boolean;
+  email: string;
+  time: string;
+}
 
 type Props = {
-  data: ActivityItem[];
+  data: RecentActivity[] | undefined;
 };
 
 export function RecentActivity({ data }: Props) {
@@ -11,24 +16,28 @@ export function RecentActivity({ data }: Props) {
       <h2 className="mb-4 text-lg font-semibold">Recent Activity</h2>
 
       <div className="space-y-2">
-        {data.map((item, idx) => (
-          <div key={idx} className="flex items-center justify-between text-sm">
-            <div>
-              <p className="font-medium">{item.email}</p>
-              <p className="text-gray-500">{item.time}</p>
-            </div>
-
-            <span
-              className={`rounded-full px-2 py-1 text-xs font-medium ${
-                item.success
-                  ? "bg-green-100 text-green-700"
-                  : "bg-red-100 text-red-700"
-              }`}
+        {data &&
+          data.map((item, idx) => (
+            <div
+              key={idx}
+              className="flex items-center justify-between text-sm"
             >
-              {item.success ? "Success" : "Failed"}
-            </span>
-          </div>
-        ))}
+              <div>
+                <p className="font-medium">{item.email}</p>
+                <p className="text-gray-500">{item.time}</p>
+              </div>
+
+              <span
+                className={`rounded-full px-2 py-1 text-xs font-medium ${
+                  item.success
+                    ? "bg-green-100 text-green-700"
+                    : "bg-red-100 text-red-700"
+                }`}
+              >
+                {item.success ? "Success" : "Failed"}
+              </span>
+            </div>
+          ))}
       </div>
     </div>
   );

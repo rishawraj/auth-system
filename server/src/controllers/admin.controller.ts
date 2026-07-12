@@ -38,33 +38,19 @@ export async function getUserById(id: string): Promise<User | null> {
   }
 }
 
+interface PageinatedUserResult {
+  users: User[];
+  totalCount: number;
+  totalPages: number;
+}
+
+// interface CountRow {
+//   count: string; // pg returns COUNT(*) as a string (bigint-safe)
+// }
+
 export const getPaginatedUsers = async (page = 1, limit = 10, search = "") => {
   const offset = (page - 1) * limit;
   const searchParam = `%${search}%`;
-
-  // const countQuery = search
-  //   ? "SELECT COUNT(*) FROM users WHERE is_deleted = false AND (name ILIKE $1 OR email ILIKE $1"
-  //   : "SELECT COUNT(*) FROM users WHERE is_deleted = false";
-
-  // const usersQuery = search
-  //   ? `
-  //   SELECT * FROM users
-  //   WHERE is_deleted = false
-  //   AND (name ILIKE $3 OR email ILIKE $3)
-  //   ORDER BY registration_date DESC
-  //   LIMIT $1 OFFSET $2`
-  //   : `
-  //   SELECT * FROM users
-  //   WHERE is_deleted = false
-  //   ORDER BY registration_date DESC
-  //   LIMIT $1 OFFSET $2
-  // `;
-
-  // const totalCount = await pool.query(countQuery, search ? [searchParam] : []);
-  // const users = await pool.query(
-  //   usersQuery,
-  //   search ? [limit, offset, searchParam] : [limit, offset]
-  // );
 
   const countQuery = search
     ? "SELECT COUNT(*) FROM users WHERE is_deleted = false AND (name ILIKE $1 OR email ILIKE $1)"
@@ -75,7 +61,7 @@ export const getPaginatedUsers = async (page = 1, limit = 10, search = "") => {
     : `SELECT * FROM users WHERE is_deleted = false ORDER BY registration_date DESC LIMIT $1 OFFSET $2`;
 
   const totalCount = await pool.query(countQuery, search ? [searchParam] : []);
-  const users = await pool.query(
+  const users = await pool.query<PageinatedUserResult>(
     usersQuery,
     search ? [limit, offset, searchParam] : [limit, offset]
   );
@@ -161,6 +147,12 @@ export async function getAdminOverviewStats() {
   };
 }
 
+interface RecentActivityRow {
+  success: boolean;
+  email: string;
+  created_at: Date;
+}
+
 export async function getRecentActivity() {
   const query = `
     SELECT success, email, created_at
@@ -169,7 +161,7 @@ export async function getRecentActivity() {
     LIMIT 10;
   `;
   // sucess, email , time(relative)
-  const result = await pool.query(query);
+  const result = await pool.query<RecentActivityRow>(query);
 
   return result.rows.map((row) => ({
     success: row.success,
@@ -202,33 +194,35 @@ export async function logAdminActions({
   }
 }
 
-export async function getAdminLogs(cursor: string | null, limit: number) {
+interface AdminAuditLogRow {
+  log_id: string;
+  action: string;
+  metadata: Record<string, unknown> | null;
+  ip_address: string | null;
+  user_agent: string | null;
+  created_at: Date;
+  admin_id: string;
+  admin_name: string;
+  target_user_id: string | null;
+  target_user_name: string | null;
+}
+
+interface AdminAuditLogsCursor {
+  created_at: string;
+  id: string;
+}
+
+interface GetAdminLogsResult {
+  logs: AdminAuditLogRow[];
+  nextCursor: string | null;
+  hasMore: boolean;
+}
+
+export async function getAdminLogs(
+  cursor: string | null,
+  limit: number
+): Promise<GetAdminLogsResult> {
   console.log(cursor, limit);
-
-  // const query = `
-  //   SELECT
-  //     a.id AS log_id,
-  //     a.action,
-  //     a.metadata,
-  //     a.ip_address,
-  //     a.user_agent,
-  //     a.created_at,
-  //     admins.id AS admin_id,
-  //     admins.name AS admin_name,
-  //     targets.id AS target_user_id,
-  //     targets.name AS target_user_name
-  //   FROM admin_audit_logs a
-  //   INNER JOIN
-  //     users admins ON a.admin_id = admins.id
-  //   INNER JOIN
-  //     users targets ON a.target_user_id = targets.id
-  //   ORDER BY
-  //     a.created_at DESC;
-  // `;
-
-  // const logs = pool.query(query);
-
-  // return logs;
 
   let lastcreatedAt = null;
   let lastId = null;
@@ -237,7 +231,7 @@ export async function getAdminLogs(cursor: string | null, limit: number) {
   if (cursor) {
     try {
       const decodedCursor = Buffer.from(cursor, "base64").toString("utf-8");
-      const parsedCursor = JSON.parse(decodedCursor);
+      const parsedCursor = JSON.parse(decodedCursor) as AdminAuditLogsCursor;
       lastcreatedAt = parsedCursor.created_at;
       lastId = parsedCursor.id;
     } catch (error) {
@@ -284,7 +278,7 @@ export async function getAdminLogs(cursor: string | null, limit: number) {
 
   queryParams.push(limit + 1);
 
-  const { rows } = await pool.query(query, queryParams);
+  const { rows } = await pool.query<AdminAuditLogRow>(query, queryParams);
 
   const hasMore = rows.length > limit;
   console.log({ hasMore });
@@ -296,8 +290,8 @@ export async function getAdminLogs(cursor: string | null, limit: number) {
   let nextCursor = null;
   if (logsToReturn.length > 0) {
     const lastLog = logsToReturn[logsToReturn.length - 1];
-    const cursorObj = {
-      created_at: lastLog.created_at,
+    const cursorObj: AdminAuditLogsCursor = {
+      created_at: lastLog.created_at.toISOString(),
       id: lastLog.log_id,
     };
     nextCursor = Buffer.from(JSON.stringify(cursorObj)).toString("base64");
