@@ -75,18 +75,20 @@ function RouteComponent() {
   return (
     <>
       <NavBar />
-      <div className="space-y-6 p-6 pt-24">
-        <AdminLogs
-          data={allAdminLogs}
-          fetchNextPage={fetchNextPage}
-          hasNextPage={hasNextPage}
-          isFetchingNextPage={isFetchingNextPage}
-        />
+      {/* Apply global background and text colors here */}
+      <div className="bg-background text-text min-h-screen space-y-8 p-6">
+        {/* Page Header using your custom font */}
+        <header className="mb-8">
+          <h1 className="font-fraunces text-primary text-4xl font-bold">
+            Dashboard Overview
+          </h1>
+          <p className="text-text/70 mt-1">
+            Manage your users and monitor system activity.
+          </p>
+        </header>
 
-        <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-
-        {/* Stats */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        {/* Stats Row */}
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           <StatCard
             label="Total Users"
             value={stats.data.data.totalUsers}
@@ -104,40 +106,121 @@ function RouteComponent() {
           />
         </div>
 
-        {/* users */}
+        {/* Bento Grid Layout for Main Content */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          {/* Main Column: Users Table (Takes up 2 columns on large screens) */}
+          <div className="flex flex-col gap-6 lg:col-span-2">
+            <AdminDashboardUsers
+              users={adminDashboardUsers?.data?.data?.users || []}
+              currentPage={page}
+              onSearchChange={setSearch}
+            />
 
-        <div className="flex-col justify-center">
-          <AdminDashboardUsers
-            users={adminDashboardUsers?.data?.data?.users || []}
-            currentPage={page}
-            // callback function for search (input change)
-            onSearchChange={setSearch}
-          />
+            {/* Re-styled Pagination */}
+            <div className="bg-secondary/30 mx-auto flex w-max items-center justify-center gap-4 rounded-full px-6 py-3 shadow-sm">
+              <button
+                disabled={page === 1}
+                onClick={() => setPage((prev) => prev - 1)}
+                className="bg-background text-primary hover:bg-primary hover:text-background rounded-md px-4 py-1.5 text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <span className="text-text text-sm font-medium">Page {page}</span>
+              <button
+                disabled={
+                  page >=
+                  (adminDashboardUsers?.data?.data?.pagination?.totalPages || 1)
+                }
+                onClick={() => setPage((prev) => prev + 1)}
+                className="bg-background text-primary hover:bg-primary hover:text-background rounded-md px-4 py-1.5 text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+          </div>
 
-          <div className="flex justify-center gap-4 bg-amber-600">
-            <button
-              disabled={page === 1}
-              onClick={() => setPage((prev) => prev - 1)}
-            >
-              Previous
-            </button>
-
-            <span className="text-white">Page {page}</span>
-
-            <button
-              disabled={
-                page >=
-                (adminDashboardUsers?.data?.data?.pagination?.totalPages || 1)
-              }
-              onClick={() => setPage((prev) => prev + 1)}
-            >
-              Next
-            </button>
+          {/* Side Column: Logs & Activity */}
+          <div className="flex flex-col gap-6">
+            <AdminLogs
+              data={allAdminLogs}
+              fetchNextPage={fetchNextPage}
+              hasNextPage={hasNextPage}
+              isFetchingNextPage={isFetchingNextPage}
+            />
+            <RecentActivity data={recentActivity?.data?.data} />
           </div>
         </div>
-
-        <RecentActivity data={recentActivity?.data?.data} />
       </div>
     </>
   );
 }
+
+//   return (
+//     <>
+//       <NavBar />
+//       <div className="space-y-6 p-6 pt-24">
+//         <AdminLogs
+//           data={allAdminLogs}
+//           fetchNextPage={fetchNextPage}
+//           hasNextPage={hasNextPage}
+//           isFetchingNextPage={isFetchingNextPage}
+//         />
+
+//         <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+
+//         {/* Stats */}
+//         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+//           <StatCard
+//             label="Total Users"
+//             value={stats.data.data.totalUsers}
+//             color="blue"
+//           />
+//           <StatCard
+//             label="Successful Logins"
+//             value={stats.data.data.successfulLogins}
+//             color="green"
+//           />
+//           <StatCard
+//             label="Failed Logins"
+//             value={stats.data.data.failedLogins}
+//             color="red"
+//           />
+//         </div>
+
+//         {/* users */}
+
+//         <div className="flex-col justify-center">
+//           <AdminDashboardUsers
+//             users={adminDashboardUsers?.data?.data?.users || []}
+//             currentPage={page}
+//             // callback function for search (input change)
+//             onSearchChange={setSearch}
+//           />
+
+//           <div className="flex justify-center gap-4 bg-amber-600">
+//             <button
+//               disabled={page === 1}
+//               onClick={() => setPage((prev) => prev - 1)}
+//             >
+//               Previous
+//             </button>
+
+//             <span className="text-white">Page {page}</span>
+
+//             <button
+//               disabled={
+//                 page >=
+//                 (adminDashboardUsers?.data?.data?.pagination?.totalPages || 1)
+//               }
+//               onClick={() => setPage((prev) => prev + 1)}
+//             >
+//               Next
+//             </button>
+//           </div>
+//         </div>
+
+//         <RecentActivity data={recentActivity?.data?.data} />
+//       </div>
+//     </>
+//   );
+// }

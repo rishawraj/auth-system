@@ -12,9 +12,10 @@ type Props = {
 
 export function RecentActivity({ data }: Props) {
   return (
-    <div className="rounded-xl border p-4">
-      <h2 className="mb-4 text-lg font-semibold">Recent Activity</h2>
-
+    <div className="border-primary/10 bg-secondary/10 rounded-2xl border p-5 shadow-sm">
+      <h2 className="font-fraunces text-primary mb-4 text-xl font-bold">
+        Recent Activity
+      </h2>
       <div className="space-y-2">
         {data &&
           data.map((item, idx) => (

@@ -3,6 +3,8 @@
 - [ ] Improve code | cleanup
 
   - [x] login/signup UI update
+  - [ ] fix /admin/users & /admin/users/$id
+  - [ ] fix types with shared dir
   - [ ] resend code option at /profile/verify-email
   - [ ] resend code option at /verify?pending_email with a timer 60sec
 

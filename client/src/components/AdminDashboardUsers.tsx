@@ -70,32 +70,28 @@ const AdminDashboardUsers = ({
   });
 
   return (
-    <div className="overflow-hidden rounded-xl border border-white/5 bg-[#121212] shadow-2xl">
+    <div className="text-text bg-background borde overflow-hidden rounded-xl shadow-2xl">
       {/* Header & Search */}
-      <div className="flex flex-col justify-between gap-4 border-b border-white/5 p-6 sm:flex-row sm:items-center">
-        <h3 className="flex items-center gap-2 text-lg font-semibold text-white">
-          <span className="material-symbols-outlined text-blue-400">
+      <div className="border-primary/10 bg-secondary/20 flex flex-col justify-between gap-4 border-b p-6 sm:flex-row sm:items-center">
+        <h3 className="font-fraunces text-primary flex items-center gap-2 text-xl font-bold">
+          <span className="material-symbols-outlined text-accent">
             <UserCog />
           </span>
           User Directory
-          {/*  */}
           <Link
             to="/admin/users"
-            className="brightness-75 hover:brightness-100"
+            className="text-primary/80 hover:text-primary transition-colors"
           >
-            <ExternalLink />
+            <ExternalLink className="h-5 w-5" />
           </Link>
         </h3>
 
         <div className="relative flex w-full max-w-sm items-center">
-          {/* The Icon: Positioned absolutely to the left */}
           <div className="pointer-events-none absolute left-3 flex items-center">
-            <Search className="h-4 w-4 text-white/50" />
+            <Search className="text-text/50 h-4 w-4" />
           </div>
-
-          {/* The Input: Added pl-10 (left padding) to make room for the icon */}
           <input
-            className="w-full rounded-lg border border-white/10 bg-white/5 py-2 pr-4 pl-10 text-sm text-white transition-all focus:border-blue-500/40 focus:ring-2 focus:ring-blue-500/40 focus:outline-none"
+            className="border-primary/20 bg-background text-text placeholder-text/40 focus:border-primary focus:ring-primary/40 w-full rounded-lg border py-2 pr-4 pl-10 text-sm transition-all focus:ring-2 focus:outline-none"
             placeholder="Search users..."
             type="text"
             onChange={(e) => {
@@ -110,23 +106,21 @@ const AdminDashboardUsers = ({
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-left">
           <thead>
-            <tr className="bg-white/5 text-xs tracking-wider text-slate-400 uppercase">
-              <th className="px-6 py-4 font-medium">User Information</th>
-              <th className="px-6 py-4 font-medium">Status</th>
-              <th className="px-6 py-4 text-right font-medium">Actions</th>
+            <tr className="bg-secondary/20 text-text/60 text-xs tracking-wider uppercase">
+              <th className="px-6 py-4 font-semibold">User Information</th>
+              <th className="px-6 py-4 font-semibold">Status</th>
+              <th className="px-6 py-4 text-right font-semibold">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/5">
+
+          <tbody className="divide-primary/10 bg-background/50 divide-y">
             {users.length === 0 ? (
               <tr>
                 <td colSpan={3} className="px-6 py-16 text-center">
                   <div className="flex flex-col items-center gap-2">
-                    <Search className="h-8 w-8 text-white/20" />
-                    <p className="text-sm font-medium text-white/40">
+                    <Search className="text-text/30 h-8 w-8" />
+                    <p className="text-text/60 text-sm font-medium">
                       No users found
-                    </p>
-                    <p className="text-xs text-white/20">
-                      Try searching with a different name or email
                     </p>
                   </div>
                 </td>
@@ -142,7 +136,7 @@ const AdminDashboardUsers = ({
                     {/* User Info Column */}
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="font-mono text-xs text-slate-500">
+                        <div className="text-text font-mono text-xs">
                           {userNumber.toString().padStart(2, "0")}
                         </div>
                         <div
@@ -154,13 +148,13 @@ const AdminDashboardUsers = ({
                           />
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-white">
+                          <p className="text-text text-sm font-medium">
                             <HighlightMatch
                               text={user.name}
                               search={hightlightedWord}
                             />
                           </p>
-                          <p className="text-xs text-slate-500">
+                          <p className="text-text/80 text-xs">
                             {
                               <HighlightMatch
                                 text={user.email}

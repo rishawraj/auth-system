@@ -20,7 +20,7 @@ const NavBar = () => {
       initial={{ y: -12, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: "spring", stiffness: 300, damping: 28 }}
-      className="sticky top-0 z-50 mx-auto w-full border-b border-[var(--color-secondary)] bg-[var(--color-background)]"
+      className="border-secondary bg-background sticky top-0 z-50 mx-auto w-full border-b"
     >
       <div className="container mx-auto flex max-w-5xl items-center justify-between px-4 py-3.5 md:px-6">
         {/* Brand */}
@@ -29,11 +29,11 @@ const NavBar = () => {
           className="group flex items-center gap-2.5 focus-visible:outline-none"
         >
           <motion.span
-            className="block h-2 w-2 shrink-0 rotate-45 bg-[var(--color-accent)]"
+            className="bg-accent block h-2 w-2 shrink-0 rotate-45"
             whileHover={{ rotate: 90 }}
             transition={{ type: "spring", stiffness: 260, damping: 15 }}
           />
-          <span className="font-serif text-[1.35rem] tracking-tight text-[var(--color-primary)]">
+          <span className="text-primary font-serif text-[1.35rem] tracking-tight">
             AuthSystem
           </span>
         </Link>
@@ -42,7 +42,7 @@ const NavBar = () => {
         <motion.button
           whileHover={{ scale: 1.08 }}
           whileTap={{ scale: 0.94 }}
-          className="cursor-pointer text-[var(--color-primary)] focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:outline-none md:hidden"
+          className="text-primary focus-visible:ring-accent cursor-pointer focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none md:hidden"
           onClick={() => setMenuOpen(!menuOpen)}
           aria-label="Toggle menu"
           aria-expanded={menuOpen}
@@ -62,10 +62,10 @@ const NavBar = () => {
             <Link to="/profile" className="focus-visible:outline-none">
               {({ isActive }) => (
                 <span
-                  className={`inline-block rounded-full border border-[var(--color-primary)] px-5 py-1.5 text-[11px] font-medium tracking-[0.14em] uppercase transition-colors focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 ${
+                  className={`border-primary focus-visible:ring-accent inline-block rounded-full border px-5 py-1.5 text-[11px] font-medium tracking-[0.14em] uppercase transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 ${
                     isActive
-                      ? "bg-[var(--color-primary)] text-[var(--color-background)]"
-                      : "text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-[var(--color-background)]"
+                      ? "bg-primary text-background"
+                      : "text-primary hover:bg-primary hover:text-background"
                   }`}
                   aria-current={isActive ? "page" : undefined}
                 >
@@ -78,7 +78,7 @@ const NavBar = () => {
               <NavLink to="/login">Login</NavLink>
               <Link
                 to="/register"
-                className="rounded-full bg-[var(--color-primary)] px-5 py-1.5 text-[11px] font-medium tracking-[0.14em] text-[var(--color-background)] uppercase transition-colors hover:bg-[var(--color-accent)] hover:text-[var(--color-text)] focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:outline-none"
+                className="bg-primary text-background hover:bg-accent hover:text-text focus-visible:ring-accent rounded-full px-5 py-1.5 text-[11px] font-medium tracking-[0.14em] uppercase transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
               >
                 Sign Up
               </Link>
@@ -93,7 +93,7 @@ const NavBar = () => {
         initial={false}
         animate={{ height: menuOpen ? "auto" : 0, opacity: menuOpen ? 1 : 0 }}
         transition={{ duration: 0.25, ease: "easeInOut" }}
-        className="overflow-hidden border-t border-transparent data-[open=true]:border-[var(--color-secondary)] md:hidden"
+        className="data-[open=true]:border-secondary overflow-hidden border-t border-transparent md:hidden"
         data-open={menuOpen}
       >
         <div className="flex flex-col gap-1 px-4 pt-3 pb-5">
@@ -111,12 +111,12 @@ const NavBar = () => {
             Features
           </MobileNavLink>
 
-          <div className="mt-3 flex flex-col gap-3 border-t border-[var(--color-secondary)] pt-4">
+          <div className="border-secondary mt-3 flex flex-col gap-3 border-t pt-4">
             {isAuthenticated ? (
               <Link
                 to="/profile"
                 onClick={() => setMenuOpen(false)}
-                className="rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-center text-sm font-medium text-[var(--color-background)]"
+                className="bg-primary text-background rounded-lg px-4 py-2.5 text-center text-sm font-medium"
               >
                 Profile
               </Link>
@@ -128,7 +128,7 @@ const NavBar = () => {
                 <Link
                   to="/register"
                   onClick={() => setMenuOpen(false)}
-                  className="rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-center text-sm font-medium text-[var(--color-background)]"
+                  className="bg-primary text-background rounded-lg px-4 py-2.5 text-center text-sm font-medium"
                 >
                   Sign Up
                 </Link>
@@ -163,16 +163,14 @@ const NavLink = ({
         whileHover={{ y: -1 }}
         whileTap={{ scale: 0.96 }}
         className={`relative inline-flex items-center text-[11px] font-medium tracking-[0.14em] uppercase transition-colors ${
-          isActive
-            ? "text-[var(--color-primary)]"
-            : "text-[var(--color-text)]/60 group-hover:text-[var(--color-primary)]"
+          isActive ? "text-primary" : "text-text/60 group-hover:text-primary"
         }`}
       >
         {children}
         {isActive && (
           <motion.span
             layoutId="nav-underline"
-            className="absolute right-0 -bottom-2 left-0 h-px bg-[var(--color-accent)]"
+            className="bg-accent absolute right-0 -bottom-2 left-0 h-px"
             transition={{ type: "spring", stiffness: 380, damping: 32 }}
           />
         )}
@@ -202,15 +200,13 @@ const MobileNavLink = ({
     {({ isActive }) => (
       <span
         className={`relative block rounded-md py-2.5 pl-4 text-base transition-colors ${
-          isActive
-            ? "bg-[var(--color-secondary)]/50 font-medium text-[var(--color-primary)]"
-            : "text-[var(--color-text)]/70"
+          isActive ? "bg-secondary/50 text-primary font-medium" : "text-text/70"
         }`}
       >
         {isActive && (
           <motion.span
             layoutId="nav-underline-mobile"
-            className="absolute top-1/2 left-0 h-4 w-[3px] -translate-y-1/2 rounded-full bg-[var(--color-accent)]"
+            className="bg-accent absolute top-1/2 left-0 h-4 w-0.75 -translate-y-1/2 rounded-full"
             transition={{ type: "spring", stiffness: 380, damping: 32 }}
           />
         )}
