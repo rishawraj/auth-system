@@ -1,6 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
-import { ExternalLink, Search, UserCog } from "lucide-react";
+import { Search, UserCog } from "lucide-react";
 import { useState } from "react";
 
 import { deleteUser, toggleUserStatus } from "../queries/adminDashboardUsers";
@@ -78,12 +77,6 @@ const AdminDashboardUsers = ({
             <UserCog />
           </span>
           User Directory
-          <Link
-            to="/admin/users"
-            className="text-primary/80 hover:text-primary transition-colors"
-          >
-            <ExternalLink className="h-5 w-5" />
-          </Link>
         </h3>
 
         <div className="relative flex w-full max-w-sm items-center">

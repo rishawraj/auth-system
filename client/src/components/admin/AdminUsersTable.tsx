@@ -46,7 +46,8 @@ export default function AdminUsersTable({ users }: Props) {
         >
           {/* Avatar */}
           <div className="flex h-11 w-11 items-center justify-center rounded-full bg-violet-500/20 text-lg font-semibold text-violet-300">
-            {user.name.charAt(0).toUpperCase()}
+            {/* {user.name.charAt(0).toUpperCase()} */}
+            <img src={user?.profile_pic || ""} alt="user-avatar" />
           </div>
 
           {/* Name */}

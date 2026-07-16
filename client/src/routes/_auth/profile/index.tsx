@@ -63,7 +63,7 @@ function RouteComponent() {
     .toUpperCase();
 
   return (
-    <div className="min-h-screen bg-[var(--color-background)]">
+    <div className="bg-background min-h-screen">
       <NavBar />
 
       <div className="container mx-auto px-4 py-24">
@@ -73,9 +73,9 @@ function RouteComponent() {
           transition={{ duration: 0.5 }}
           className="mx-auto max-w-2xl"
         >
-          <div className="overflow-hidden rounded-xl border border-[var(--color-secondary)]">
+          <div className="border-secondary overflow-hidden rounded-xl border">
             {/* Cover */}
-            <div className="relative h-28 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)]">
+            <div className="from-primary to-accent relative h-28 bg-linear-to-r">
               <motion.div
                 initial={{ scale: 0.5, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
@@ -92,10 +92,10 @@ function RouteComponent() {
                     src={user.profile_pic}
                     alt={user.name}
                     sizes="112px"
-                    className="h-28 w-28 rounded-full border-4 border-[var(--color-background)] object-cover"
+                    className="border-background h-28 w-28 rounded-full border-4 object-cover"
                   />
                 ) : (
-                  <div className="flex h-28 w-28 items-center justify-center rounded-full border-4 border-[var(--color-background)] bg-[var(--color-secondary)] text-xl font-medium text-[var(--color-primary)]">
+                  <div className="border-background bg-secondary text-primary flex h-28 w-28 items-center justify-center rounded-full border-4 text-xl font-medium">
                     {initials}
                   </div>
                 )}
@@ -108,7 +108,7 @@ function RouteComponent() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
-                className="font-serif text-2xl text-[var(--color-text)]"
+                className="text-text font-serif text-2xl"
               >
                 {user?.name}
               </motion.h1>
@@ -116,7 +116,7 @@ function RouteComponent() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.4 }}
-                className="mt-1 text-sm text-[var(--color-text)]/60"
+                className="text-text/60 mt-1 text-sm"
               >
                 {user?.email}
               </motion.p>
@@ -132,7 +132,7 @@ function RouteComponent() {
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={() => navigate({ to: "/profile/edit" })}
-                  className="cursor-pointer rounded-full bg-[var(--color-primary)] px-5 py-2 text-xs font-medium tracking-wide text-[var(--color-background)] uppercase transition-colors hover:bg-[var(--color-accent)] hover:text-[var(--color-text)] focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:outline-none"
+                  className="bg-primary text-background hover:bg-accent hover:text-text focus-visible:ring-accent cursor-pointer rounded-full px-5 py-2 text-xs font-medium tracking-wide uppercase transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                 >
                   Edit profile
                 </motion.button>
@@ -140,10 +140,10 @@ function RouteComponent() {
                 <motion.button
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
-                  onClick={() => navigate({ to: "/profile/settings" })}
-                  className="cursor-pointer rounded-full border border-[var(--color-secondary)] px-5 py-2 text-xs font-medium tracking-wide text-[var(--color-text)] uppercase transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:outline-none"
+                  onClick={() => navigate({ to: "/2FAEnable" })}
+                  className="border-secondary text-text hover:border-primary hover:text-primary focus-visible:ring-accent cursor-pointer rounded-full border px-5 py-2 text-xs font-medium tracking-wide uppercase transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                 >
-                  Settings
+                  Enable 2FA
                 </motion.button>
 
                 {user?.is_super_user && (
@@ -151,7 +151,7 @@ function RouteComponent() {
                     whileHover={{ scale: 1.03 }}
                     whileTap={{ scale: 0.97 }}
                     onClick={() => navigate({ to: "/admin" })}
-                    className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[var(--color-accent)] px-5 py-2 text-xs font-medium tracking-wide text-[var(--color-accent)] uppercase transition-colors hover:bg-[var(--color-accent)] hover:text-[var(--color-background)] focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:outline-none"
+                    className="border-accent text-accent hover:bg-accent hover:text-background focus-visible:ring-accent inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-5 py-2 text-xs font-medium tracking-wide uppercase transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                   >
                     <ShieldCheck size={13} />
                     Admin dashboard
@@ -168,9 +168,9 @@ function RouteComponent() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.6 }}
-                className="mt-10 border-t border-[var(--color-secondary)] pt-8 text-left"
+                className="border-secondary mt-10 border-t pt-8 text-left"
               >
-                <h2 className="text-center text-[11px] font-medium tracking-[0.2em] text-[var(--color-text)]/50 uppercase">
+                <h2 className="text-text/50 text-center text-[11px] font-medium tracking-[0.2em] uppercase">
                   Account details
                 </h2>
 
@@ -179,14 +179,12 @@ function RouteComponent() {
                     {getDetailItems(user).map((item) => (
                       <div
                         key={item.label}
-                        className="rounded-lg bg-[var(--color-secondary)]/30 p-4"
+                        className="bg-secondary/30 rounded-lg p-4"
                       >
-                        <dt className="text-xs font-medium text-[var(--color-text)]/50">
+                        <dt className="text-text/50 text-xs font-medium">
                           {item.label}
                         </dt>
-                        <dd className="mt-1 text-sm text-[var(--color-text)]">
-                          {item.value}
-                        </dd>
+                        <dd className="text-text mt-1 text-sm">{item.value}</dd>
                       </div>
                     ))}
                   </dl>

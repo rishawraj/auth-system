@@ -36,8 +36,6 @@ import { Route as AuthProfileEditImport } from "./routes/_auth/profile/edit";
 import { Route as AuthIsAdminAdminIndexImport } from "./routes/_auth/_isAdmin/admin/index";
 import { Route as AuthIsAdminAdminSettingsImport } from "./routes/_auth/_isAdmin/admin/settings";
 import { Route as authAuthGoogleCallbackImport } from "./routes/(auth)/auth.google.callback";
-import { Route as AuthIsAdminAdminUsersIndexImport } from "./routes/_auth/_isAdmin/admin/users/index";
-import { Route as AuthIsAdminAdminUsersPostIdImport } from "./routes/_auth/_isAdmin/admin/users/$postId";
 
 // Create/Update Routes
 
@@ -188,21 +186,6 @@ const authAuthGoogleCallbackRoute = authAuthGoogleCallbackImport.update({
   path: "/auth/google/callback",
   getParentRoute: () => rootRoute,
 } as any);
-
-const AuthIsAdminAdminUsersIndexRoute = AuthIsAdminAdminUsersIndexImport.update(
-  {
-    id: "/admin/users/",
-    path: "/admin/users/",
-    getParentRoute: () => AuthIsAdminRoute,
-  } as any,
-);
-
-const AuthIsAdminAdminUsersPostIdRoute =
-  AuthIsAdminAdminUsersPostIdImport.update({
-    id: "/admin/users/$postId",
-    path: "/admin/users/$postId",
-    getParentRoute: () => AuthIsAdminRoute,
-  } as any);
 
 // Populate the FileRoutesByPath interface
 
@@ -383,20 +366,6 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AuthIsAdminAdminIndexImport;
       parentRoute: typeof AuthIsAdminImport;
     };
-    "/_auth/_isAdmin/admin/users/$postId": {
-      id: "/_auth/_isAdmin/admin/users/$postId";
-      path: "/admin/users/$postId";
-      fullPath: "/admin/users/$postId";
-      preLoaderRoute: typeof AuthIsAdminAdminUsersPostIdImport;
-      parentRoute: typeof AuthIsAdminImport;
-    };
-    "/_auth/_isAdmin/admin/users/": {
-      id: "/_auth/_isAdmin/admin/users/";
-      path: "/admin/users";
-      fullPath: "/admin/users";
-      preLoaderRoute: typeof AuthIsAdminAdminUsersIndexImport;
-      parentRoute: typeof AuthIsAdminImport;
-    };
   }
 }
 
@@ -405,15 +374,11 @@ declare module "@tanstack/react-router" {
 interface AuthIsAdminRouteChildren {
   AuthIsAdminAdminSettingsRoute: typeof AuthIsAdminAdminSettingsRoute;
   AuthIsAdminAdminIndexRoute: typeof AuthIsAdminAdminIndexRoute;
-  AuthIsAdminAdminUsersPostIdRoute: typeof AuthIsAdminAdminUsersPostIdRoute;
-  AuthIsAdminAdminUsersIndexRoute: typeof AuthIsAdminAdminUsersIndexRoute;
 }
 
 const AuthIsAdminRouteChildren: AuthIsAdminRouteChildren = {
   AuthIsAdminAdminSettingsRoute: AuthIsAdminAdminSettingsRoute,
   AuthIsAdminAdminIndexRoute: AuthIsAdminAdminIndexRoute,
-  AuthIsAdminAdminUsersPostIdRoute: AuthIsAdminAdminUsersPostIdRoute,
-  AuthIsAdminAdminUsersIndexRoute: AuthIsAdminAdminUsersIndexRoute,
 };
 
 const AuthIsAdminRouteWithChildren = AuthIsAdminRoute._addFileChildren(
@@ -473,8 +438,6 @@ export interface FileRoutesByFullPath {
   "/auth/google/callback": typeof authAuthGoogleCallbackRoute;
   "/admin/settings": typeof AuthIsAdminAdminSettingsRoute;
   "/admin": typeof AuthIsAdminAdminIndexRoute;
-  "/admin/users/$postId": typeof AuthIsAdminAdminUsersPostIdRoute;
-  "/admin/users": typeof AuthIsAdminAdminUsersIndexRoute;
 }
 
 export interface FileRoutesByTo {
@@ -502,8 +465,6 @@ export interface FileRoutesByTo {
   "/auth/google/callback": typeof authAuthGoogleCallbackRoute;
   "/admin/settings": typeof AuthIsAdminAdminSettingsRoute;
   "/admin": typeof AuthIsAdminAdminIndexRoute;
-  "/admin/users/$postId": typeof AuthIsAdminAdminUsersPostIdRoute;
-  "/admin/users": typeof AuthIsAdminAdminUsersIndexRoute;
 }
 
 export interface FileRoutesById {
@@ -533,8 +494,6 @@ export interface FileRoutesById {
   "/(auth)/auth/google/callback": typeof authAuthGoogleCallbackRoute;
   "/_auth/_isAdmin/admin/settings": typeof AuthIsAdminAdminSettingsRoute;
   "/_auth/_isAdmin/admin/": typeof AuthIsAdminAdminIndexRoute;
-  "/_auth/_isAdmin/admin/users/$postId": typeof AuthIsAdminAdminUsersPostIdRoute;
-  "/_auth/_isAdmin/admin/users/": typeof AuthIsAdminAdminUsersIndexRoute;
 }
 
 export interface FileRouteTypes {
@@ -563,9 +522,7 @@ export interface FileRouteTypes {
     | "/profile"
     | "/auth/google/callback"
     | "/admin/settings"
-    | "/admin"
-    | "/admin/users/$postId"
-    | "/admin/users";
+    | "/admin";
   fileRoutesByTo: FileRoutesByTo;
   to:
     | "/"
@@ -591,9 +548,7 @@ export interface FileRouteTypes {
     | "/profile"
     | "/auth/google/callback"
     | "/admin/settings"
-    | "/admin"
-    | "/admin/users/$postId"
-    | "/admin/users";
+    | "/admin";
   id:
     | "__root__"
     | "/"
@@ -620,9 +575,7 @@ export interface FileRouteTypes {
     | "/_auth/profile/"
     | "/(auth)/auth/google/callback"
     | "/_auth/_isAdmin/admin/settings"
-    | "/_auth/_isAdmin/admin/"
-    | "/_auth/_isAdmin/admin/users/$postId"
-    | "/_auth/_isAdmin/admin/users/";
+    | "/_auth/_isAdmin/admin/";
   fileRoutesById: FileRoutesById;
 }
 
@@ -748,9 +701,7 @@ export const routeTree = rootRoute
       "parent": "/_auth",
       "children": [
         "/_auth/_isAdmin/admin/settings",
-        "/_auth/_isAdmin/admin/",
-        "/_auth/_isAdmin/admin/users/$postId",
-        "/_auth/_isAdmin/admin/users/"
+        "/_auth/_isAdmin/admin/"
       ]
     },
     "/_auth/logout": {
@@ -786,14 +737,6 @@ export const routeTree = rootRoute
     },
     "/_auth/_isAdmin/admin/": {
       "filePath": "_auth/_isAdmin/admin/index.tsx",
-      "parent": "/_auth/_isAdmin"
-    },
-    "/_auth/_isAdmin/admin/users/$postId": {
-      "filePath": "_auth/_isAdmin/admin/users/$postId.tsx",
-      "parent": "/_auth/_isAdmin"
-    },
-    "/_auth/_isAdmin/admin/users/": {
-      "filePath": "_auth/_isAdmin/admin/users/index.tsx",
       "parent": "/_auth/_isAdmin"
     }
   }
