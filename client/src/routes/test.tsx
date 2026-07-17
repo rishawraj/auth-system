@@ -1,43 +1,11 @@
-import { createFileRoute, useLoaderData } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 
 import NavBar from "../components/NavBar-test";
-import { getToken } from "../utils/authToken";
-
-const API_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const Route = createFileRoute("/test")({
   component: ThemeShowcase,
 });
-
-function RouteComponent() {
-  const data = useLoaderData({ from: "/test" });
-
-  return (
-    <>
-      <NavBar />
-      <div>
-        <pre>{JSON.stringify(data, null, 2)}</pre>
-      </div>
-
-      <button
-        onClick={async () => {
-          // include token from getToken
-          const token = getToken();
-          const res = await fetch(`${API_URL}/test-refresh-token`, {
-            credentials: "include",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          console.log(res);
-        }}
-      >
-        send
-      </button>
-    </>
-  );
-}
 
 export default function ThemeShowcase() {
   const [isDark, setIsDark] = useState(false);

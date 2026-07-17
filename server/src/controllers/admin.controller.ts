@@ -2,12 +2,12 @@ import { formatDistanceToNow } from "date-fns";
 import { pool } from "../config/db.config.js";
 import { User } from "../models/user.model.js";
 
-export async function getAllUsers() {
-  const users = await pool.query(
-    "SELECT * FROM users WHERE is_deleted = false ORDER BY registration_date DESC;"
-  );
-  return users;
-}
+// export async function getAllUsers() {
+//   const users = await pool.query(
+//     "SELECT * FROM users WHERE is_deleted = false ORDER BY registration_date DESC;"
+//   );
+//   return users;
+// }
 
 /**
  * Retrieves a user by their ID from the database
@@ -16,27 +16,27 @@ export async function getAllUsers() {
  * @throws Error if database query fails
  */
 
-export async function getUserById(id: string): Promise<User | null> {
-  try {
-    // Validate input
-    if (!id) {
-      throw new Error("User ID is required");
-    }
+// export async function getUserById(id: string): Promise<User | null> {
+//   try {
+//     // Validate input
+//     if (!id) {
+//       throw new Error("User ID is required");
+//     }
 
-    // Query database for user with specified fields only
-    const result = await pool.query("SELECT * FROM users WHERE id = $1", [id]);
+//     // Query database for user with specified fields only
+//     const result = await pool.query("SELECT * FROM users WHERE id = $1", [id]);
 
-    // Return the first row or null if no user found
-    return result.rows.length > 0 ? result.rows[0] : null;
-  } catch (error) {
-    console.error(`Error fetching user with ID ${id}:`, error);
-    throw new Error(
-      `Failed to retrieve user: ${
-        error instanceof Error ? error.message : "Unknown error"
-      }`
-    );
-  }
-}
+//     // Return the first row or null if no user found
+//     return result.rows.length > 0 ? result.rows[0] : null;
+//   } catch (error) {
+//     console.error(`Error fetching user with ID ${id}:`, error);
+//     throw new Error(
+//       `Failed to retrieve user: ${
+//         error instanceof Error ? error.message : "Unknown error"
+//       }`
+//     );
+//   }
+// }
 
 interface PageinatedUserResult {
   users: User[];

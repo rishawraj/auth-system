@@ -1,8 +1,13 @@
 import { z } from "zod";
 import dotenv from "dotenv";
+import path from "path";
+
+const environment = process.env.NODE_ENV || "development";
 
 // Load .env file
-dotenv.config();
+dotenv.config({
+  path: path.resolve(process.cwd(), `.env.${environment}`),
+});
 
 // Define the schema for environment variables
 const envSchema = z

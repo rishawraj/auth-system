@@ -22,7 +22,7 @@
 - [ ] CSRF protection
 
   - double submit cookie tokens
-  - SameSiste=Strict/lax
+  - SameSite=Strict/lax
 
 - [ ] Rate-Limiting on Auth Endpoints
 

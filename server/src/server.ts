@@ -61,6 +61,7 @@ if (import.meta.url === "file://" + process.argv[1]) {
 
   const server = http.createServer(handler);
   server.listen(3000, () => {
+    console.log(`server is running in [${env.NODE_ENV}]`);
     console.log("server is running on http://localhost:3000");
   });
 }
