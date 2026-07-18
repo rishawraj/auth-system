@@ -160,7 +160,7 @@ function RouteComponent() {
                           </div>
                           <button
                             onClick={() => handleToggle(setting.key)}
-                            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none ${
+                            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none ${
                               settings[setting.key]
                                 ? "bg-indigo-600 dark:bg-indigo-500"
                                 : "bg-gray-200 dark:bg-gray-600"

@@ -24,12 +24,12 @@ const STEPS = [
 
 export const HowItWorks = () => {
   return (
-    <section className="bg-[var(--color-secondary)]/25 px-4 py-20 md:py-28">
+    <section className="bg-secondary/25 px-4 py-20 md:py-28">
       <div className="container mx-auto max-w-5xl">
-        <p className="mb-3 text-center text-[11px] font-medium tracking-[0.25em] text-[var(--color-accent)] uppercase">
+        <p className="text-accent mb-3 text-center text-[11px] font-medium tracking-[0.25em] uppercase">
           Getting started
         </p>
-        <h2 className="mb-14 text-center font-serif text-2xl text-[var(--color-text)] md:text-3xl">
+        <h2 className="text-text mb-14 text-center font-serif text-2xl md:text-3xl">
           Three steps. That's it.
         </h2>
 
@@ -43,20 +43,20 @@ export const HowItWorks = () => {
               transition={{ duration: 0.5, delay: i * 0.1 }}
               className="relative"
             >
-              <span className="font-serif text-4xl text-[var(--color-accent)]/40">
+              <span className="text-accent/40 font-serif text-4xl">
                 {step.number}
               </span>
-              <h3 className="mt-3 text-lg font-medium text-[var(--color-text)]">
+              <h3 className="text-text mt-3 text-lg font-medium">
                 {step.title}
               </h3>
-              <p className="mt-2 text-sm leading-relaxed text-[var(--color-text)]/65">
+              <p className="text-text/65 mt-2 text-sm leading-relaxed">
                 {step.description}
               </p>
 
               {i < STEPS.length - 1 && (
                 <div
                   aria-hidden
-                  className="absolute top-6 left-[calc(100%+1rem)] hidden h-px w-8 bg-[var(--color-secondary)] md:block"
+                  className="bg-secondary absolute top-6 left-[calc(100%+1rem)] hidden h-px w-8 md:block"
                 />
               )}
             </motion.div>

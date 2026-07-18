@@ -85,7 +85,7 @@ function ForgotPasswordPage() {
           <div className="bg-secondary mt-4 rounded-md p-4">
             <div className="flex flex-col gap-2">
               <div className="ml-3 flex gap-1.5">
-                <div className="flex-shrink-0">
+                <div className="shrink-0">
                   <svg
                     className="h-5 w-5 text-green-400"
                     viewBox="0 0 20 20"
@@ -112,7 +112,7 @@ function ForgotPasswordPage() {
         {error && (
           <div className="mt-4 rounded-md bg-red-50 p-4">
             <div className="flex">
-              <div className="flex-shrink-0">
+              <div className="shrink-0">
                 <svg
                   className="h-5 w-5 text-red-400"
                   viewBox="0 0 20 20"

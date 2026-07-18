@@ -111,7 +111,7 @@ Instructions:
             className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white shadow-2xl dark:bg-gray-800"
           >
             {/* Header */}
-            <div className="rounded-t-xl bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white">
+            <div className="rounded-t-xl bg-linear-to-r from-blue-600 to-purple-600 p-6 text-white">
               <div className="flex items-center gap-3">
                 <Shield className="h-8 w-8" />
                 <div>
@@ -128,7 +128,7 @@ Instructions:
               {/* Warning Alert */}
               <div className="mb-6 rounded-r-lg border-l-4 border-amber-400 bg-amber-50 p-4 dark:bg-amber-900/20">
                 <div className="flex items-start">
-                  <AlertTriangle className="mt-0.5 mr-3 h-5 w-5 flex-shrink-0 text-amber-400" />
+                  <AlertTriangle className="mt-0.5 mr-3 h-5 w-5 shrink-0 text-amber-400" />
                   <div>
                     <h3 className="mb-1 text-sm font-semibold text-amber-800 dark:text-amber-200">
                       Important Security Notice
@@ -148,27 +148,27 @@ Instructions:
                 </h3>
                 <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
                   <li className="flex items-start">
-                    <span className="mt-0.5 mr-3 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                    <span className="mt-0.5 mr-3 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                       1
                     </span>
                     Use these codes when you can't access your primary 2FA
                     method
                   </li>
                   <li className="flex items-start">
-                    <span className="mt-0.5 mr-3 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                    <span className="mt-0.5 mr-3 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                       2
                     </span>
                     Each code can only be used once - they become invalid after
                     use
                   </li>
                   <li className="flex items-start">
-                    <span className="mt-0.5 mr-3 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                    <span className="mt-0.5 mr-3 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                       3
                     </span>
                     Store them in a password manager or secure physical location
                   </li>
                   <li className="flex items-start">
-                    <span className="mt-0.5 mr-3 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                    <span className="mt-0.5 mr-3 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                       4
                     </span>
                     Generate new codes if you suspect these have been
@@ -278,7 +278,7 @@ Instructions:
               {/* Footer Warning */}
               <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
                 <div className="flex items-start">
-                  <AlertTriangle className="mt-0.5 mr-3 h-5 w-5 flex-shrink-0 text-red-500" />
+                  <AlertTriangle className="mt-0.5 mr-3 h-5 w-5 shrink-0 text-red-500" />
                   <div>
                     <h4 className="mb-1 text-sm font-semibold text-red-800 dark:text-red-200">
                       Security Reminder

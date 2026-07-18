@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import NavBar from "../components/NavBar-test";
+
 import { FeaturesPage } from "../components/features/FeaturesPage";
+import NavBar from "../components/NavBar-test";
 
 export const Route = createFileRoute("/features")({
   component: RouteComponent,

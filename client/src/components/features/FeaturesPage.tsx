@@ -34,7 +34,7 @@ const GROUPS: { icon: LucideIcon; title: string; items: string[] }[] = [
 ];
 
 export const FeaturesPage = () => (
-  <div className="bg-[var(--color-background)] px-4 py-20 md:py-28">
+  <div className="bg-background px-4 py-20 md:py-28">
     <div className="container mx-auto max-w-5xl">
       <PageIntro
         eyebrow="Features"
@@ -52,23 +52,23 @@ export const FeaturesPage = () => (
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-80px" }}
               transition={{ duration: 0.5, delay: i * 0.1 }}
-              className="rounded-xl border border-[var(--color-secondary)] p-7"
+              className="border-secondary rounded-xl border p-7"
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-secondary)]/60">
-                <Icon size={18} className="text-[var(--color-primary)]" />
+              <div className="bg-secondary/60 flex h-10 w-10 items-center justify-center rounded-full">
+                <Icon size={18} className="text-primary" />
               </div>
-              <h3 className="mt-5 font-serif text-lg text-[var(--color-text)]">
+              <h3 className="text-text mt-5 font-serif text-lg">
                 {group.title}
               </h3>
               <ul className="mt-4 space-y-2.5">
                 {group.items.map((item) => (
                   <li
                     key={item}
-                    className="flex items-start gap-2.5 text-sm text-[var(--color-text)]/70"
+                    className="text-text/70 flex items-start gap-2.5 text-sm"
                   >
                     <span
                       aria-hidden
-                      className="mt-2 h-1 w-1 shrink-0 rounded-full bg-[var(--color-accent)]"
+                      className="bg-accent mt-2 h-1 w-1 shrink-0 rounded-full"
                     />
                     {item}
                   </li>

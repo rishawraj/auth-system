@@ -9,7 +9,7 @@ const STACK = [
 ];
 
 export const AboutPage = () => (
-  <div className="bg-[var(--color-background)] px-4 py-20 md:py-28">
+  <div className="bg-background px-4 py-20 md:py-28">
     <div className="container mx-auto max-w-4xl">
       <PageIntro
         eyebrow="About"
@@ -23,16 +23,14 @@ export const AboutPage = () => (
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-80px" }}
         transition={{ duration: 0.5 }}
-        className="mt-16 grid gap-px overflow-hidden rounded-xl border border-[var(--color-secondary)] bg-[var(--color-secondary)] sm:grid-cols-2"
+        className="border-secondary bg-secondary mt-16 grid gap-px overflow-hidden rounded-xl border sm:grid-cols-2"
       >
         {STACK.map((item) => (
-          <div key={item.name} className="bg-[var(--color-background)] p-6">
-            <h3 className="text-sm font-medium tracking-wide text-[var(--color-primary)] uppercase">
+          <div key={item.name} className="bg-background p-6">
+            <h3 className="text-primary text-sm font-medium tracking-wide uppercase">
               {item.name}
             </h3>
-            <p className="mt-1.5 text-sm text-[var(--color-text)]/65">
-              {item.note}
-            </p>
+            <p className="text-text/65 mt-1.5 text-sm">{item.note}</p>
           </div>
         ))}
       </motion.div>
@@ -43,12 +41,12 @@ export const AboutPage = () => (
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-80px" }}
         transition={{ duration: 0.5, delay: 0.1 }}
-        className="mt-16 border-l-2 border-[var(--color-accent)] pl-6"
+        className="border-accent mt-16 border-l-2 pl-6"
       >
-        <h2 className="font-serif text-xl text-[var(--color-text)] md:text-2xl">
+        <h2 className="text-text font-serif text-xl md:text-2xl">
           How it protects your account
         </h2>
-        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[var(--color-text)]/70 md:text-base">
+        <p className="text-text/70 mt-3 max-w-2xl text-sm leading-relaxed md:text-base">
           Passwords are hashed with bcrypt and never stored or logged in plain
           text. Sessions run on short-lived access tokens paired with rotating
           refresh tokens, each one invalidated server-side the moment it's
@@ -66,14 +64,14 @@ export const AboutPage = () => (
         transition={{ duration: 0.5, delay: 0.15 }}
         className="mt-16 flex flex-col items-center gap-3 text-center"
       >
-        <p className="text-sm text-[var(--color-text)]/60">
+        <p className="text-text/60 text-sm">
           Curious how a specific flow works under the hood?
         </p>
         <a
           href="https://github.com/rishawraj/auth-system/"
           target="_blank"
           rel="noreferrer"
-          className="rounded-full border border-[var(--color-secondary)] px-6 py-2 text-xs font-medium tracking-wide text-[var(--color-text)] uppercase transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:outline-none"
+          className="border-secondary text-text hover:border-primary hover:text-primary focus-visible:ring-accent rounded-full border px-6 py-2 text-xs font-medium tracking-wide uppercase transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
         >
           View source on GitHub
         </a>

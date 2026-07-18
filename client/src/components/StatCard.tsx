@@ -53,7 +53,7 @@ export function StatCard({ label, value, color }: Props) {
 
   return (
     <div
-      className={`bg-background hover:bg-background/100 relative flex items-center justify-between rounded-xl border-l-4 p-6 shadow-md transition-all ${styles.border}`}
+      className={`bg-background hover:bg-background relative flex items-center justify-between rounded-xl border-l-4 p-6 shadow-md transition-all ${styles.border}`}
     >
       <div>
         {/* Muted label for better visual hierarchy */}
