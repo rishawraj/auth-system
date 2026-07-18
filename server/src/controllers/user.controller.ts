@@ -27,14 +27,7 @@ import busboy from "busboy";
 import { uploadToR2 } from "../utils/uploadToR2.js";
 import { PoolClient } from "pg";
 
-// const SECRET = env.ACCESS_TOKEN_SECRET;
-// const FRONTEND_URL = env.FRONTEND_URL;
-
-const registerSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters long"),
-});
+import { api } from "@auth-system/shared/src";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -57,7 +50,7 @@ export async function handleRegister(
   try {
     const body = await readBody<{ token: string; code: string }>(req);
 
-    const result = registerSchema.safeParse(body);
+    const result = api.RegisterRequestSchema.safeParse(body);
 
     if (!result.success) {
       const errors = result.error.flatten().fieldErrors;

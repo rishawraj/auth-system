@@ -1,6 +1,7 @@
 import { faker } from "@faker-js/faker";
 import bcrypt from "bcrypt";
-import type { UserAuthData } from "../../shared/types/User.js";
+// import type { UserAuthData } from "../../shared/types/User.js";
+import type { User } from "../src/models/user.model.js";
 import { pool } from "../src/config/db.config.js";
 
 async function seedUsers(count: number = 50) {
@@ -15,15 +16,15 @@ async function seedUsers(count: number = 50) {
       const lastName = faker.person.lastName();
 
       // Constructing a user object that matches UserAuthData
-      const newUser: UserAuthData = {
+      const newUser: User = {
         id: faker.string.uuid(), // Local UUID generation
         name: `${firstName} ${lastName}`,
         email: faker.internet.email({ firstName, lastName }).toLowerCase(),
         password: hashedPassword,
         is_active: faker.datatype.boolean({ probability: 0.8 }), // 80% chance of being active
         is_super_user: false,
-        registration_date: faker.date.past().toISOString(),
-        last_login: faker.date.recent().toISOString(),
+        registration_date: faker.date.past(),
+        last_login: faker.date.recent(),
         profile_pic: `https://api.dicebear.com/7.x/adventurer/png?seed=${faker.string.alphanumeric(10)}`,
         last_login_method: faker.helpers.arrayElement([
           "credentials",
@@ -63,7 +64,7 @@ async function seedUsers(count: number = 50) {
         verification_code: null,
         verification_code_expiry_time: null,
         reset_password_token: null,
-        reset_passsword_token_expiry_time: null,
+        reset_password_token_expiry_time: null,
         oauth_provider: null,
         oauth_id: null,
         oauth_access_token: null,

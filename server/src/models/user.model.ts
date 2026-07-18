@@ -31,6 +31,10 @@ export interface User {
   tmp_two_factor_secret: string | null;
   disable_2fa_otp: string | null;
   disable_2fa_otp_expiry_time: Date | null;
+  regenerate_2fa_otp: string | null;
+  regenerate_2fa_otp_expiry: Date | null;
+  pending_email: string | null;
+  last_code_sent_at: Date | null;
 }
 
 // User input for creating a user (e.g., POST /users)

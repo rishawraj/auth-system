@@ -1,12 +1,13 @@
+import { api } from "@auth-system/shared/src";
 import { useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import React, { useState } from "react";
 
-interface FormData {
-  name: string;
-  email: string;
-  password: string;
-}
+// interface FormData {
+//   name: string;
+//   email: string;
+//   password: string;
+// }
 
 interface FormErrors {
   name?: string;
@@ -15,7 +16,7 @@ interface FormErrors {
 }
 
 export default function UserRegistrationForm() {
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState<api.RegisterRequest>({
     name: "",
     email: "",
     password: "",
@@ -151,7 +152,7 @@ export default function UserRegistrationForm() {
             >
               <div className="rounded-md bg-green-50 p-4 dark:bg-green-900/50">
                 <div className="flex">
-                  <div className="flex-shrink-0">
+                  <div className="shrink-0">
                     <motion.svg
                       animate={{ rotate: [0, 20, 0] }}
                       transition={{ duration: 0.5 }}

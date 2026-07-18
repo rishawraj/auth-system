@@ -76,7 +76,7 @@ function EmailAuth2FARegenerate() {
           <div className="space-y-6">
             <div className="rounded-md bg-yellow-50 p-4 dark:bg-yellow-900/20">
               <div className="flex">
-                <div className="flex-shrink-0">
+                <div className="shrink-0">
                   <AlertTriangle
                     className="h-5 w-5 text-yellow-400"
                     aria-hidden="true"
@@ -129,7 +129,7 @@ function EmailAuth2FARegenerate() {
           <div className="space-y-6">
             <div className="rounded-md bg-red-50 p-4 dark:bg-red-900/20">
               <div className="flex">
-                <div className="flex-shrink-0">
+                <div className="shrink-0">
                   <AlertTriangle
                     className="h-5 w-5 text-red-400"
                     aria-hidden="true"
@@ -310,7 +310,7 @@ function GoogleAuth2FARegenerate() {
           <div className="space-y-6">
             <div className="rounded-md bg-yellow-50 p-4 dark:bg-yellow-900/20">
               <div className="flex">
-                <div className="flex-shrink-0">
+                <div className="shrink-0">
                   <AlertTriangle
                     className="h-5 w-5 text-yellow-400"
                     aria-hidden="true"
@@ -363,7 +363,7 @@ function GoogleAuth2FARegenerate() {
           <div className="space-y-6">
             <div className="rounded-md bg-red-50 p-4 dark:bg-red-900/20">
               <div className="flex">
-                <div className="flex-shrink-0">
+                <div className="shrink-0">
                   <AlertTriangle
                     className="h-5 w-5 text-red-400"
                     aria-hidden="true"
