@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 
-const UserSchema = z.object({
+export const UserSchema = z.object({
   id: z.string().uuid(),
 
   name: z.string().max(100),
@@ -61,7 +61,7 @@ const UserSchema = z.object({
   last_code_sent_at: z.date().nullable(),
 });
 
-type User = z.infer<typeof UserSchema>;
+export type User = z.infer<typeof UserSchema>;
 
 export const PublicUserSchema = UserSchema.omit({
   password: true,

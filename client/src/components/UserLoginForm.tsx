@@ -1,7 +1,7 @@
+import { api } from "@auth-system/shared";
 import { useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { z } from "zod";
 
 import { setToken, setType } from "../utils/authToken";
 
@@ -10,36 +10,12 @@ type FormErrors = {
   password?: string;
 };
 
-interface FormData {
-  email: string;
-  password: string;
-}
-
-interface LoginResponse {
-  message: string;
-  accessToken: string;
-  type: string;
-  isTwoFactorEnabled: boolean;
-}
-
-const formSchema = z.object({
-  email: z
-    .string()
-    .trim()
-    .min(1, "Email is required")
-    .email("Email is invalid"),
-  password: z
-    .string()
-    .min(1, "Password is required")
-    .min(6, "Password must be at least 6 characters"),
-});
-
 const handleGoogleLogin = async () => {
   window.location.href = `${import.meta.env.VITE_API_BASE_URL}/auth/google`;
 };
 
 export default function UserLoginForm() {
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState<api.LoginRequst>({
     email: "",
     password: "",
   });
@@ -52,7 +28,7 @@ export default function UserLoginForm() {
   const API_URL = import.meta.env.VITE_API_BASE_URL;
 
   const validateForm = (): boolean => {
-    const result = formSchema.safeParse(formData);
+    const result = api.LoginRequestSchema.safeParse(formData);
     if (!result.success) {
       const fieldErrors: FormErrors = {};
       for (const issue of result.error.issues) {
@@ -68,7 +44,7 @@ export default function UserLoginForm() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
+    setFormData((prev: any) => ({
       ...prev,
       [name]: value,
     }));
@@ -92,13 +68,22 @@ export default function UserLoginForm() {
         body: JSON.stringify(formData),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        setErrorMessage(errorData?.error ?? "Login failed");
+      const json = await response.json();
+      const parsed = api.LoginReponseSchema.safeParse(json);
+
+      if (!parsed.success) {
+        console.error(parsed.error);
+        setErrorMessage("Server returned an invalid response");
         return;
       }
 
-      const data: LoginResponse = await response.json();
+      // if (!response.ok) {
+      //   const errorData = await response.json().catch(() => null);
+      //   setErrorMessage(errorData?.error ?? "Login failed");
+      //   return;
+      // }
+
+      const data = parsed.data;
       const token = data.accessToken;
 
       if (!token) {

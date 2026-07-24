@@ -11,7 +11,6 @@ import {
   send,
   setServerCookie,
 } from "../utils/helpers.js";
-import { z } from "zod";
 import { pool } from "../config/db.config.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -29,15 +28,10 @@ import { PoolClient } from "pg";
 
 import { api } from "@auth-system/shared/src";
 
-const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().length(6, "Password must be at least 6 characters long"),
-});
-
-const verifySchema = z.object({
-  pending_email: z.string().email("Invalid email address"),
-  code: z.string().min(6, "invalid code"),
-});
+// const verifySchema = z.object({
+//   pending_email: z.string().email("Invalid email address"),
+//   code: z.string().min(6, "invalid code"),
+// });
 
 const RESEND_COOLDOWN_SECONDS = 60;
 
@@ -85,9 +79,6 @@ export async function handleRegister(
     const hashedPassword = await bcrypt.hash(password, 10);
     const { code: verificationCode, expiresAt: verification_code_expiry_time } =
       generateSixDigitCodeWithExpiry();
-
-    // const verificationCode = CodeWithExpiry.code;
-    // const verification_code_expiry_time = CodeWithExpiry.expiresAt;
 
     const ua = new UAParser(req.headers["user-agent"] || "");
     const ip =
@@ -196,7 +187,7 @@ export async function handleLogin(
     const userAgent = req.headers["user-agent"];
 
     const body = await readBody(req);
-    const result = loginSchema.safeParse(body);
+    const result = api.LoginRequestSchema.safeParse(body);
 
     if (!result.success) {
       const errors = result.error.flatten().fieldErrors;
@@ -972,7 +963,7 @@ export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
 
   try {
     const body = await readBody(req);
-    const result = verifySchema.safeParse(body);
+    const result = api.VerifyRequestSchema.safeParse(body);
 
     if (!result.success) {
       return send(res, 400, { message: "Invalid request body" });
