@@ -29,29 +29,6 @@ export default function UserRegistrationForm() {
   const navigate = useNavigate({ from: "/register" });
   const API_URL = import.meta.env.VITE_API_BASE_URL;
 
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
-
-    if (!formData.name.trim()) {
-      newErrors.name = "Name is required";
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Email is invalid";
-    }
-
-    if (!formData.password) {
-      newErrors.password = "Password is required";
-    } else if (formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -62,8 +39,20 @@ export default function UserRegistrationForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
 
+    const parsedRequest = api.RegisterRequestSchema.safeParse(formData);
+
+    if (!parsedRequest.success) {
+      const fieldErrors = parsedRequest.error.flatten().fieldErrors;
+      setErrors({
+        name: fieldErrors.name?.[0],
+        email: fieldErrors.email?.[0],
+        password: fieldErrors.password?.[0],
+      });
+      return;
+    }
+
+    setErrors({});
     setLoading(true);
     setErrorMessage("");
 
@@ -84,14 +73,23 @@ export default function UserRegistrationForm() {
         );
       }
 
-      const responseData = await response.json();
+      const json = await response.json();
+
+      const parsedResponse = api.RegisterResponseSchema.safeParse(json);
+
+      if (!parsedResponse.success) {
+        throw new Error("Invalid response from server");
+      }
+
+      const responseData = parsedResponse.data;
+
       setSuccess(true);
       setFormData({ name: "", email: "", password: "" });
+
       navigate({
         to: "/verify",
         search: {
-          // token: responseData.accessToken,
-          pending_email: responseData.user.pending_email,
+          pending_email: responseData.pending_email,
           QRCodeImageUrl: responseData.qrcodeImageUrl,
         },
       });

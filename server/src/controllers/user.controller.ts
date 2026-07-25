@@ -26,12 +26,8 @@ import busboy from "busboy";
 import { uploadToR2 } from "../utils/uploadToR2.js";
 import { PoolClient } from "pg";
 
-import { api } from "@auth-system/shared/src";
-
-// const verifySchema = z.object({
-//   pending_email: z.string().email("Invalid email address"),
-//   code: z.string().min(6, "invalid code"),
-// });
+import { api, models } from "@auth-system/shared/src";
+import { loginLimiter, registerLimiter } from "../utils/rateLimiter.js";
 
 const RESEND_COOLDOWN_SECONDS = 60;
 
@@ -39,10 +35,25 @@ export async function handleRegister(
   req: IncomingMessage,
   res: ServerResponse
 ): Promise<void> {
-  let client: PoolClient | undefined;
+  const ip =
+    req.headers["x-forwarded-for"]?.toString().split(",")[0] ||
+    req.socket.remoteAddress ||
+    "unknow_ip";
 
   try {
-    const body = await readBody<{ token: string; code: string }>(req);
+    await registerLimiter.consume(ip);
+  } catch {
+    return send(res, 429, {
+      error:
+        "Too many registration attempts from this IP. Please try again in an hour.",
+    });
+  }
+
+  let client: PoolClient | undefined;
+  let inTransaction = false;
+
+  try {
+    const body = await readBody<api.RegisterRequest>(req);
 
     const result = api.RegisterRequestSchema.safeParse(body);
 
@@ -61,19 +72,36 @@ export async function handleRegister(
       [email]
     );
 
-    const existingUser = existingUserResult.rows[0];
+    const existingUser: models.User = existingUserResult.rows[0];
 
     if (existingUser) {
-      if (existingUser.oauth_provider) {
-        return send(res, 400, {
-          message:
-            "This account was created with Google. Please use Google login instead.",
-        });
-      } else {
-        return send(res, 400, {
-          message: "User with this email already exists",
-        });
-      }
+      await client.query(
+        `INSERT INTO email_outbox (to_email, template, payload)
+         VALUES ($1, $2, $3)`,
+        [
+          email,
+          "existing_account_notice",
+          JSON.stringify({ provider: existingUser.oauth_provider }),
+        ]
+      );
+
+      const dummySecret = new Secret({ size: 20 }).base32;
+      const dummyTotp = new TOTP({
+        issuer: "auth-system",
+        label: email,
+        secret: dummySecret,
+        digits: 6,
+        period: 30,
+      });
+      const qrcodeImageUrl = await qrcode.toDataURL(dummyTotp.toString());
+
+      const response = api.RegisterResponseSchema.parse({
+        message: "If the email is valid, a verification code has been sent.",
+        pending_email: email,
+        qrcodeImageUrl,
+      });
+
+      return send(res, 201, response);
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -103,6 +131,7 @@ export async function handleRegister(
 
     try {
       await client.query("BEGIN");
+      inTransaction = true;
 
       const newUserResult = await client.query(
         `INSERT INTO users (
@@ -127,7 +156,7 @@ export async function handleRegister(
         ]
       );
 
-      const newUser = newUserResult.rows[0];
+      const newUser: models.User = newUserResult.rows[0];
 
       // generate QRCode 2fa
       const totp = new TOTP({
@@ -149,18 +178,35 @@ export async function handleRegister(
       );
 
       await client.query("COMMIT");
+      inTransaction = false;
 
-      send(res, 201, {
-        message: "User registered successfully",
-        user: newUser,
+      const response = api.RegisterResponseSchema.parse({
+        message: "If the email is valid, a verification code has been sent.",
+        pending_email: newUser.pending_email,
         qrcodeImageUrl,
       });
-    } catch (error) {
-      await client.query("ROLLBACK");
 
-      if (error.code === "23505") {
-        return send(res, 409, { error: "User with this email alread exists" });
+      send(res, 201, response);
+    } catch (error) {
+      if (inTransaction) {
+        await client.query("ROLLBACK");
       }
+
+      if (error instanceof Error && "code" in error && error.code === "23505") {
+        const dummyTotp = new TOTP({
+          issuer: "auth-system",
+          label: email,
+          secret: new Secret({ size: 20 }).base32,
+        });
+        const qrcodeImageUrl = await qrcode.toDataURL(dummyTotp.toString());
+
+        return send(res, 201, {
+          message: "If the email is valid, a verification code has been sent.",
+          pending_email: email,
+          qrcodeImageUrl,
+        });
+      }
+
       console.error("Registration error:", error);
       send(res, 500, { error: "Internal server error" });
     }
@@ -171,6 +217,7 @@ export async function handleRegister(
     client?.release();
   }
 }
+//  ================== Login =======================
 
 export async function handleLogin(
   req: IncomingMessage,
@@ -181,7 +228,8 @@ export async function handleLogin(
       (Array.isArray(req.headers["x-forwarded-for"])
         ? req.headers["x-forwarded-for"][0]
         : req.headers["x-forwarded-for"]?.split(",")[0]) ||
-      req.socket.remoteAddress;
+      req.socket.remoteAddress ||
+      "unknown_ip";
 
     const ip_address = normalizeIP(rawIp);
     const userAgent = req.headers["user-agent"];
@@ -194,10 +242,18 @@ export async function handleLogin(
       return send(res, 400, { errors });
     }
 
-    const { email, password } = result.data;
+    const email = result.data.email.toLowerCase().trim();
+    const password = result.data.password;
 
-    if (!email || !password) {
-      return send(res, 400, { error: "Email and password are required" });
+    try {
+      await Promise.all([
+        loginLimiter.consume(rawIp),
+        loginLimiter.consume(email),
+      ]);
+    } catch {
+      return send(res, 429, {
+        error: "Too many login attempts. Try again later.",
+      });
     }
 
     const userResult = await pool.query<User>(
@@ -253,8 +309,6 @@ export async function handleLogin(
 
       return send(res, 401, { error: "Invalid credentials" });
     }
-
-    // ! ======
 
     const accessToken = generateAccessToken({
       email: user.email,
@@ -324,7 +378,9 @@ export async function handleLogin(
     send(res, 500, { error: "Internal server error" });
   }
 }
+//  ================== Login ========================
 
+//  ================= Handle Profile ================
 export async function handleProfile(
   req: IncomingMessage,
   res: ServerResponse

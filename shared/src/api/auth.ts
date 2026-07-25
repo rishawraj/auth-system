@@ -2,17 +2,16 @@ import { z } from "zod";
 
 // =========================  Register ============================
 export const RegisterRequestSchema = z.object({
-  name: z.string().min(1),
-  email: z.string().email(),
-  password: z.string().min(6),
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Invalid email"),
+  password: z.string().min(6, "Pasword must be atleast 6 characters"),
 });
 
 export type RegisterRequest = z.infer<typeof RegisterRequestSchema>;
 
 export const RegisterResponseSchema = z.object({
-  user: z.object({
-    pending_email: z.string(),
-  }),
+  message: z.string(),
+  pending_email: z.string(),
   qrcodeImageUrl: z.string(),
 });
 
