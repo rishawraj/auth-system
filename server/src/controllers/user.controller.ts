@@ -27,7 +27,11 @@ import { uploadToR2 } from "../utils/uploadToR2.js";
 import { PoolClient } from "pg";
 
 import { api, models } from "@auth-system/shared/src";
-import { loginLimiter, registerLimiter } from "../utils/rateLimiter.js";
+import {
+  emailLimiter,
+  loginLimiter,
+  registerLimiter,
+} from "../utils/rateLimiter.js";
 
 const RESEND_COOLDOWN_SECONDS = 60;
 
@@ -42,7 +46,20 @@ export async function handleRegister(
 
   try {
     await registerLimiter.consume(ip);
-  } catch {
+  } catch (rateLimiterRes) {
+    // 1. Tell the client how many seconds to wait
+    res.setHeader(
+      "Retry-After",
+      Math.round(rateLimiterRes.msBeforeNext / 1000)
+    );
+
+    res.setHeader("X-RateLimit-Limit", 5);
+    res.setHeader("X-RateLimit-Remaining", rateLimiterRes.remainingPoints);
+    res.setHeader(
+      "X-RateLimit-Reset",
+      new Date(Date.now() + rateLimiterRes.msBeforeNext).toISOString()
+    );
+
     return send(res, 429, {
       error:
         "Too many registration attempts from this IP. Please try again in an hour.",
@@ -1142,13 +1159,35 @@ export async function handleResendCode(
   req: IncomingMessage,
   res: ServerResponse
 ) {
+  const ip =
+    req.headers["x-forwarded-for"]?.toString().split(",")[0] ||
+    req.socket.remoteAddress ||
+    "unknow_ip";
   const body = await readBody<{ email: string }>(req);
   const { email } = body;
   if (!email) {
     return send(res, 400, { message: "Email is required" });
   }
 
-  console.log({ email });
+  try {
+    await Promise.all([emailLimiter.consume(ip), emailLimiter.consume(email)]);
+  } catch (rateLimiterRes) {
+    res.setHeader(
+      "Retry-After",
+      Math.round(rateLimiterRes.msBeforeNext / 1000)
+    );
+
+    res.setHeader("X-RateLimit-Limit", 5);
+    res.setHeader("X-RateLimit-Remaining", rateLimiterRes.remainingPoints);
+    res.setHeader(
+      "X-RateLimit-Reset",
+      new Date(Date.now() + rateLimiterRes.msBeforeNext).toISOString()
+    );
+
+    return send(res, 429, {
+      error: "Too many requests from this IP. Please try again in an hour.",
+    });
+  }
 
   const client = await pool.connect();
 
@@ -1201,8 +1240,6 @@ export async function handleResendCode(
       [result.code, result.expiresAt, user.id]
     );
 
-    console.log({ deadpool: email });
-
     await client.query(
       `INSERT INTO email_outbox (to_email, template, payload)
            VALUES ($1, $2, $3)`,
@@ -1228,6 +1265,32 @@ export async function handleForgotPassword(
   req: IncomingMessage,
   res: ServerResponse
 ) {
+  const ip =
+    req.headers["x-forwarded-for"]?.toString().split(",")[0] ||
+    req.socket.remoteAddress ||
+    "unknow_ip";
+
+  try {
+    await emailLimiter.consume(ip);
+  } catch (rateLimiterRes) {
+    // 1. Tell the client how many seconds to wait
+    res.setHeader(
+      "Retry-After",
+      Math.round(rateLimiterRes.msBeforeNext / 1000)
+    );
+
+    res.setHeader("X-RateLimit-Limit", 5);
+    res.setHeader("X-RateLimit-Remaining", rateLimiterRes.remainingPoints);
+    res.setHeader(
+      "X-RateLimit-Reset",
+      new Date(Date.now() + rateLimiterRes.msBeforeNext).toISOString()
+    );
+
+    return send(res, 429, {
+      error: "Too many requests from this IP. Please try again in an hour.",
+    });
+  }
+
   let client: PoolClient | undefined;
 
   try {

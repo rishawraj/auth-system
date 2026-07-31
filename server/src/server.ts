@@ -2,6 +2,7 @@ import http, { IncomingMessage, ServerResponse } from "node:http";
 import handleRoutes from "./routes/index.routes.js";
 import { env } from "./config/env.js";
 import { startCronJobs } from "./cron/cleanupUnverifiedUsers.js";
+import { standardApiLimiter } from "./utils/rateLimiter.js";
 
 const handler: http.RequestListener = (req, res) => {
   void handleRequest(req, res);
@@ -32,10 +33,47 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
     res.setHeader("Access-Control-Allow-Credentials", "true");
     res.setHeader("Access-Control-Max-Age", 2592000); // 30 days (in seconds) for preflight cache
 
+    res.setHeader(
+      "Access-Control-Expose-Headers",
+      "Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset"
+    );
+
     // handle preflight request
     if (req.method === "OPTIONS") {
       res.statusCode = 204;
       res.end();
+      return;
+    }
+
+    const rawIp =
+      (Array.isArray(req.headers["x-forwarded-for"])
+        ? req.headers["x-forwarded-for"][0]
+        : req.headers["x-forwarded-for"]?.split(",")[0]) ||
+      req.socket.remoteAddress ||
+      "unknown_ip";
+
+    try {
+      await standardApiLimiter.consume(rawIp);
+    } catch (rateLimiterRes) {
+      // 1. Tell the client how many seconds to wait
+      res.setHeader(
+        "Retry-After",
+        Math.round(rateLimiterRes.msBeforeNext / 1000)
+      );
+
+      // 2. (Optional) Provide standard rate limit info
+      res.setHeader("X-RateLimit-Limit", 200);
+      res.setHeader("X-RateLimit-Remaining", rateLimiterRes.remainingPoints);
+      res.setHeader(
+        "X-RateLimit-Reset",
+        new Date(Date.now() + rateLimiterRes.msBeforeNext).toISOString()
+      );
+
+      // Return 429 immediately if they exceed 200 requests / 15 mins
+      res.writeHead(429, { "Content-Type": "application/json" });
+      res.end(
+        JSON.stringify({ error: "Too many requests. Please try again later." })
+      );
       return;
     }
 

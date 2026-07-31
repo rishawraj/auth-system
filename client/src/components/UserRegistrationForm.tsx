@@ -1,7 +1,7 @@
 import { api } from "@auth-system/shared/src";
 import { useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 // interface FormData {
 //   name: string;
@@ -25,9 +25,26 @@ export default function UserRegistrationForm() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [cooldown, setCooldown] = useState(0);
 
   const navigate = useNavigate({ from: "/register" });
   const API_URL = import.meta.env.VITE_API_BASE_URL;
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setInterval(() => setCooldown((prev) => prev - 1), 1000);
+    return () => clearInterval(timer);
+  }, [cooldown]);
+
+  const formatCooldown = (totalSeconds: number) => {
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+
+    if (minutes > 0) {
+      return `${minutes}m ${seconds}s`;
+    }
+    return `${seconds}s`;
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -65,6 +82,14 @@ export default function UserRegistrationForm() {
         },
         body: JSON.stringify(formData),
       });
+
+      if (response.status === 429) {
+        const retryAfter = response.headers.get("Retry-After");
+        if (retryAfter) {
+          setCooldown(parseInt(retryAfter, 10));
+        }
+        throw new Error("Too many attempts.");
+      }
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
@@ -284,7 +309,7 @@ export default function UserRegistrationForm() {
               >
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || cooldown > 0}
                   className="flex w-full cursor-pointer justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 dark:bg-indigo-500 dark:hover:bg-indigo-400"
                 >
                   {loading ? (
@@ -298,7 +323,7 @@ export default function UserRegistrationForm() {
                       className="h-5 w-5 rounded-full border-2 border-white border-t-transparent"
                     />
                   ) : (
-                    "Create Account"
+                    `${cooldown > 0 ? `Try again in ${formatCooldown(cooldown)}` : "Submit"}`
                   )}
                 </button>
               </motion.div>

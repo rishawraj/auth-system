@@ -18,6 +18,7 @@ import bcrypt from "bcrypt";
 import { User } from "../models/user.model.js";
 import crypto from "crypto";
 import { PoolClient } from "pg";
+import { emailLimiter } from "../utils/rateLimiter.js";
 
 interface JwtPayload {
   email: string;
@@ -417,6 +418,11 @@ export async function DisableTwoFactorAuthSendOTP(
   req: IncomingMessage,
   res: ServerResponse
 ) {
+  const ip =
+    req.headers["x-forwarded-for"]?.toString().split(",")[0] ||
+    req.socket.remoteAddress ||
+    "unknow_ip";
+
   let client: PoolClient | undefined;
   try {
     const authHeader = req.headers.authorization;
@@ -436,6 +442,30 @@ export async function DisableTwoFactorAuthSendOTP(
     } catch (error) {
       console.log(error);
       return send(res, 401, { error: "Invalid token" });
+    }
+
+    // rate limit
+    try {
+      await Promise.all([
+        emailLimiter.consume(ip),
+        emailLimiter.consume(decoded.email),
+      ]);
+    } catch (rateLimiterRes) {
+      res.setHeader(
+        "Retry-After",
+        Math.round(rateLimiterRes.msBeforeNext / 1000)
+      );
+
+      res.setHeader("X-RateLimit-Limit", 5);
+      res.setHeader("X-RateLimit-Remaining", rateLimiterRes.remainingPoints);
+      res.setHeader(
+        "X-RateLimit-Reset",
+        new Date(Date.now() + rateLimiterRes.msBeforeNext).toISOString()
+      );
+
+      return send(res, 429, {
+        error: "Too many requests from this IP. Please try again in an hour.",
+      });
     }
 
     client = await pool.connect();
@@ -651,6 +681,11 @@ export async function RegenerateBackupCodesEmailUser(
   req: IncomingMessage,
   res: ServerResponse
 ) {
+  const ip =
+    req.headers["x-forwarded-for"]?.toString().split(",")[0] ||
+    req.socket.remoteAddress ||
+    "unknow_ip";
+
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader) return send(res, 401, { error: "No token provided" });
@@ -675,6 +710,30 @@ export async function RegenerateBackupCodesEmailUser(
         !("email" in decoded)
       ) {
         return send(res, 401, { error: "Invalid token payload" });
+      }
+
+      // rate limit
+      try {
+        await Promise.all([
+          emailLimiter.consume(ip),
+          emailLimiter.consume(decoded.email),
+        ]);
+      } catch (rateLimiterRes) {
+        res.setHeader(
+          "Retry-After",
+          Math.round(rateLimiterRes.msBeforeNext / 1000)
+        );
+
+        res.setHeader("X-RateLimit-Limit", 5);
+        res.setHeader("X-RateLimit-Remaining", rateLimiterRes.remainingPoints);
+        res.setHeader(
+          "X-RateLimit-Reset",
+          new Date(Date.now() + rateLimiterRes.msBeforeNext).toISOString()
+        );
+
+        return send(res, 429, {
+          error: "Too many requests from this IP. Please try again in an hour.",
+        });
       }
 
       const userResult = await pool.query(
@@ -765,6 +824,12 @@ export async function RegenerateBackupCodesSendOTPGoogleUser(
   res: ServerResponse
 ) {
   console.log("[CONTROLLER] regenerate backup codes sms");
+
+  const ip =
+    req.headers["x-forwarded-for"]?.toString().split(",")[0] ||
+    req.socket.remoteAddress ||
+    "unknow_ip";
+
   let client: PoolClient | undefined;
 
   try {
@@ -789,6 +854,30 @@ export async function RegenerateBackupCodesSendOTPGoogleUser(
       !("email" in decoded)
     ) {
       return send(res, 401, { error: "Invalid token payload" });
+    }
+
+    // rate limit
+    try {
+      await Promise.all([
+        emailLimiter.consume(ip),
+        emailLimiter.consume(decoded.email),
+      ]);
+    } catch (rateLimiterRes) {
+      res.setHeader(
+        "Retry-After",
+        Math.round(rateLimiterRes.msBeforeNext / 1000)
+      );
+
+      res.setHeader("X-RateLimit-Limit", 5);
+      res.setHeader("X-RateLimit-Remaining", rateLimiterRes.remainingPoints);
+      res.setHeader(
+        "X-RateLimit-Reset",
+        new Date(Date.now() + rateLimiterRes.msBeforeNext).toISOString()
+      );
+
+      return send(res, 429, {
+        error: "Too many requests from this IP. Please try again in an hour.",
+      });
     }
 
     client = await pool.connect();

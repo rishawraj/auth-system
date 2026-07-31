@@ -46,34 +46,6 @@ export default async (
 
   const getUserByIdMatch = RegExp(/^\/admin\/users\/([^/]+)$/).exec(pathname);
 
-  // get user by id
-  // if (req.method === "GET" && getUserByIdMatch) {
-  //   const userId = getUserByIdMatch[1];
-  //   console.log("userId", userId);
-  //   try {
-  //     const user = await getUserById(userId);
-  //     if (user) {
-  //       send(res, 200, {
-  //         status: "OK",
-  //         message: "User fetched successfully",
-  //         data: user,
-  //       });
-  //     } else {
-  //       send(res, 404, {
-  //         status: "Not Found",
-  //         message: "User not found",
-  //       });
-  //     }
-  //   } catch (error) {
-  //     console.error("Error fetching user:", error);
-  //     send(res, 500, {
-  //       status: "Internal Server Error",
-  //       message: "Error fetching user data",
-  //     });
-  //   }
-  //   return true; // Add this line to indicate the route was handled
-  // }
-
   // todo prevent deactivation of super user
   // req has user info req.user.is_superuser?
   if (req.method === "PATCH" && getUserByIdMatch) {
@@ -136,17 +108,6 @@ export default async (
     }
     return true;
   }
-
-  // if (req.method === "GET" && pathname === "/admin/users") {
-  //   const usersList = await getAllUsers();
-  //   send(res, 200, {
-  //     status: "OK",
-  //     message: "Users fetched successfully",
-  //     data: usersList.rows,
-  //   });
-
-  //   return true; // Add this line to indicate the route was handled
-  // }
 
   if (req.method === "GET" && pathname === "/admin/paginated-users") {
     try {
