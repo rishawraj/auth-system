@@ -18,7 +18,11 @@ import bcrypt from "bcrypt";
 import { User } from "../models/user.model.js";
 import crypto from "crypto";
 import { PoolClient } from "pg";
-import { emailLimiter } from "../utils/rateLimiter.js";
+import {
+  bruteForceLimiter,
+  emailLimiter,
+  isRateLimiterRejection,
+} from "../utils/rateLimiter.js";
 
 interface JwtPayload {
   email: string;
@@ -139,6 +143,11 @@ export async function VerifyTwoFactorAuth(
   req: IncomingMessage,
   res: ServerResponse
 ) {
+  const ip =
+    req.headers["x-forwarded-for"]?.toString().split(",")[0] ||
+    req.socket.remoteAddress ||
+    "unknown_ip";
+
   try {
     console.log("verify 2 auth");
 
@@ -152,6 +161,21 @@ export async function VerifyTwoFactorAuth(
 
     const { code, id } = result.data;
     console.log({ code, id });
+
+    try {
+      await Promise.all([
+        bruteForceLimiter.consume(ip),
+        bruteForceLimiter.consume(id),
+      ]);
+    } catch (err) {
+      if (isRateLimiterRejection(err)) {
+        return send(res, 429, {
+          error: "Too many requests. Please try again later",
+        });
+      }
+      console.error("Rate limiter failure:", err);
+      return send(res, 500, { error: "Internal server error" });
+    }
 
     const userResult = await pool.query("SELECT * FROM users WHERE id = $1", [
       id,
@@ -336,73 +360,87 @@ export async function ValidateTwoFactorAuth(
     if (!code) {
       return send(res, 400, { error: "Invalid 2fa code" });
     }
-    //
+
+    let decoded;
+
     try {
-      const decoded = jwt.verify(token, SECRET);
+      decoded = jwt.verify(token, SECRET);
 
-      if (
-        typeof decoded === "object" &&
-        decoded !== null &&
-        "email" in decoded
-      ) {
-        const userResult = await pool.query(
-          "SELECT * FROM users WHERE email = $1",
-          [decoded.email]
-        );
-
-        const user = userResult.rows[0];
-
-        if (!user) {
-          return send(res, 404, { error: "User not found" });
-        }
-
-        const secret = user.two_factor_secret;
-
-        const totp = new TOTP({
-          issuer: "auth-system",
-          label: user.email,
-          secret: secret,
-          digits: 6,
-          period: 30,
-        });
-
-        const delta = totp.validate({ token: code, window: 1 });
-        console.log({ delta });
-        if (delta === null) {
-          console.log(
-            "%cTwo factor auth failed",
-            "color: red; font-size: 20px; font-weight: bold;"
-          );
-
-          await logLoginAttempt({
-            userId: user.id,
-            email: user.email,
-            success: false,
-            ip: ip_address,
-            userAgent,
-            oauthProvider: type === "google" ? "google" : null,
+      // rate limit
+      try {
+        await Promise.all([
+          bruteForceLimiter.consume(rawIp),
+          bruteForceLimiter.consume(decoded.email),
+        ]);
+      } catch (err) {
+        if (isRateLimiterRejection(err)) {
+          return send(res, 429, {
+            error: "Too many requests. Please try again later",
           });
-
-          return send(res, 400, { error: "Invalid 2fa code" });
         }
+        console.error("Rate limiter failure:", err);
+        return send(res, 500, { error: "Internal server error" });
+      }
+    } catch (error) {
+      console.log(error);
+      send(res, 401, { error: "Invalid token" });
+    }
+
+    if (typeof decoded === "object" && decoded !== null && "email" in decoded) {
+      const userResult = await pool.query(
+        "SELECT * FROM users WHERE email = $1",
+        [decoded.email]
+      );
+
+      const user = userResult.rows[0];
+
+      if (!user) {
+        return send(res, 404, { error: "User not found" });
+      }
+
+      const secret = user.two_factor_secret;
+
+      const totp = new TOTP({
+        issuer: "auth-system",
+        label: user.email,
+        secret: secret,
+        digits: 6,
+        period: 30,
+      });
+
+      const delta = totp.validate({ token: code, window: 1 });
+      console.log({ delta });
+      if (delta === null) {
+        console.log(
+          "%cTwo factor auth failed",
+          "color: red; font-size: 20px; font-weight: bold;"
+        );
 
         await logLoginAttempt({
           userId: user.id,
           email: user.email,
-          success: true,
+          success: false,
           ip: ip_address,
           userAgent,
           oauthProvider: type === "google" ? "google" : null,
         });
 
-        send(res, 200, {
-          message: "2fa validated",
-        });
-      } else {
-        send(res, 401, { error: "Invalid token" });
+        return send(res, 400, { error: "Invalid 2fa code" });
       }
-    } catch (error) {
-      console.log(error);
+
+      await logLoginAttempt({
+        userId: user.id,
+        email: user.email,
+        success: true,
+        ip: ip_address,
+        userAgent,
+        oauthProvider: type === "google" ? "google" : null,
+      });
+
+      send(res, 200, {
+        message: "2fa validated",
+      });
+    } else {
       send(res, 401, { error: "Invalid token" });
     }
 
@@ -450,22 +488,26 @@ export async function DisableTwoFactorAuthSendOTP(
         emailLimiter.consume(ip),
         emailLimiter.consume(decoded.email),
       ]);
-    } catch (rateLimiterRes) {
-      res.setHeader(
-        "Retry-After",
-        Math.round(rateLimiterRes.msBeforeNext / 1000)
-      );
+    } catch (err) {
+      //todo set this to all needed api endpoints.
 
-      res.setHeader("X-RateLimit-Limit", 5);
-      res.setHeader("X-RateLimit-Remaining", rateLimiterRes.remainingPoints);
-      res.setHeader(
-        "X-RateLimit-Reset",
-        new Date(Date.now() + rateLimiterRes.msBeforeNext).toISOString()
-      );
+      if (isRateLimiterRejection(err)) {
+        res.setHeader("Retry-After", Math.round(err.msBeforeNext / 1000));
 
-      return send(res, 429, {
-        error: "Too many requests from this IP. Please try again in an hour.",
-      });
+        res.setHeader("X-RateLimit-Limit", 5);
+        res.setHeader("X-RateLimit-Remaining", err.remainingPoints);
+        res.setHeader(
+          "X-RateLimit-Reset",
+          new Date(Date.now() + err.msBeforeNext).toISOString()
+        );
+
+        return send(res, 429, {
+          error: "Too many requests. Please try again later.",
+        });
+      }
+
+      console.error("Rate limiter failure:", err);
+      return send(res, 500, { error: "Internal server error" });
     }
 
     client = await pool.connect();
@@ -519,6 +561,11 @@ export async function DisableTwoFactorAuthVerifyOTP(
   req: IncomingMessage,
   res: ServerResponse
 ) {
+  const ip =
+    req.headers["x-forwarded-for"]?.toString().split(",")[0] ||
+    req.socket.remoteAddress ||
+    "unknown_ip";
+
   try {
     const authHeader = req.headers.authorization;
 
@@ -548,38 +595,55 @@ export async function DisableTwoFactorAuthVerifyOTP(
       return send(res, 400, { error: "Invalid code" });
     }
 
+    let decoded;
     try {
-      const decoded = jwt.verify(token, SECRET);
+      decoded = jwt.verify(token, SECRET);
 
-      if (
-        typeof decoded === "object" &&
-        decoded !== null &&
-        "email" in decoded
-      ) {
-        const userResult = await pool.query(
-          "SELECT * FROM users WHERE email = $1",
-          [decoded.email]
-        );
-
-        const user: User = userResult.rows[0];
-
-        if (!user) {
-          return send(res, 404, { error: "User not found" });
+      // rate limit
+      try {
+        await Promise.all([
+          bruteForceLimiter.consume(ip),
+          bruteForceLimiter.consume(decoded.email),
+        ]);
+      } catch (err) {
+        if (isRateLimiterRejection(err)) {
+          return send(res, 429, {
+            error: "Too many requests. Please try again later",
+          });
         }
+        console.error("Rate limiter failure:", err);
+        return send(res, 500, { error: "Internal server error" });
+      }
+    } catch (error) {
+      console.log(error);
+      return send(res, 401, { error: "Invalid token" });
+    }
 
-        if (user.disable_2fa_otp !== code) {
-          return send(res, 400, { error: "Invalid code" });
-        }
+    if (typeof decoded === "object" && decoded !== null && "email" in decoded) {
+      const userResult = await pool.query(
+        "SELECT * FROM users WHERE email = $1",
+        [decoded.email]
+      );
 
-        if (user.disable_2fa_otp_expiry_time < new Date()) {
-          return send(res, 400, { error: "Code expired" });
-        }
+      const user: User = userResult.rows[0];
 
-        // Delete backup codes first
-        await deleteBackupCodes(user.id);
+      if (!user) {
+        return send(res, 404, { error: "User not found" });
+      }
 
-        await pool.query(
-          `
+      if (user.disable_2fa_otp !== code) {
+        return send(res, 400, { error: "Invalid code" });
+      }
+
+      if (user.disable_2fa_otp_expiry_time < new Date()) {
+        return send(res, 400, { error: "Code expired" });
+      }
+
+      // Delete backup codes first
+      await deleteBackupCodes(user.id);
+
+      await pool.query(
+        `
           UPDATE users
           SET is_two_factor_enabled = false,
               disable_2fa_otp = NULL,
@@ -587,12 +651,8 @@ export async function DisableTwoFactorAuthVerifyOTP(
               two_factor_secret = NULL
           WHERE id = $1
           `,
-          [user.id]
-        );
-      }
-    } catch (error) {
-      console.log(error);
-      return send(res, 401, { error: "Invalid token" });
+        [user.id]
+      );
     }
   } catch (error) {
     console.log(error);
@@ -608,6 +668,11 @@ export async function ValidateBackupCode(
   req: IncomingMessage,
   res: ServerResponse
 ) {
+  const ip =
+    req.headers["x-forwarded-for"]?.toString().split(",")[0] ||
+    req.socket.remoteAddress ||
+    "unknown_ip";
+
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader) return send(res, 401, { error: "No token provided" });
@@ -627,48 +692,62 @@ export async function ValidateBackupCode(
     const { code } = result.data;
     if (!code) return send(res, 400, { error: "Invalid backup code" });
 
+    let decoded;
     try {
-      const decoded = jwt.verify(token, SECRET);
-      if (
-        typeof decoded === "object" &&
-        decoded !== null &&
-        "email" in decoded
-      ) {
-        const userResult = await pool.query(
-          "SELECT * FROM users WHERE email = $1",
-          [decoded.email]
-        );
+      decoded = jwt.verify(token, SECRET);
 
-        const user = userResult.rows[0];
-        if (!user) return send(res, 404, { error: "User not found" });
-
-        // Hash the provided backup code
-        const hash = crypto.createHash("sha256").update(code).digest("hex");
-
-        // Check if the backup code exists and hasn't been used
-        const backupCodeResult = await pool.query(
-          "SELECT * FROM two_fa_backup_codes WHERE user_id = $1 AND code_hash = $2 AND used = false",
-          [user.id, hash]
-        );
-
-        if (backupCodeResult.rows.length === 0) {
-          return send(res, 400, {
-            error: "Invalid or already used backup code",
+      // rate limit
+      try {
+        await Promise.all([
+          bruteForceLimiter.consume(ip),
+          bruteForceLimiter.consume(decoded.email),
+        ]);
+      } catch (err) {
+        if (isRateLimiterRejection(err)) {
+          return send(res, 429, {
+            error: "Too many requests. Please try again later",
           });
         }
-
-        // Mark the backup code as used
-        await pool.query(
-          "UPDATE two_fa_backup_codes SET used = true, used_at = NOW() WHERE id = $1",
-          [backupCodeResult.rows[0].id]
-        );
-
-        send(res, 200, { message: "Backup code validated successfully" });
-      } else {
-        send(res, 401, { error: "Invalid token" });
+        console.error("Rate limiter failure:", err);
+        return send(res, 500, { error: "Internal server error" });
       }
     } catch (error) {
       console.error("Error validating backup code:", error);
+      send(res, 401, { error: "Invalid token" });
+    }
+
+    if (typeof decoded === "object" && decoded !== null && "email" in decoded) {
+      const userResult = await pool.query(
+        "SELECT * FROM users WHERE email = $1",
+        [decoded.email]
+      );
+
+      const user = userResult.rows[0];
+      if (!user) return send(res, 404, { error: "User not found" });
+
+      // Hash the provided backup code
+      const hash = crypto.createHash("sha256").update(code).digest("hex");
+
+      // Check if the backup code exists and hasn't been used
+      const backupCodeResult = await pool.query(
+        "SELECT * FROM two_fa_backup_codes WHERE user_id = $1 AND code_hash = $2 AND used = false",
+        [user.id, hash]
+      );
+
+      if (backupCodeResult.rows.length === 0) {
+        return send(res, 400, {
+          error: "Invalid or already used backup code",
+        });
+      }
+
+      // Mark the backup code as used
+      await pool.query(
+        "UPDATE two_fa_backup_codes SET used = true, used_at = NOW() WHERE id = $1",
+        [backupCodeResult.rows[0].id]
+      );
+
+      send(res, 200, { message: "Backup code validated successfully" });
+    } else {
       send(res, 401, { error: "Invalid token" });
     }
   } catch (error) {
@@ -718,22 +797,24 @@ export async function RegenerateBackupCodesEmailUser(
           emailLimiter.consume(ip),
           emailLimiter.consume(decoded.email),
         ]);
-      } catch (rateLimiterRes) {
-        res.setHeader(
-          "Retry-After",
-          Math.round(rateLimiterRes.msBeforeNext / 1000)
-        );
+      } catch (err) {
+        if (isRateLimiterRejection(err)) {
+          res.setHeader("Retry-After", Math.round(err.msBeforeNext / 1000));
 
-        res.setHeader("X-RateLimit-Limit", 5);
-        res.setHeader("X-RateLimit-Remaining", rateLimiterRes.remainingPoints);
-        res.setHeader(
-          "X-RateLimit-Reset",
-          new Date(Date.now() + rateLimiterRes.msBeforeNext).toISOString()
-        );
+          res.setHeader("X-RateLimit-Limit", 5);
+          res.setHeader("X-RateLimit-Remaining", err.remainingPoints);
+          res.setHeader(
+            "X-RateLimit-Reset",
+            new Date(Date.now() + err.msBeforeNext).toISOString()
+          );
 
-        return send(res, 429, {
-          error: "Too many requests from this IP. Please try again in an hour.",
-        });
+          return send(res, 429, {
+            error: "Too many requests. Please try again later.",
+          });
+        }
+
+        console.error("Rate limiter failure:", err);
+        return send(res, 500, { error: "Internal server error" });
       }
 
       const userResult = await pool.query(
@@ -862,22 +943,24 @@ export async function RegenerateBackupCodesSendOTPGoogleUser(
         emailLimiter.consume(ip),
         emailLimiter.consume(decoded.email),
       ]);
-    } catch (rateLimiterRes) {
-      res.setHeader(
-        "Retry-After",
-        Math.round(rateLimiterRes.msBeforeNext / 1000)
-      );
+    } catch (err) {
+      if (isRateLimiterRejection(err)) {
+        res.setHeader("Retry-After", Math.round(err.msBeforeNext / 1000));
 
-      res.setHeader("X-RateLimit-Limit", 5);
-      res.setHeader("X-RateLimit-Remaining", rateLimiterRes.remainingPoints);
-      res.setHeader(
-        "X-RateLimit-Reset",
-        new Date(Date.now() + rateLimiterRes.msBeforeNext).toISOString()
-      );
+        res.setHeader("X-RateLimit-Limit", 5);
+        res.setHeader("X-RateLimit-Remaining", err.remainingPoints);
+        res.setHeader(
+          "X-RateLimit-Reset",
+          new Date(Date.now() + err.msBeforeNext).toISOString()
+        );
 
-      return send(res, 429, {
-        error: "Too many requests from this IP. Please try again in an hour.",
-      });
+        return send(res, 429, {
+          error: "Too many requests. Please try again later.",
+        });
+      }
+
+      console.error("Rate limiter failure:", err);
+      return send(res, 500, { error: "Internal server error" });
     }
 
     client = await pool.connect();

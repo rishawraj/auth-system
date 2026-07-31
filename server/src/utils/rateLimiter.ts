@@ -31,20 +31,14 @@ export const emailLimiter = new RateLimiterPostgres({
   tableCreated: true,
 });
 
-export const registerLimiter = new RateLimiterPostgres({
-  storeClient: pool,
-  tableName: "rate_limits",
-  points: 5,
-  duration: 60 * 60,
-  keyPrefix: "register_fail",
-  tableCreated: true,
-});
-
-export const loginLimiter = new RateLimiterPostgres({
-  storeClient: pool,
-  tableName: "rate_limits",
-  points: 5,
-  duration: 15 * 60,
-  keyPrefix: "login_fail",
-  tableCreated: true,
-});
+export function isRateLimiterRejection(err: unknown): boolean {
+  // rate-limiter-flexible resolves with a RateLimiterRes-shaped object on
+  // an actual rate-limit hit, but throws a real Error on store/connection
+  // failures. Don't conflate the two.
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    !(err instanceof Error) &&
+    "remainingPoints" in err
+  );
+}

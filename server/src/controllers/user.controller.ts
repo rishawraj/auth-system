@@ -29,11 +29,20 @@ import { PoolClient } from "pg";
 import { api, models } from "@auth-system/shared/src";
 import {
   emailLimiter,
-  loginLimiter,
-  registerLimiter,
+  bruteForceLimiter,
+  isRateLimiterRejection,
 } from "../utils/rateLimiter.js";
 
+const REFRESH_TOKEN_EXPIRY_SECONDS = Number(env.REFRESH_TOKEN_EXPIRY);
+if (Number.isNaN(REFRESH_TOKEN_EXPIRY_SECONDS)) {
+  throw new Error("REFRESH_TOKEN_EXPIRY must be a valid number");
+}
+
 const RESEND_COOLDOWN_SECONDS = 60;
+
+function isPgError(err: unknown): err is { code: string; message: string } {
+  return typeof err === "object" && err !== null && "code" in err;
+}
 
 export async function handleRegister(
   req: IncomingMessage,
@@ -42,28 +51,28 @@ export async function handleRegister(
   const ip =
     req.headers["x-forwarded-for"]?.toString().split(",")[0] ||
     req.socket.remoteAddress ||
-    "unknow_ip";
+    "unknown_ip";
 
   try {
-    await registerLimiter.consume(ip);
-  } catch (rateLimiterRes) {
-    // 1. Tell the client how many seconds to wait
-    res.setHeader(
-      "Retry-After",
-      Math.round(rateLimiterRes.msBeforeNext / 1000)
-    );
+    await emailLimiter.consume(ip);
+  } catch (err) {
+    if (isRateLimiterRejection(err)) {
+      res.setHeader("Retry-After", Math.round(err.msBeforeNext / 1000));
 
-    res.setHeader("X-RateLimit-Limit", 5);
-    res.setHeader("X-RateLimit-Remaining", rateLimiterRes.remainingPoints);
-    res.setHeader(
-      "X-RateLimit-Reset",
-      new Date(Date.now() + rateLimiterRes.msBeforeNext).toISOString()
-    );
+      res.setHeader("X-RateLimit-Limit", 5);
+      res.setHeader("X-RateLimit-Remaining", err.remainingPoints);
+      res.setHeader(
+        "X-RateLimit-Reset",
+        new Date(Date.now() + err.msBeforeNext).toISOString()
+      );
 
-    return send(res, 429, {
-      error:
-        "Too many registration attempts from this IP. Please try again in an hour.",
-    });
+      return send(res, 429, {
+        error: "Too many requests. Please try again later.",
+      });
+    }
+
+    console.error("Rate limiter failure:", err);
+    return send(res, 500, { error: "Internal server error" });
   }
 
   let client: PoolClient | undefined;
@@ -264,13 +273,17 @@ export async function handleLogin(
 
     try {
       await Promise.all([
-        loginLimiter.consume(rawIp),
-        loginLimiter.consume(email),
+        bruteForceLimiter.consume(rawIp),
+        bruteForceLimiter.consume(email),
       ]);
-    } catch {
-      return send(res, 429, {
-        error: "Too many login attempts. Try again later.",
-      });
+    } catch (err) {
+      if (isRateLimiterRejection(err)) {
+        return send(res, 429, {
+          error: "Too many requests. Please try again later",
+        });
+      }
+      console.error("Rate limiter failure:", err);
+      return send(res, 500, { error: "Internal server error" });
     }
 
     const userResult = await pool.query<User>(
@@ -922,6 +935,11 @@ export async function handleUpdateEmail(
   req: IncomingMessage,
   res: ServerResponse
 ) {
+  const ip =
+    req.headers["x-forwarded-for"]?.toString().split(",")[0] ||
+    req.socket.remoteAddress ||
+    "unknown_ip";
+
   try {
     const authHeader = req.headers.authorization;
     const token = authHeader?.startsWith("Bearer ")
@@ -946,6 +964,21 @@ export async function handleUpdateEmail(
     }
 
     const { email } = decodedToken;
+
+    try {
+      await Promise.all([
+        bruteForceLimiter.consume(ip),
+        bruteForceLimiter.consume(email),
+      ]);
+    } catch (err) {
+      if (isRateLimiterRejection(err)) {
+        return send(res, 429, {
+          error: "Too many requests. Please try again later",
+        });
+      }
+      console.error("Rate limiter failure:", err);
+      return send(res, 500, { error: "Internal server error" });
+    }
 
     // Query the database to check verification code
     const userQuery =
@@ -1032,7 +1065,14 @@ export async function handleUpdateEmail(
 }
 
 export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
-  const client = await pool.connect();
+  const ip =
+    req.headers["x-forwarded-for"]?.toString().split(",")[0] ||
+    req.socket.remoteAddress ||
+    "unknown_ip";
+
+  // let client: PoolClient | undefined;
+
+  console.log("wtttttt");
 
   try {
     const body = await readBody(req);
@@ -1044,22 +1084,33 @@ export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
 
     const { pending_email, code } = result.data;
 
-    await client.query("BEGIN");
+    try {
+      await Promise.all([
+        bruteForceLimiter.consume(ip),
+        bruteForceLimiter.consume(pending_email),
+      ]);
+    } catch (err) {
+      if (isRateLimiterRejection(err)) {
+        return send(res, 429, {
+          error: "Too many requests. Please try again later",
+        });
+      }
+      console.error("Rate limiter failure:", err);
+      return send(res, 500, { error: "Internal server error" });
+    }
 
     const userQuery = `
-      SELECT id, is_super_user, verification_code, verification_code_expiry_time 
+    SELECT id, is_super_user, verification_code, verification_code_expiry_time 
       FROM users 
       WHERE pending_email = $1
     `;
 
-    // const userResult = await client.query(userQuery, [pending_email]);
-    const { rows } = await client.query(userQuery, [pending_email]);
+    const { rows } = await pool.query(userQuery, [pending_email]);
 
     const user = rows[0];
 
     // Check if verification code is valid and not expired
     if (!user || user.verification_code !== code) {
-      await client.query("ROLLBACK");
       return send(res, 400, { message: "Invalid verification code" });
     }
 
@@ -1067,24 +1118,8 @@ export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
       user.verification_code_expiry_time &&
       new Date(user.verification_code_expiry_time) < new Date()
     ) {
-      await client.query("ROLLBACK");
       return send(res, 400, { message: "Verification code has expired" });
     }
-
-    // Update user account to active status
-    const updateQuery = `
-      UPDATE users 
-      SET 
-        is_active = TRUE, 
-        verification_code = NULL, 
-        verification_code_expiry_time = NULL,
-        email = $1,
-        pending_email = NULL,
-        last_login = NOW()
-      WHERE id = $2
-    `;
-
-    await client.query(updateQuery, [pending_email, user.id]);
 
     // Generate a new access token
     const accessToken = generateAccessToken({
@@ -1093,43 +1128,40 @@ export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
     });
 
     const jti = randomUUID();
-    const refreshTokenPayload = {
-      email: pending_email,
-      jti,
-    };
-
-    const refreshToken = generateRefreshToken(refreshTokenPayload);
+    const refreshToken = generateRefreshToken({ email: pending_email, jti });
     const refreshTokenHash = hashToken(refreshToken);
+    const expiryTime = new Date(Date.now() + env.REFRESH_TOKEN_EXPIRY * 1000);
 
-    // Set the refresh token in the database
-    // hash the refresh token
+    // One atomic statement — UPDATE + INSERT via CTE, re-validates code/expiry
+    // in the WHERE clause. No pool.connect(), no explicit BEGIN/COMMIT.
 
-    const refreshTokenExpiry = Number(env.REFRESH_TOKEN_EXPIRY);
-    if (isNaN(refreshTokenExpiry)) {
-      throw new Error("REFRESH_TOKEN_EXPIRY must be a valid number");
-    }
-
-    const expiryTime = new Date(
-      // 1ms  * 1000 = 1s
-      Date.now() + env.REFRESH_TOKEN_EXPIRY * 1000
+    const { rows: writeRows } = await pool.query(
+      `WITH updated AS (
+         UPDATE users
+         SET is_active = TRUE,
+             verification_code = NULL,
+             verification_code_expiry_time = NULL,
+             email = $1,
+             pending_email = NULL,
+             last_login = NOW()
+         WHERE pending_email = $1
+           AND verification_code = $2
+           AND (verification_code_expiry_time IS NULL OR verification_code_expiry_time > NOW())
+         RETURNING id
+       )
+       INSERT INTO refresh_tokens (user_id, token_hash, expires_at, jti)
+       SELECT id, $3, $4, $5 FROM updated
+       ON CONFLICT (user_id) DO UPDATE
+         SET token_hash = EXCLUDED.token_hash,
+             expires_at = EXCLUDED.expires_at,
+             jti = EXCLUDED.jti
+       RETURNING user_id`,
+      [pending_email, code, refreshTokenHash, expiryTime, jti]
     );
 
-    // upsert refresh token
-    const upsertTokenQUery = `
-      INSERT INTO refresh_tokens (user_id, token_hash, expires_at, jti) 
-      VALUES ($1, $2, $3, $4) 
-      ON CONFLICT (user_id) 
-      DO UPDATE SET token_hash = $2, expires_at = $3, jti = $4
-      `;
-
-    await client.query(upsertTokenQUery, [
-      user.id,
-      refreshTokenHash,
-      expiryTime,
-      jti,
-    ]);
-
-    await client.query("COMMIT");
+    if (writeRows.length === 0) {
+      return send(res, 400, { message: "Invalid verification code" });
+    }
 
     setServerCookie({
       name: "refreshToken",
@@ -1147,11 +1179,21 @@ export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
       type: "email",
     });
   } catch (error) {
-    await client.query("ROLLBACK");
+    if (isPgError(error)) {
+      switch (error.code) {
+        case "57014": // query_canceled (statement_timeout)
+        case "08000":
+        case "08003":
+        case "08006": // connection failures
+          console.error("DB unavailable during verify:", error);
+          return send(res, 503, { error: "Service temporarily unavailable" });
+        default:
+          console.error("DB error during verify:", error);
+          return send(res, 500, { error: "Internal server error" });
+      }
+    }
     console.error("Verification error: ", error);
-    send(res, 500, { error: "Internal server error duing verification" });
-  } finally {
-    client?.release();
+    send(res, 500, { error: "Internal server error" });
   }
 }
 
@@ -1162,7 +1204,7 @@ export async function handleResendCode(
   const ip =
     req.headers["x-forwarded-for"]?.toString().split(",")[0] ||
     req.socket.remoteAddress ||
-    "unknow_ip";
+    "unknown_ip";
   const body = await readBody<{ email: string }>(req);
   const { email } = body;
   if (!email) {
@@ -1171,22 +1213,24 @@ export async function handleResendCode(
 
   try {
     await Promise.all([emailLimiter.consume(ip), emailLimiter.consume(email)]);
-  } catch (rateLimiterRes) {
-    res.setHeader(
-      "Retry-After",
-      Math.round(rateLimiterRes.msBeforeNext / 1000)
-    );
+  } catch (err) {
+    if (isRateLimiterRejection(err)) {
+      res.setHeader("Retry-After", Math.round(err.msBeforeNext / 1000));
 
-    res.setHeader("X-RateLimit-Limit", 5);
-    res.setHeader("X-RateLimit-Remaining", rateLimiterRes.remainingPoints);
-    res.setHeader(
-      "X-RateLimit-Reset",
-      new Date(Date.now() + rateLimiterRes.msBeforeNext).toISOString()
-    );
+      res.setHeader("X-RateLimit-Limit", 5);
+      res.setHeader("X-RateLimit-Remaining", err.remainingPoints);
+      res.setHeader(
+        "X-RateLimit-Reset",
+        new Date(Date.now() + err.msBeforeNext).toISOString()
+      );
 
-    return send(res, 429, {
-      error: "Too many requests from this IP. Please try again in an hour.",
-    });
+      return send(res, 429, {
+        error: "Too many requests. Please try again later.",
+      });
+    }
+
+    console.error("Rate limiter failure:", err);
+    return send(res, 500, { error: "Internal server error" });
   }
 
   const client = await pool.connect();
@@ -1268,27 +1312,28 @@ export async function handleForgotPassword(
   const ip =
     req.headers["x-forwarded-for"]?.toString().split(",")[0] ||
     req.socket.remoteAddress ||
-    "unknow_ip";
+    "unknown_ip";
 
   try {
     await emailLimiter.consume(ip);
-  } catch (rateLimiterRes) {
-    // 1. Tell the client how many seconds to wait
-    res.setHeader(
-      "Retry-After",
-      Math.round(rateLimiterRes.msBeforeNext / 1000)
-    );
+  } catch (err) {
+    if (isRateLimiterRejection(err)) {
+      res.setHeader("Retry-After", Math.round(err.msBeforeNext / 1000));
 
-    res.setHeader("X-RateLimit-Limit", 5);
-    res.setHeader("X-RateLimit-Remaining", rateLimiterRes.remainingPoints);
-    res.setHeader(
-      "X-RateLimit-Reset",
-      new Date(Date.now() + rateLimiterRes.msBeforeNext).toISOString()
-    );
+      res.setHeader("X-RateLimit-Limit", 5);
+      res.setHeader("X-RateLimit-Remaining", err.remainingPoints);
+      res.setHeader(
+        "X-RateLimit-Reset",
+        new Date(Date.now() + err.msBeforeNext).toISOString()
+      );
 
-    return send(res, 429, {
-      error: "Too many requests from this IP. Please try again in an hour.",
-    });
+      return send(res, 429, {
+        error: "Too many requests. Please try again later.",
+      });
+    }
+
+    console.error("Rate limiter failure:", err);
+    return send(res, 500, { error: "Internal server error" });
   }
 
   let client: PoolClient | undefined;
@@ -1367,6 +1412,11 @@ export async function handleResetPassword(
   req: IncomingMessage,
   res: ServerResponse
 ) {
+  const ip =
+    req.headers["x-forwarded-for"]?.toString().split(",")[0] ||
+    req.socket.remoteAddress ||
+    "unknown_ip";
+
   try {
     console.log("Reset password");
     const body = await readBody<{ token: string; password: string }>(req);
@@ -1386,6 +1436,21 @@ export async function handleResetPassword(
     }
 
     const { email } = decodedToken;
+
+    try {
+      await Promise.all([
+        bruteForceLimiter.consume(ip),
+        bruteForceLimiter.consume(email),
+      ]);
+    } catch (err) {
+      if (isRateLimiterRejection(err)) {
+        return send(res, 429, {
+          error: "Too many requests. Please try again later",
+        });
+      }
+      console.error("Rate limiter failure:", err);
+      return send(res, 500, { error: "Internal server error" });
+    }
 
     // Query the database to check reset password token
     const userQuery =
