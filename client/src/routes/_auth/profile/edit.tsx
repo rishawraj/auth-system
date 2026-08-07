@@ -57,6 +57,7 @@ function RouteComponent() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [imageSrc, setImageSrc] = useState(profile?.user.profile_pic || "");
+  const [draftImageSrc, setDraftImageSrc] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   // form state
@@ -89,7 +90,8 @@ function RouteComponent() {
     reader.addEventListener("load", () => {
       const imageUrl = reader.result?.toString() || "";
       console.log({ imageUrl });
-      setImageSrc(imageUrl);
+      // setImageSrc(imageUrl);
+      setDraftImageSrc(imageUrl);
       setModalOpen(true);
     });
     reader.readAsDataURL(file);
@@ -100,16 +102,24 @@ function RouteComponent() {
   }, []);
 
   const handleCropConfirm = async () => {
-    if (!imageSrc || !croppedAreaPixels) return;
+    if (!draftImageSrc || !croppedAreaPixels) return;
 
     const croppedImage = await getCroppedCircularImage(
-      imageSrc,
+      draftImageSrc,
       croppedAreaPixels,
     );
 
     setImageSrc(croppedImage); // preview
     setIsProfilePicChanged(true);
+    closeModal();
+  };
+
+  const closeModal = () => {
     setModalOpen(false);
+    setDraftImageSrc(null);
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+    if (imageInputRef.current) imageInputRef.current.value = "";
   };
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -129,14 +139,17 @@ function RouteComponent() {
     if (!isOauthUser) {
       if (formData.password && !formData.newPassword) {
         setError("Please enter the new password.");
+        setIsLoading(false);
         return;
       }
       if (formData.newPassword && !formData.password) {
         setError("Please enter you current password to set a new one.");
+        setIsLoading(false);
         return;
       }
       if (formData.newPassword !== formData.confirmNewPassword) {
         setError("New passwords do not match.");
+        setIsLoading(false);
         return;
       }
     }
@@ -380,7 +393,7 @@ function RouteComponent() {
               </h2>
               <button
                 className="rounded-full p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-gray-700"
-                onClick={() => setModalOpen(false)}
+                onClick={closeModal}
               >
                 ✕
               </button>
@@ -389,7 +402,7 @@ function RouteComponent() {
             {/* cropper area */}
             <div className="relative h-80 w-full overflow-hidden rounded-lg bg-gray-100">
               <EasyCropper
-                image={imageSrc}
+                image={draftImageSrc ?? ""}
                 crop={crop}
                 zoom={zoom}
                 aspect={1}
@@ -416,7 +429,7 @@ function RouteComponent() {
             <div className="flex justify-end gap-3">
               <button
                 className="rounded-lg border px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-                onClick={() => setModalOpen(false)}
+                onClick={closeModal}
               >
                 Cancel
               </button>
