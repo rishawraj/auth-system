@@ -22,7 +22,29 @@ async function migrate() {
       );
     `);
 
-    const migrationsDir = path.resolve(process.cwd(), "migrations");
+    const possibleDirs = [
+      process.env.MIGRATIONS_DIR,
+      path.resolve(process.cwd(), "server/migrations"),
+      path.resolve(process.cwd(), "migrations"),
+    ];
+
+    let migrationsDir = "";
+    for (const dir of possibleDirs) {
+      if (!dir) continue;
+      try {
+        const stat = await fs.stat(dir);
+        if (stat.isDirectory()) {
+          migrationsDir = dir;
+          break;
+        }
+      } catch {
+        // continue
+      }
+    }
+
+    if (!migrationsDir) {
+      throw new Error(`Migrations directory not found in: ${possibleDirs.join(", ")}`);
+    }
 
     const files = (await fs.readdir(migrationsDir))
       .filter((file) => file.endsWith(".sql"))

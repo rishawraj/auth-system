@@ -10,7 +10,7 @@ RUN npm ci
 # ── Stage 2: Build Vite app ────────────────────────────────
 FROM deps AS build
 COPY . .
-RUN npm run build -w client
+RUN npm run build -w shared && npm run build -w client
 
 # ── Stage 3: Serve with nginx ──────────────────────────────
 FROM nginx:alpine AS runtime

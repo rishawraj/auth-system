@@ -16,7 +16,7 @@ FROM deps AS build
 COPY . . 
 
 # server + shared 
-RUN npm run build -w server
+RUN npm run build -w shared && npm run build -w server
 
 # 3 prod runtime
 FROM node:20-alpine AS runtime
@@ -24,14 +24,16 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV HUSKY=0
 
-# copy only the compiled output
+# copy manifests and compiled outputs for monorepo resolution
+COPY package.json package-lock.json ./
+COPY shared/package.json ./shared/
+COPY --from=build /app/shared/dist ./shared/dist
+COPY server/package.json ./server/
 COPY --from=build /app/server/dist ./server/dist
-COPY server/migrations ./migrations
-COPY server/package.json ./package.json
+COPY server/migrations ./server/migrations
 
 RUN --mount=type=cache,target=/root/.npm \
-    npm install --omit=dev
-
+    npm ci --omit=dev
 
 EXPOSE 3000
-CMD ["node", "server/dist/server/src/server.js"]
+CMD ["node", "server/dist/src/server.js"]
