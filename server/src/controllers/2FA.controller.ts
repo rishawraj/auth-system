@@ -13,11 +13,11 @@ import jwt from "jsonwebtoken";
 import { env } from "../config/env.js";
 import { Secret, TOTP } from "otpauth";
 import qrcode from "qrcode";
-import { z } from "zod";
 import bcrypt from "bcrypt";
 import { User } from "../models/user.model.js";
 import crypto from "crypto";
 import { PoolClient } from "pg";
+import { api } from "@auth-system/shared";
 import {
   bruteForceLimiter,
   emailLimiter,
@@ -112,32 +112,13 @@ export async function EnableTwofactorAuth(
   }
 }
 
-const VerifyTwoFactorAuthSchema = z.object({
-  code: z.string(),
-  id: z.string(),
-});
-
-const TwoFactorAuthSchema = z.object({
-  code: z.string(),
-  type: z.string(),
-});
-
-const DisableTwoFactorAuthSchema = z.object({
-  password: z.string(),
-});
-
-const DisableTwoFactorAuthOTPVerifySchema = z.object({
-  code: z.string(),
-});
-
-const ValidateBackupCodeSchema = z.object({
-  code: z.string(),
-});
-
-const RegenerateBackupCodesEmailSchema = z.object({
-  password: z.string(),
-  totp: z.string(),
-});
+const VerifyTwoFactorAuthSchema = api.VerifyTwoFactorAuthSchema;
+const TwoFactorAuthSchema = api.TwoFactorAuthSchema;
+const DisableTwoFactorAuthSchema = api.DisableTwoFactorAuthSchema;
+const DisableTwoFactorAuthOTPVerifySchema =
+  api.DisableTwoFactorAuthOTPVerifySchema;
+const ValidateBackupCodeSchema = api.ValidateBackupCodeSchema;
+const RegenerateBackupCodesEmailSchema = api.RegenerateBackupCodesEmailSchema;
 
 export async function VerifyTwoFactorAuth(
   req: IncomingMessage,
@@ -1031,12 +1012,7 @@ export async function RegenerateBackupCodesGoogleUser(
       return send(res, 401, { error: "Invalid authorization format" });
 
     const body = await readBody(req);
-    const result = z
-      .object({
-        otp: z.string(),
-        totp: z.string(),
-      })
-      .safeParse(body);
+    const result = api.RegenerateBackupCodesGoogleSchema.safeParse(body);
 
     if (!result.success) {
       const errors = result.error.flatten().fieldErrors;

@@ -1,10 +1,11 @@
 import { z } from "zod";
+import { PublicUserSchema } from "../models/user.js";
 
-// =========================  Register ============================
+// ========================= Register ============================
 export const RegisterRequestSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email"),
-  password: z.string().min(6, "Pasword must be atleast 6 characters"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 export type RegisterRequest = z.infer<typeof RegisterRequestSchema>;
@@ -16,38 +17,103 @@ export const RegisterResponseSchema = z.object({
 });
 
 export type RegisterResponse = z.infer<typeof RegisterResponseSchema>;
-// =========================  Register ============================
 
-// =========================  Login  ============================
+// ========================= Login ============================
 export const LoginRequestSchema = z.object({
   email: z
     .string()
     .trim()
     .min(1, "Email is required")
-    .email("Invalid email addres"),
+    .email("Invalid email address"),
   password: z
     .string()
     .min(1, "Password is required")
-    .length(6, "Password must be atleast 6 characters long"),
+    .min(6, "Password must be at least 6 characters long"),
 });
 
-export type LoginRequst = z.infer<typeof LoginRequestSchema>;
+export type LoginRequest = z.infer<typeof LoginRequestSchema>;
+export type LoginRequst = LoginRequest; // Backward compatibility for typo
 
-export const LoginReponseSchema = z.object({
+export const LoginResponseSchema = z.object({
   message: z.string(),
   accessToken: z.string(),
   type: z.string(),
   isTwoFactorEnabled: z.boolean(),
 });
 
-export type LoginResponse = z.infer<typeof LoginReponseSchema>;
-// =========================  Login  ============================
+export type LoginResponse = z.infer<typeof LoginResponseSchema>;
+export const LoginReponseSchema = LoginResponseSchema; // Backward compatibility for typo
 
-// =========================  Verify  ============================
+// ========================= Verify ============================
 export const VerifyRequestSchema = z.object({
   pending_email: z.string().email("Invalid email address"),
-  code: z.string().min(6, "invalid code"),
+  code: z.string().min(6, "Invalid code"),
 });
 
 export type VerifyRequest = z.infer<typeof VerifyRequestSchema>;
-// =========================  Verify  ============================
+
+export const VerifyEmailRequestSchema = z.object({
+  code: z.string().min(6, "Invalid code"),
+});
+
+export type VerifyEmailRequest = z.infer<typeof VerifyEmailRequestSchema>;
+
+// ========================= Resend Code ============================
+export const ResendCodeRequestSchema = z.object({
+  pending_email: z.string().email("Invalid email address"),
+});
+
+export type ResendCodeRequest = z.infer<typeof ResendCodeRequestSchema>;
+
+export const ResendCodeResponseSchema = z.object({
+  message: z.string(),
+});
+
+export type ResendCodeResponse = z.infer<typeof ResendCodeResponseSchema>;
+
+// ========================= Forgot Password ============================
+export const ForgotPasswordRequestSchema = z.object({
+  email: z.string().email("Invalid email address"),
+});
+
+export type ForgotPasswordRequest = z.infer<typeof ForgotPasswordRequestSchema>;
+
+export const ForgotPasswordResponseSchema = z.object({
+  message: z.string(),
+});
+
+export type ForgotPasswordResponse = z.infer<typeof ForgotPasswordResponseSchema>;
+
+// ========================= Reset Password ============================
+export const ResetPasswordRequestSchema = z.object({
+  token: z.string().min(1, "Token is required"),
+  newPassword: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+export type ResetPasswordRequest = z.infer<typeof ResetPasswordRequestSchema>;
+
+export const ResetPasswordResponseSchema = z.object({
+  message: z.string(),
+});
+
+export type ResetPasswordResponse = z.infer<typeof ResetPasswordResponseSchema>;
+
+// ========================= General Responses ============================
+export const LogoutResponseSchema = z.object({
+  message: z.string(),
+});
+
+export type LogoutResponse = z.infer<typeof LogoutResponseSchema>;
+
+export const RefreshTokenResponseSchema = z.object({
+  message: z.string(),
+  accessToken: z.string(),
+});
+
+export type RefreshTokenResponse = z.infer<typeof RefreshTokenResponseSchema>;
+
+export const MeResponseSchema = z.object({
+  user: PublicUserSchema,
+});
+
+export type MeResponse = z.infer<typeof MeResponseSchema>;

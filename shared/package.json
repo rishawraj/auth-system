@@ -13,11 +13,19 @@
     "./src": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./api": {
+      "types": "./dist/api/index.d.ts",
+      "import": "./dist/api/index.js"
+    },
+    "./models": {
+      "types": "./dist/models/index.d.ts",
+      "import": "./dist/models/index.js"
     }
   },
   "scripts": {
     "clean": "rm -rf dist",
-    "build": " npm run clean && tsc",
+    "build": "npm run clean && tsc",
     "dev": "tsc -w"
   },
   "peerDependencies": {

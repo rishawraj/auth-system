@@ -1,24 +1,17 @@
-// shared/src/models/user.ts
-
 import { z } from "zod";
 
 export const UserSchema = z.object({
   id: z.string().uuid(),
-
   name: z.string().max(100),
-
-  email: z.string().email().max(150).nullable(),
-
+  email: z.string().email().max(150),
   password: z.string().nullable(),
-
   is_active: z.boolean().default(false),
 
   verification_code: z.string().max(100).nullable(),
-  verification_code_expiry_time: z.date().nullable(),
+  verification_code_expiry_time: z.coerce.date().nullable(),
 
-  registration_date: z.date(),
-
-  last_login: z.date().nullable(),
+  registration_date: z.coerce.date(),
+  last_login: z.coerce.date().nullable(),
 
   is_super_user: z.boolean().default(false),
 
@@ -26,13 +19,12 @@ export const UserSchema = z.object({
   oauth_id: z.string().max(255).nullable(),
   oauth_access_token: z.string().nullable(),
   oauth_refresh_token: z.string().nullable(),
-  oauth_token_expires_at: z.date().nullable(),
+  oauth_token_expires_at: z.coerce.date().nullable(),
 
   reset_password_token: z.string().max(255).nullable(),
-  reset_password_token_expiry_time: z.date().nullable(),
+  reset_password_token_expiry_time: z.coerce.date().nullable(),
 
   profile_pic: z.string().nullable(),
-
   last_login_method: z.string().max(20).nullable(),
 
   is_two_factor_enabled: z.boolean().default(false),
@@ -51,14 +43,13 @@ export const UserSchema = z.object({
   tmp_two_factor_secret: z.string().nullable(),
 
   disable_2fa_otp: z.string().length(6).nullable(),
-  disable_2fa_otp_expiry_time: z.date().nullable(),
+  disable_2fa_otp_expiry_time: z.coerce.date().nullable(),
 
   regenerate_2fa_otp: z.string().length(6).nullable(),
-  regenerate_2fa_otp_expiry: z.date().nullable(),
+  regenerate_2fa_otp_expiry: z.coerce.date().nullable(),
 
   pending_email: z.string().email().max(150).nullable(),
-
-  last_code_sent_at: z.date().nullable(),
+  last_code_sent_at: z.coerce.date().nullable(),
 });
 
 export type User = z.infer<typeof UserSchema>;
@@ -71,6 +62,31 @@ export const PublicUserSchema = UserSchema.omit({
   oauth_access_token: true,
   verification_code: true,
   reset_password_token: true,
+  disable_2fa_otp: true,
+  regenerate_2fa_otp: true,
 });
 
 export type PublicUser = z.infer<typeof PublicUserSchema>;
+
+export const CreateUserInputSchema = z.object({
+  name: z.string().min(1, "Name is required").max(100),
+  email: z.string().email("Invalid email address").max(150),
+  password: z.string().min(6, "Password must be at least 6 characters long"),
+  oauth_provider: z.string().optional(),
+  oauth_id: z.string().optional(),
+});
+
+export type CreateUserInput = z.infer<typeof CreateUserInputSchema>;
+
+export const UpdateProfileSchema = z.object({
+  name: z.string().min(1).max(100).optional(),
+  profile_pic: z.string().nullable().optional(),
+});
+
+export type UpdateProfileInput = z.infer<typeof UpdateProfileSchema>;
+
+export const UpdateUserStatusSchema = z.object({
+  is_active: z.boolean(),
+});
+
+export type UpdateUserStatusInput = z.infer<typeof UpdateUserStatusSchema>;

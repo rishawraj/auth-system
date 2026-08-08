@@ -1,30 +1,21 @@
 // for /admin/index.tsx
 
+import type {
+  AdminLogsPage,
+  AdminPaginatedUsersResponse,
+  AdminStatsResponse,
+  RecentActivityResponse,
+} from "@auth-system/shared";
 import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query";
 
-import { AdminLogItem } from "../types/dashboard";
-import { User } from "../types/types";
 import { fetchWithAuth } from "../utils/api";
 
-export interface AdminLogsPage {
-  data: {
-    logs: AdminLogItem[];
-    hasMore: boolean;
-    nextCursor: string | null;
-  };
-}
-
-export interface AdminOverviewStats {
-  totalUsers: number;
-  successfulLogins: number;
-  failedLogins: number;
-}
-
-export interface AdminStatsResponse {
-  status: string;
-  message: string;
-  data: AdminOverviewStats;
-}
+export type {
+  AdminLogsPage,
+  AdminStatsResponse,
+  RecentActivityResponse,
+  AdminPaginatedUsersResponse,
+};
 
 export const statsQuery = queryOptions({
   queryKey: ["stats"],
@@ -32,22 +23,10 @@ export const statsQuery = queryOptions({
     fetchWithAuth("/admin/stats/overview"),
 });
 
-interface RecentActivity {
-  success: boolean;
-  email: string;
-  time: string;
-}
-
-interface recentActivityResponse {
-  status: string;
-  message: string;
-  data: RecentActivity[];
-}
-
 export const recentActivityQuery = queryOptions({
   queryKey: ["recent-activity"],
   queryFn: () =>
-    fetchWithAuth<recentActivityResponse>("/admin/recent-activity"),
+    fetchWithAuth<RecentActivityResponse>("/admin/recent-activity"),
 });
 
 export const adminLogsQuery = infiniteQueryOptions({
@@ -69,23 +48,6 @@ export const adminLogsQuery = infiniteQueryOptions({
     return lastPage.data.hasMore ? lastPage.data.nextCursor : undefined;
   },
 });
-
-interface AdminUsersPagination {
-  currentPage: number;
-  totalPages: number;
-  totalCount: number;
-  hasNextPage: boolean;
-  hasPrevPage: boolean;
-}
-
-interface AdminPaginatedUsersResponse {
-  status: string;
-  message: string;
-  data: {
-    users: User[];
-    pagination: AdminUsersPagination;
-  };
-}
 
 export const adminDashboardPaginatedUsersQuery = (
   page: number,

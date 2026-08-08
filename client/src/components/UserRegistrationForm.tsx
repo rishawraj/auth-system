@@ -1,4 +1,8 @@
-import { api } from "@auth-system/shared/src";
+import {
+  RegisterRequest,
+  RegisterRequestSchema,
+  RegisterResponseSchema,
+} from "@auth-system/shared";
 import { useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import React, { useEffect, useState } from "react";
@@ -16,7 +20,7 @@ interface FormErrors {
 }
 
 export default function UserRegistrationForm() {
-  const [formData, setFormData] = useState<api.RegisterRequest>({
+  const [formData, setFormData] = useState<RegisterRequest>({
     name: "",
     email: "",
     password: "",
@@ -57,7 +61,7 @@ export default function UserRegistrationForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const parsedRequest = api.RegisterRequestSchema.safeParse(formData);
+    const parsedRequest = RegisterRequestSchema.safeParse(formData);
 
     if (!parsedRequest.success) {
       const fieldErrors = parsedRequest.error.flatten().fieldErrors;
@@ -100,7 +104,7 @@ export default function UserRegistrationForm() {
 
       const json = await response.json();
 
-      const parsedResponse = api.RegisterResponseSchema.safeParse(json);
+      const parsedResponse = RegisterResponseSchema.safeParse(json);
 
       if (!parsedResponse.success) {
         throw new Error("Invalid response from server");

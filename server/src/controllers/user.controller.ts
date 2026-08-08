@@ -26,7 +26,7 @@ import busboy from "busboy";
 import { uploadToR2 } from "../utils/uploadToR2.js";
 import { PoolClient } from "pg";
 
-import { api, models } from "@auth-system/shared/src";
+import { api, models } from "@auth-system/shared";
 import {
   emailLimiter,
   bruteForceLimiter,
