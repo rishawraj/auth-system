@@ -41,7 +41,10 @@ export async function processEmailOutbox() {
           isTestMode: env.NODE_ENV !== "production",
         };
 
-        const getBackoff = (attempts, config) => {
+        const getBackoff = (
+          attempts: number,
+          config: typeof backoffConfig,
+        ) => {
           if (config.isTestMode) return 0.1; // 100 milliseconds for instant test execution
 
           const { baseDelaySeconds, multiplier, maxDelaySeconds } = config;
@@ -82,5 +85,3 @@ export async function processEmailOutbox() {
     client?.release();
   }
 }
-
-setInterval(processEmailOutbox, 5_000);

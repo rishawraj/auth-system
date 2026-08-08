@@ -13,6 +13,7 @@ import {
   updateProfile,
   handleUpdateEmail,
   handleResendCode,
+  handleResendVerifyEmailCode,
 } from "../controllers/user.controller.js";
 import {
   handleGoogleAuth,
@@ -46,6 +47,11 @@ export default async (req: IncomingMessage, res: ServerResponse) => {
 
   if (req.method === "POST" && pathname === "/verify-email") {
     await handleUpdateEmail(req, res);
+    return true;
+  }
+
+  if (req.method === "POST" && pathname === "/resend-verify-email-code") {
+    await handleResendVerifyEmailCode(req, res);
     return true;
   }
 

@@ -1197,6 +1197,130 @@ export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
   }
 }
 
+export async function handleResendVerifyEmailCode(
+  req: IncomingMessage,
+  res: ServerResponse
+) {
+  const ip =
+    req.headers["x-forwarded-for"]?.toString().split(",")[0] ||
+    req.socket.remoteAddress ||
+    "unknown_ip";
+
+  try {
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.startsWith("Bearer ")
+      ? authHeader.split(" ")[1]
+      : null;
+
+    if (!token) {
+      return send(res, 401, { error: "No token provided" });
+    }
+
+    let decodedToken;
+    try {
+      decodedToken = jwt.verify(token, env.ACCESS_TOKEN_SECRET);
+    } catch (error) {
+      console.error("Token verification failed:", error.message);
+      return send(res, 401, { error: "Invalid or expired token" });
+    }
+
+    const { email } = decodedToken;
+
+    try {
+      await Promise.all([
+        emailLimiter.consume(ip),
+        emailLimiter.consume(email),
+      ]);
+    } catch (err) {
+      if (isRateLimiterRejection(err)) {
+        res.setHeader("Retry-After", Math.round(err.msBeforeNext / 1000));
+        res.setHeader("X-RateLimit-Limit", 5);
+        res.setHeader("X-RateLimit-Remaining", err.remainingPoints);
+        res.setHeader(
+          "X-RateLimit-Reset",
+          new Date(Date.now() + err.msBeforeNext).toISOString()
+        );
+        return send(res, 429, {
+          error: "Too many requests. Please try again later.",
+        });
+      }
+      console.error("Rate limiter failure:", err);
+      return send(res, 500, { error: "Internal server error" });
+    }
+
+    const client = await pool.connect();
+
+    try {
+      await client.query("BEGIN");
+
+      const { rows } = await client.query(
+        `SELECT id, pending_email, verification_code_expiry_time, last_code_sent_at
+         FROM users
+         WHERE email = $1
+         FOR UPDATE`,
+        [email]
+      );
+
+      if (rows.length === 0) {
+        await client.query("ROLLBACK");
+        return send(res, 404, { error: "User not found" });
+      }
+
+      const user = rows[0];
+
+      if (!user.pending_email) {
+        await client.query("ROLLBACK");
+        return send(res, 400, { error: "No pending email change" });
+      }
+
+      if (user.last_code_sent_at) {
+        const secondsSinceLastSend =
+          (Date.now() - new Date(user.last_code_sent_at).getTime()) / 1_000;
+
+        if (secondsSinceLastSend < RESEND_COOLDOWN_SECONDS) {
+          await client.query("ROLLBACK");
+          return send(res, 429, {
+            message: `Please wait ${Math.ceil(RESEND_COOLDOWN_SECONDS - secondsSinceLastSend)}s before requesting another code.`,
+          });
+        }
+      }
+
+      const MINUTES_VALID = 15;
+      const result = generateSixDigitCodeWithExpiry(MINUTES_VALID);
+
+      await client.query(
+        `UPDATE users
+        SET verification_code = $1,
+            verification_code_expiry_time = $2,
+            last_code_sent_at = NOW()
+        WHERE id = $3`,
+        [result.code, result.expiresAt, user.id]
+      );
+
+      await client.query(
+        `INSERT INTO email_outbox (to_email, template, payload)
+             VALUES ($1, $2, $3)`,
+        [user.pending_email, "verification_code", JSON.stringify({ code: result.code })]
+      );
+
+      await client.query("COMMIT");
+
+      return send(res, 200, {
+        message: "A new verification code has been sent to your new email.",
+      });
+    } catch (error) {
+      await client.query("ROLLBACK");
+      console.error("Error resending verification code: ", error);
+      return send(res, 500, { message: "Failed to resend code" });
+    } finally {
+      client?.release();
+    }
+  } catch (error) {
+    console.error("Error in handleResendVerifyEmailCode:", error);
+    return send(res, 500, { message: "Internal server error" });
+  }
+}
+
 export async function handleResendCode(
   req: IncomingMessage,
   res: ServerResponse

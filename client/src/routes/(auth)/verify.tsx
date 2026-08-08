@@ -3,7 +3,7 @@ import {
   useNavigate,
   useSearch,
 } from "@tanstack/react-router";
-import React, { useState, ChangeEvent, KeyboardEvent } from "react";
+import React, { useState, useEffect, useCallback, ChangeEvent, KeyboardEvent } from "react";
 
 import { setToken, setType } from "../../utils/authToken";
 
@@ -29,6 +29,8 @@ function VerifyComponent() {
   const [resending, setResending] = useState(false);
   const [resendMessage, setResendMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [countdown, setCountdown] = useState(60);
+  const [canResend, setCanResend] = useState(false);
 
   // const inputRefs = Array(6)
   //   .fill(0)
@@ -40,6 +42,28 @@ function VerifyComponent() {
       .fill(0)
       .map(() => React.createRef<HTMLInputElement>()),
   ).current;
+
+  const startCountdown = useCallback(() => {
+    setCountdown(60);
+    setCanResend(false);
+  }, []);
+
+  useEffect(() => {
+    startCountdown();
+  }, [startCountdown]);
+
+  useEffect(() => {
+    if (countdown <= 0) {
+      setCanResend(true);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setCountdown((prev) => prev - 1);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [countdown]);
 
   const handleChange = (
     index: number,
@@ -134,6 +158,7 @@ function VerifyComponent() {
       }
 
       setResendMessage("A new code has been sent to your email");
+      startCountdown();
     } catch (error) {
       console.error("Erorr resending code:", error);
       setResendMessage(
@@ -227,13 +252,19 @@ function VerifyComponent() {
 
         {!showResend && (
           <div className="mb-4 flex flex-col items-center gap-2">
-            <button
-              onClick={handleResend}
-              disabled={resending}
-              className="text-sm font-medium text-blue-500 underline hover:text-blue-600 disabled:opacity-50"
-            >
-              {resending ? "Sending..." : "Resend code"}
-            </button>
+            {canResend ? (
+              <button
+                onClick={handleResend}
+                disabled={resending}
+                className="text-sm font-medium text-blue-500 underline hover:text-blue-600 disabled:opacity-50"
+              >
+                {resending ? "Sending..." : "Resend code"}
+              </button>
+            ) : (
+              <p className="text-sm text-gray-500">
+                Resend code in {countdown}s
+              </p>
+            )}
             {resendMessage && (
               <p className="text-center text-sm text-gray-600">
                 {resendMessage}

@@ -1,8 +1,9 @@
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { FormEvent, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 
 import { verifyEmail } from "../../../queries/adminDashboardUsers";
+import { fetchWithAuth } from "../../../utils/api";
 import { setToken } from "../../../utils/authToken";
 
 export const Route = createFileRoute("/_auth/profile/verify-email")({
@@ -13,6 +14,29 @@ function RouteComponent() {
   const naviate = useNavigate();
 
   const [code, setCode] = useState("");
+  const [countdown, setCountdown] = useState(60);
+  const [canResend, setCanResend] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendMessage, setResendMessage] = useState<string | null>(null);
+  const [resendError, setResendError] = useState<string | null>(null);
+
+  const startCountdown = useCallback(() => {
+    setCountdown(60);
+    setCanResend(false);
+  }, []);
+
+  useEffect(() => {
+    if (countdown <= 0) {
+      setCanResend(true);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setCountdown((prev) => prev - 1);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [countdown]);
 
   const verifyMutation = useMutation({
     mutationFn: verifyEmail,
@@ -26,6 +50,29 @@ function RouteComponent() {
       console.error(error.message);
     },
   });
+
+  const handleResend = async () => {
+    setResending(true);
+    setResendMessage(null);
+    setResendError(null);
+
+    try {
+      const data = await fetchWithAuth<{ message: string }>(
+        "/resend-verify-email-code",
+        { method: "POST" },
+      );
+      setResendMessage(data.message);
+      startCountdown();
+    } catch (error) {
+      setResendError(
+        error instanceof Error
+          ? error.message
+          : "Failed to resend code. Please try again.",
+      );
+    } finally {
+      setResending(false);
+    }
+  };
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -80,6 +127,33 @@ function RouteComponent() {
             {verifyMutation.isPending ? "Verifying..." : "Verify Email"}
           </button>
         </form>
+
+        <div className="mt-4 flex flex-col items-center gap-2">
+          {canResend ? (
+            <button
+              onClick={handleResend}
+              disabled={resending}
+              className="text-sm font-medium text-purple-600 underline hover:text-purple-700 disabled:opacity-50 dark:text-purple-400 dark:hover:text-purple-300"
+            >
+              {resending ? "Sending..." : "Resend code"}
+            </button>
+          ) : (
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Resend code in {countdown}s
+            </p>
+          )}
+
+          {resendMessage && (
+            <p className="text-center text-sm text-green-600 dark:text-green-400">
+              {resendMessage}
+            </p>
+          )}
+          {resendError && (
+            <p className="text-center text-sm text-red-600 dark:text-red-400">
+              {resendError}
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );
