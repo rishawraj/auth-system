@@ -69,19 +69,21 @@ export default function UserLoginForm() {
       });
 
       const json = await response.json();
-      const parsed = api.LoginReponseSchema.safeParse(json);
+
+      if (!response.ok) {
+        setErrorMessage(
+          json?.error || json?.message || `Login failed (${response.status})`,
+        );
+        return;
+      }
+
+      const parsed = api.LoginResponseSchema.safeParse(json);
 
       if (!parsed.success) {
         console.error(parsed.error);
         setErrorMessage("Server returned an invalid response");
         return;
       }
-
-      // if (!response.ok) {
-      //   const errorData = await response.json().catch(() => null);
-      //   setErrorMessage(errorData?.error ?? "Login failed");
-      //   return;
-      // }
 
       const data = parsed.data;
       const token = data.accessToken;

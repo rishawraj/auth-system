@@ -5,7 +5,8 @@ ENV HUSKY=0
 COPY package.json package-lock.json ./
 COPY client/package.json ./client/
 COPY shared/package.json ./shared/
-RUN npm ci
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --fetch-retries=5 --fetch-retry-maxtimeout=120000
 
 # ── Stage 2: Build Vite app ────────────────────────────────
 FROM deps AS build
