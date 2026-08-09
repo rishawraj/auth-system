@@ -1,11 +1,15 @@
 import { IncomingMessage, ServerResponse } from "http";
 import {
   generateAccessToken,
+  generateRefreshToken,
+  hashToken,
   logLoginAttempt,
+  normalizeIP,
   parseCookies,
   send,
   setServerCookie,
 } from "../utils/helpers.js";
+import { randomUUID } from "crypto";
 import { pool } from "../config/db.config.js";
 import { User } from "../models/user.model.js";
 import { OAuth2Client, TokenPayload } from "google-auth-library";
@@ -222,9 +226,9 @@ export async function handleGoogleCallback(
 
     const token = generateAccessToken(jwtpayload);
 
-    // ! log login activity
-    // const ip_address = normalizeIP(rawIp);
-    // const userAgent = req.headers["user-agent"];
+    const rawIp = req.headers["x-forwarded-for"]?.toString().split(",")[0] || req.socket.remoteAddress || undefined;
+    const ip_address = normalizeIP(rawIp) || null;
+    const userAgent = (req.headers["user-agent"] as string) || null;
 
     if (!user.is_two_factor_enabled) {
       logLoginAttempt({
@@ -232,16 +236,27 @@ export async function handleGoogleCallback(
         email: user.email,
         success: true,
         oauthProvider: "google",
-        ip: "",
-        userAgent: "",
+        ip: ip_address,
+        userAgent: userAgent || undefined,
       });
     }
 
+    const jti = randomUUID();
+    const appRefreshToken = generateRefreshToken({ email: user.email, jti });
+    const refreshTokenHash = hashToken(appRefreshToken);
+    const expiryTime = new Date(Date.now() + env.REFRESH_TOKEN_EXPIRY * 1000);
+
+    await pool.query(
+      `INSERT INTO refresh_tokens (user_id, token_hash, expires_at, jti, ip_address, user_agent, last_used_at, issued_at)
+       VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())`,
+      [user.id, refreshTokenHash, expiryTime, jti, ip_address, userAgent]
+    );
+
     setServerCookie({
       name: "refreshToken",
-      value: tokens.refresh_token,
+      value: appRefreshToken,
       res,
-      maxAge: tokens.expiry_date,
+      maxAge: env.REFRESH_TOKEN_EXPIRY,
       path: "/",
       isProduction: process.env.NODE_ENV === "production",
     });

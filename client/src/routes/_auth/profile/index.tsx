@@ -4,7 +4,7 @@ import {
   useNavigate,
 } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, Laptop } from "lucide-react";
 
 import { LogoutButton } from "../../../components/LogoutButton";
 import NavBar from "../../../components/NavBar-test";
@@ -144,6 +144,16 @@ function RouteComponent() {
                   className="border-secondary text-text hover:border-primary hover:text-primary focus-visible:ring-accent cursor-pointer rounded-full border px-5 py-2 text-xs font-medium tracking-wide uppercase transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                 >
                   Enable 2FA
+                </motion.button>
+
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => navigate({ to: "/profile/settings" })}
+                  className="border-secondary text-text hover:border-primary hover:text-primary focus-visible:ring-accent inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-5 py-2 text-xs font-medium tracking-wide uppercase transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                >
+                  <Laptop size={13} />
+                  Devices & Sessions
                 </motion.button>
 
                 {user?.is_super_user && (

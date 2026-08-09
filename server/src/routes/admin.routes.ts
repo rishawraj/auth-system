@@ -8,6 +8,8 @@ import {
   logAdminActions,
   softDeleteUser,
   updateUserStatus,
+  getUserActiveSessions,
+  revokeUserSessionsByAdmin,
 } from "../controllers/admin.controller.js";
 import { checkSuperUser } from "../middleware/checkSuperUser.js";
 
@@ -45,6 +47,47 @@ export default async (
   }
 
   const getUserByIdMatch = RegExp(/^\/admin\/users\/([^/]+)$/).exec(pathname);
+  const getUserSessionsMatch = RegExp(/^\/admin\/users\/([^/]+)\/sessions$/).exec(pathname);
+  const revokeUserSessionsMatch = RegExp(/^\/admin\/users\/([^/]+)\/revoke-sessions$/).exec(pathname);
+
+  if (req.method === "GET" && getUserSessionsMatch) {
+    const userId = getUserSessionsMatch[1];
+    try {
+      const sessions = await getUserActiveSessions(userId);
+      send(res, 200, {
+        status: "OK",
+        message: "User active sessions fetched successfully",
+        data: { sessions },
+      });
+    } catch (error) {
+      console.error("Error fetching user sessions for admin:", error);
+      send(res, 500, { status: "Error", message: "Failed to fetch user active sessions" });
+    }
+    return true;
+  }
+
+  if (req.method === "POST" && revokeUserSessionsMatch) {
+    const userId = revokeUserSessionsMatch[1];
+    try {
+      const body = (await readBody(req)) as { jti?: string };
+      await revokeUserSessionsByAdmin(userId, body?.jti);
+
+      logAdminActions({
+        adminId: req.user.id,
+        userId: userId,
+        action: body?.jti ? `REVOKE_SESSION_${body.jti}` : "REVOKE_ALL_SESSIONS",
+      });
+
+      send(res, 200, {
+        status: "OK",
+        message: body?.jti ? "Session revoked successfully" : "All user sessions revoked successfully",
+      });
+    } catch (error) {
+      console.error("Error revoking user sessions by admin:", error);
+      send(res, 500, { status: "Error", message: "Failed to revoke user sessions" });
+    }
+    return true;
+  }
 
   // todo prevent deactivation of super user
   // req has user info req.user.is_superuser?

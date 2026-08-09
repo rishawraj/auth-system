@@ -14,6 +14,9 @@ import {
   handleUpdateEmail,
   handleResendCode,
   handleResendVerifyEmailCode,
+  handleGetSessions,
+  handleRevokeSession,
+  handleRevokeAllOtherSessions,
 } from "../controllers/user.controller.js";
 import {
   handleGoogleAuth,
@@ -24,6 +27,21 @@ import {
 export default async (req: IncomingMessage, res: ServerResponse) => {
   const parsedUrl = new URL(req.url || "", `http://${req.headers.host}`);
   const pathname = parsedUrl.pathname;
+
+  if (req.method === "GET" && pathname === "/sessions") {
+    await handleGetSessions(req, res);
+    return true;
+  }
+
+  if (req.method === "POST" && pathname === "/sessions/revoke") {
+    await handleRevokeSession(req, res);
+    return true;
+  }
+
+  if (req.method === "POST" && pathname === "/sessions/revoke-others") {
+    await handleRevokeAllOtherSessions(req, res);
+    return true;
+  }
 
   if (req.method === "POST" && pathname === "/register") {
     await handleRegister(req, res);

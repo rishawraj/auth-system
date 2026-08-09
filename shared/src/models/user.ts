@@ -90,3 +90,19 @@ export const UpdateUserStatusSchema = z.object({
 });
 
 export type UpdateUserStatusInput = z.infer<typeof UpdateUserStatusSchema>;
+
+export const SessionSchema = z.object({
+  id: z.string(),
+  jti: z.string(),
+  ip_address: z.string().nullable(),
+  user_agent: z.string().nullable(),
+  browser: z.string(),
+  os: z.string(),
+  device: z.string(),
+  issued_at: z.coerce.date(),
+  last_used_at: z.coerce.date(),
+  is_current: z.boolean(),
+});
+
+export type SessionInfo = z.infer<typeof SessionSchema>;
+

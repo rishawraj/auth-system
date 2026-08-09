@@ -2,7 +2,7 @@ import http, { IncomingMessage, ServerResponse } from "node:http";
 import handleRoutes from "./routes/index.routes.js";
 import { env } from "./config/env.js";
 import { startCronJobs } from "./cron/cleanupUnverifiedUsers.js";
-// import { processEmailOutbox } from "./workers/emailOutbox.worker.js";
+import { processEmailOutbox } from "./workers/emailOutbox.worker.js";
 import { standardApiLimiter } from "./utils/rateLimiter.js";
 
 const handler: http.RequestListener = (req, res) => {
@@ -97,7 +97,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
 // 👉 No auto listen() on import. Ever.
 if (import.meta.url === "file://" + process.argv[1]) {
   startCronJobs();
-  // setInterval(processEmailOutbox, 5_000);
+  setInterval(processEmailOutbox, 5_000);
 
   const server = http.createServer(handler);
   server.listen(3000, () => {

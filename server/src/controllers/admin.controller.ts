@@ -1,6 +1,7 @@
 import { formatDistanceToNow } from "date-fns";
 import { pool } from "../config/db.config.js";
 import { User } from "../models/user.model.js";
+import { parseDevice } from "../utils/deviceParser.js";
 
 // export async function getAllUsers() {
 //   const users = await pool.query(
@@ -111,13 +112,14 @@ export async function updateUserStatus(
   RETURNING id, name, email, is_active;
   `;
   const result = await pool.query(query, [is_active, id]);
+
+  // If user is deactivated, revoke all active sessions immediately
+  if (!is_active && result.rows[0]) {
+    await pool.query("DELETE FROM refresh_tokens WHERE user_id = $1", [id]);
+  }
+
   return result.rows[0];
 }
-
-// export async function deleteUser(id: string) {
-//   const user = await pool.query("DELETE FROM users WHERE id = $1;", [id]);
-//   return user;
-// }
 
 // Soft delete
 export const softDeleteUser = async (id: string) => {
@@ -128,8 +130,55 @@ export const softDeleteUser = async (id: string) => {
     RETURNING id;
   `;
   const result = await pool.query(query, [id]);
+
+  if (result.rows[0]) {
+    await pool.query("DELETE FROM refresh_tokens WHERE user_id = $1", [id]);
+  }
+
   return result.rows[0];
 };
+
+export async function getUserActiveSessions(userId: string) {
+  const query = `
+    SELECT id, jti, ip_address, user_agent, issued_at, last_used_at
+    FROM refresh_tokens
+    WHERE user_id = $1 AND (revoked IS FALSE OR revoked IS NULL) AND expires_at > NOW()
+    ORDER BY last_used_at DESC;
+  `;
+  const { rows } = await pool.query(query, [userId]);
+
+  return rows.map((row) => {
+    const parsed = parseDevice(row.user_agent);
+    return {
+      id: row.id,
+      jti: row.jti,
+      ip_address: row.ip_address || "Unknown IP",
+      user_agent: row.user_agent,
+      browser: parsed.browser,
+      os: parsed.os,
+      device: parsed.device,
+      issued_at: row.issued_at,
+      last_used_at: row.last_used_at || row.issued_at,
+    };
+  });
+}
+
+export async function revokeUserSessionsByAdmin(
+  userId: string,
+  jti?: string
+) {
+  if (jti) {
+    await pool.query(
+      "DELETE FROM refresh_tokens WHERE user_id = $1 AND jti = $2",
+      [userId, jti]
+    );
+  } else {
+    await pool.query("DELETE FROM refresh_tokens WHERE user_id = $1", [
+      userId,
+    ]);
+  }
+  return true;
+}
 
 export async function getAdminOverviewStats() {
   const query = `

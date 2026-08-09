@@ -1,19 +1,22 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Search, UserCog } from "lucide-react";
+import {
+  Search,
+  UserCog,
+  Laptop,
+  Ban,
+  CheckCircle2,
+  Trash2,
+  ShieldCheck,
+  XCircle,
+} from "lucide-react";
 import { useState } from "react";
 
 import { deleteUser, toggleUserStatus } from "../queries/adminDashboardUsers";
 import { adminLogsQuery, statsQuery } from "../queries/dashboard";
 import type { User } from "../types/types";
 
+import AdminUserSessionsModal from "./AdminUserSessionsModal";
 import { HighlightMatch } from "./HighlightMatch";
-
-// Status Styles Mapping
-const STATUS_STYLES = {
-  active: "bg-emerald-400/10 text-emerald-400 border-emerald-400/20",
-  inactive: "bg-white/10 text-slate-400 border-white/10",
-  admin: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-};
 
 const AdminDashboardUsers = ({
   users,
@@ -25,6 +28,8 @@ const AdminDashboardUsers = ({
   onSearchChange: (val: string) => void;
 }) => {
   const [hightlightedWord, setHighlightedWord] = useState("");
+  const [selectedUserForSessions, setSelectedUserForSessions] =
+    useState<User | null>(null);
 
   const queryClient = useQueryClient();
   const userStatusMutation = useMutation({
@@ -40,14 +45,12 @@ const AdminDashboardUsers = ({
     },
     onError: (error) => {
       console.error("Mutation failed: ", error);
-      //todo toast
       alert("Could not update user status");
     },
   });
 
   const userDeleteMutation = useMutation({
     mutationFn: deleteUser,
-
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: ["admin-dashboard-users"],
@@ -63,19 +66,16 @@ const AdminDashboardUsers = ({
     },
     onError: (error) => {
       console.error("Mutation failed", error);
-      // todo toast
       alert("Could not delete user");
     },
   });
 
   return (
-    <div className="text-text bg-background borde overflow-hidden rounded-xl shadow-2xl">
+    <div className="text-text bg-background border-primary/10 overflow-hidden rounded-xl border shadow-2xl">
       {/* Header & Search */}
       <div className="border-primary/10 bg-secondary/20 flex flex-col justify-between gap-4 border-b p-6 sm:flex-row sm:items-center">
         <h3 className="font-fraunces text-primary flex items-center gap-2 text-xl font-bold">
-          <span className="material-symbols-outlined text-accent">
-            <UserCog />
-          </span>
+          <UserCog className="text-accent h-6 w-6" />
           User Directory
         </h3>
 
@@ -85,7 +85,7 @@ const AdminDashboardUsers = ({
           </div>
           <input
             className="border-primary/20 bg-background text-text placeholder-text/40 focus:border-primary focus:ring-primary/40 w-full rounded-lg border py-2 pr-4 pl-10 text-sm transition-all focus:ring-2 focus:outline-none"
-            placeholder="Search users..."
+            placeholder="Search users by name or email..."
             type="text"
             onChange={(e) => {
               setHighlightedWord(e.target.value);
@@ -121,6 +121,15 @@ const AdminDashboardUsers = ({
             ) : (
               users.map((user, index) => {
                 const userNumber = (currentPage - 1) * 10 + (index + 1);
+                const initials = user.name
+                  ? user.name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .slice(0, 2)
+                      .join("")
+                      .toUpperCase()
+                  : "U";
+
                 return (
                   <tr
                     key={user.id}
@@ -129,31 +138,43 @@ const AdminDashboardUsers = ({
                     {/* User Info Column */}
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="text-text font-mono text-xs">
+                        <div className="text-text/50 font-mono text-xs">
                           {userNumber.toString().padStart(2, "0")}
                         </div>
-                        <div
-                          className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold`}
-                        >
-                          <img
-                            src={`${user.profile_pic}`}
-                            alt={user.name.slice(0, 2)}
-                          />
+                        <div className="bg-secondary text-primary border-primary/20 flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border text-xs font-bold">
+                          {user.profile_pic ? (
+                            <img
+                              src={user.profile_pic}
+                              alt={user.name}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <span>{initials}</span>
+                          )}
                         </div>
                         <div>
-                          <p className="text-text text-sm font-medium">
-                            <HighlightMatch
-                              text={user.name}
-                              search={hightlightedWord}
-                            />
-                          </p>
-                          <p className="text-text/80 text-xs">
-                            {
+                          <div className="flex items-center gap-2">
+                            <p className="text-text text-sm font-semibold">
                               <HighlightMatch
-                                text={user.email}
+                                text={user.name}
                                 search={hightlightedWord}
                               />
-                            }
+                            </p>
+                            {user.is_super_user && (
+                              <span
+                                className="inline-flex items-center gap-1 rounded-full border border-blue-500/20 bg-blue-500/10 px-2 py-0.5 text-[10px] font-bold text-blue-400"
+                                title="Administrator"
+                              >
+                                <ShieldCheck className="h-3 w-3 text-blue-400" />
+                                Admin
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-text/70 text-xs">
+                            <HighlightMatch
+                              text={user.email}
+                              search={hightlightedWord}
+                            />
                           </p>
                         </div>
                       </div>
@@ -161,16 +182,33 @@ const AdminDashboardUsers = ({
 
                     {/* Status Column */}
                     <td className="px-6 py-4">
-                      <span
-                        className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold tracking-tight uppercase ${STATUS_STYLES[user.is_active ? "active" : "inactive"]}`}
-                      >
-                        {user.is_active ? "active" : "inactive"}
-                      </span>
+                      {user.is_active ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-400">
+                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                          Active
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-400">
+                          <XCircle className="h-3.5 w-3.5 text-amber-400" />
+                          Blocked
+                        </span>
+                      )}
                     </td>
 
-                    {/* Actions Column */}
+                    {/* Actions Column with Icon Buttons */}
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
+                        {/* Sessions Button */}
+                        <button
+                          onClick={() => setSelectedUserForSessions(user)}
+                          title="Manage Active Sessions & Revocation"
+                          className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-indigo-500/30 bg-indigo-500/10 px-3 py-1.5 text-xs font-semibold text-indigo-400 transition-all hover:bg-indigo-500/20 hover:text-indigo-300"
+                        >
+                          <Laptop className="h-3.5 w-3.5" />
+                          <span>Sessions</span>
+                        </button>
+
+                        {/* Block / Unblock Icon Button */}
                         <button
                           onClick={() => {
                             userStatusMutation.mutate({
@@ -181,21 +219,60 @@ const AdminDashboardUsers = ({
                           disabled={
                             user.is_super_user || userStatusMutation.isPending
                           }
-                          className={`rounded px-3 py-1.5 text-xs font-semibold transition-all ${user.is_super_user ? "cursor-not-allowed text-slate-400 opacity-30" : "text-slate-400 hover:bg-white/10 hover:text-white"}`}
+                          title={
+                            user.is_super_user
+                              ? "Superusers cannot be blocked"
+                              : user.is_active
+                                ? "Block user access"
+                                : "Unblock user access"
+                          }
+                          className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all ${
+                            user.is_super_user
+                              ? "cursor-not-allowed border-slate-700 text-slate-500 opacity-40"
+                              : user.is_active
+                                ? "border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20"
+                                : "border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
+                          }`}
                         >
-                          {user.is_active ? "block" : "unblock"}
+                          {user.is_active ? (
+                            <>
+                              <Ban className="h-3.5 w-3.5 text-amber-400" />
+                              <span>Block</span>
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                              <span>Unblock</span>
+                            </>
+                          )}
                         </button>
+
+                        {/* Delete Icon Button */}
                         <button
                           onClick={() => {
-                            if (confirm("Are you sure?"))
+                            if (
+                              confirm(
+                                `Are you sure you want to delete user ${user.name}?`,
+                              )
+                            )
                               userDeleteMutation.mutate({ id: user.id });
                           }}
                           disabled={
                             user.is_super_user || userDeleteMutation.isPending
                           }
-                          className={`rounded px-3 py-1.5 text-xs font-semibold transition-all ${user.is_super_user ? "cursor-not-allowed text-slate-400 opacity-30" : "text-red-400/80 hover:bg-red-400/10 hover:text-red-400"}`}
+                          title={
+                            user.is_super_user
+                              ? "Superusers cannot be deleted"
+                              : "Delete user"
+                          }
+                          className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all ${
+                            user.is_super_user
+                              ? "cursor-not-allowed border-slate-700 text-slate-500 opacity-40"
+                              : "border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300"
+                          }`}
                         >
-                          Delete
+                          <Trash2 className="h-3.5 w-3.5" />
+                          <span>Delete</span>
                         </button>
                       </div>
                     </td>
@@ -206,6 +283,14 @@ const AdminDashboardUsers = ({
           </tbody>
         </table>
       </div>
+
+      {/* Admin User Sessions Modal */}
+      {selectedUserForSessions && (
+        <AdminUserSessionsModal
+          user={selectedUserForSessions}
+          onClose={() => setSelectedUserForSessions(null)}
+        />
+      )}
     </div>
   );
 };

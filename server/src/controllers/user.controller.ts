@@ -22,6 +22,7 @@ import { Secret, TOTP } from "otpauth";
 import qrcode from "qrcode";
 
 import { env } from "../config/env.js";
+import { parseDevice } from "../utils/deviceParser.js";
 import busboy from "busboy";
 import { uploadToR2 } from "../utils/uploadToR2.js";
 import { PoolClient } from "pg";
@@ -369,8 +370,8 @@ export async function handleLogin(
 
     try {
       await pool.query(
-        "INSERT INTO refresh_tokens (user_id, token_hash, expires_at, jti) VALUES ($1, $2, $3, $4) ON CONFLICT (user_id) DO UPDATE SET token_hash = $2, expires_at = $3, jti = $4 returning *",
-        [user.id, refreshTokenHash, expiryTime, jti]
+        "INSERT INTO refresh_tokens (user_id, token_hash, expires_at, jti, ip_address, user_agent, last_used_at, issued_at) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW()) RETURNING *",
+        [user.id, refreshTokenHash, expiryTime, jti, ip_address, userAgent]
       );
     } catch (error) {
       console.error("Error inserting refresh token:", error);
@@ -1039,12 +1040,14 @@ export async function handleUpdateEmail(
       Date.now() + env.REFRESH_TOKEN_EXPIRY * 1000
     );
 
+    const userAgent = (req.headers["user-agent"] as string) || null;
+    const rawIp = req.headers["x-forwarded-for"]?.toString().split(",")[0] || req.socket.remoteAddress || undefined;
+    const ip_address = normalizeIP(rawIp) || null;
+
     await pool.query(
-      `INSERT INTO refresh_tokens (user_id, token_hash, expires_at,jti)
-       VALUES ($1, $2, $3, $4)
-       ON CONFLICT (user_id)
-       DO UPDATE SET token_hash = $2, expires_at = $3, jti = $4`,
-      [user.id, refreshTokenHash, expiryTime, jti]
+      `INSERT INTO refresh_tokens (user_id, token_hash, expires_at, jti, ip_address, user_agent, last_used_at, issued_at)
+       VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())`,
+      [user.id, refreshTokenHash, expiryTime, jti, ip_address, userAgent]
     );
 
     setServerCookie({
@@ -1149,14 +1152,18 @@ export async function handleVerify(req: IncomingMessage, res: ServerResponse) {
            AND (verification_code_expiry_time IS NULL OR verification_code_expiry_time > NOW())
          RETURNING id
        )
-       INSERT INTO refresh_tokens (user_id, token_hash, expires_at, jti)
-       SELECT id, $3, $4, $5 FROM updated
-       ON CONFLICT (user_id) DO UPDATE
-         SET token_hash = EXCLUDED.token_hash,
-             expires_at = EXCLUDED.expires_at,
-             jti = EXCLUDED.jti
+       INSERT INTO refresh_tokens (user_id, token_hash, expires_at, jti, ip_address, user_agent, last_used_at, issued_at)
+       SELECT id, $3, $4, $5, $6, $7, NOW(), NOW() FROM updated
        RETURNING user_id`,
-      [pending_email, code, refreshTokenHash, expiryTime, jti]
+      [
+        pending_email,
+        code,
+        refreshTokenHash,
+        expiryTime,
+        jti,
+        normalizeIP(ip) || null,
+        (req.headers["user-agent"] as string) || null,
+      ]
     );
 
     if (writeRows.length === 0) {
@@ -1657,8 +1664,8 @@ export async function handleTokenRefresh(
 
       const storedToken = tokenResult.rows[0];
 
-      if (!storedToken) {
-        return send(res, 401, { error: "Invalid or expired refresh token" });
+      if (!storedToken || storedToken.revoked) {
+        return send(res, 401, { error: "Invalid or revoked refresh token" });
       }
 
       const userResult = await pool.query(
@@ -1670,15 +1677,24 @@ export async function handleTokenRefresh(
 
       if (!user || user.email !== email) {
         console.log(`User mismatch for refresh token jti ${jti}`);
-        await pool.query("DELETE FROM tokens WHERE jti = $1", [jti]);
+        await pool.query("DELETE FROM refresh_tokens WHERE jti = $1", [jti]);
         return send(res, 401, { error: "Invalid or expired refresh token" });
       }
 
       if (new Date() > new Date(storedToken.expires_at)) {
         console.log("token expired");
-        await pool.query("DELETE FROM tokens WHERE jti = $1", [jti]);
+        await pool.query("DELETE FROM refresh_tokens WHERE jti = $1", [jti]);
         return send(res, 401, { error: "Invalid or expired refresh token" });
       }
+
+      const rawIp = req.headers["x-forwarded-for"]?.toString().split(",")[0] || req.socket.remoteAddress || undefined;
+      const ip_address = normalizeIP(rawIp) || null;
+      const userAgent = (req.headers["user-agent"] as string) || null;
+
+      await pool.query(
+        "UPDATE refresh_tokens SET last_used_at = NOW(), ip_address = COALESCE($2, ip_address), user_agent = COALESCE($3, user_agent) WHERE jti = $1",
+        [jti, ip_address, userAgent]
+      );
 
       const accessTokenPayload = {
         email: user.email,
@@ -1719,3 +1735,204 @@ export async function testRefreshToken(
 
   send(res, 200, { message: "refresh token working" });
 }
+
+export async function handleGetSessions(
+  req: IncomingMessage,
+  res: ServerResponse
+): Promise<void> {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return send(res, 401, { error: "No token provided" });
+
+    const token = authHeader.split(" ")[1];
+    if (!token) return send(res, 401, { error: "Invalid authorization format" });
+
+    const decoded = jwt.verify(token, env.ACCESS_TOKEN_SECRET) as jwt.JwtPayload;
+    if (!decoded || !decoded.email) {
+      return send(res, 401, { error: "Invalid token payload" });
+    }
+
+    const userResult = await pool.query(
+      "SELECT id FROM users WHERE email = $1 AND is_deleted = false",
+      [decoded.email]
+    );
+    const user = userResult.rows[0];
+    if (!user) return send(res, 404, { error: "User not found" });
+
+    // Extract current JTI from cookie if present
+    const cookies = parseCookies(req);
+    const currentRefreshToken = cookies["refreshToken"];
+    let currentJti: string | null = null;
+    if (currentRefreshToken) {
+      try {
+        const decodedRefresh = jwt.verify(
+          currentRefreshToken,
+          env.REFRESH_TOKEN_SECRET!
+        ) as jwt.JwtPayload;
+        currentJti = decodedRefresh?.jti || null;
+      } catch {
+        // ignore invalid refresh token cookie
+      }
+    }
+
+    const sessionsResult = await pool.query(
+      `SELECT id, jti, ip_address, user_agent, issued_at, last_used_at
+       FROM refresh_tokens
+       WHERE user_id = $1 AND (revoked IS FALSE OR revoked IS NULL) AND expires_at > NOW()
+       ORDER BY last_used_at DESC`,
+      [user.id]
+    );
+
+    const sessions = sessionsResult.rows.map((row) => {
+      const parsed = parseDevice(row.user_agent);
+      return {
+        id: row.id,
+        jti: row.jti,
+        ip_address: row.ip_address || "Unknown IP",
+        user_agent: row.user_agent,
+        browser: parsed.browser,
+        os: parsed.os,
+        device: parsed.device,
+        issued_at: row.issued_at,
+        last_used_at: row.last_used_at || row.issued_at,
+        is_current: currentJti ? row.jti === currentJti : false,
+      };
+    });
+
+    return send(res, 200, { sessions });
+  } catch (error) {
+    console.error("Error fetching sessions:", error);
+    return send(res, 500, { error: "Internal server error" });
+  }
+}
+
+export async function handleRevokeSession(
+  req: IncomingMessage,
+  res: ServerResponse
+): Promise<void> {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return send(res, 401, { error: "No token provided" });
+
+    const token = authHeader.split(" ")[1];
+    if (!token) return send(res, 401, { error: "Invalid authorization format" });
+
+    const decoded = jwt.verify(token, env.ACCESS_TOKEN_SECRET) as jwt.JwtPayload;
+    if (!decoded || !decoded.email) {
+      return send(res, 401, { error: "Invalid token payload" });
+    }
+
+    const userResult = await pool.query(
+      "SELECT id FROM users WHERE email = $1 AND is_deleted = false",
+      [decoded.email]
+    );
+    const user = userResult.rows[0];
+    if (!user) return send(res, 404, { error: "User not found" });
+
+    const body = await readBody<{ jti?: string }>(req);
+    const targetJti = body?.jti;
+    if (!targetJti) {
+      return send(res, 400, { error: "Session JTI is required" });
+    }
+
+    // Check current session
+    const cookies = parseCookies(req);
+    const currentRefreshToken = cookies["refreshToken"];
+    let currentJti: string | null = null;
+    if (currentRefreshToken) {
+      try {
+        const decodedRefresh = jwt.verify(
+          currentRefreshToken,
+          env.REFRESH_TOKEN_SECRET!
+        ) as jwt.JwtPayload;
+        currentJti = decodedRefresh?.jti || null;
+      } catch {
+        // ignore
+      }
+    }
+
+    const isRevokingCurrent = targetJti === currentJti;
+
+    await pool.query(
+      "DELETE FROM refresh_tokens WHERE jti = $1 AND user_id = $2",
+      [targetJti, user.id]
+    );
+
+    if (isRevokingCurrent) {
+      setServerCookie({
+        name: "refreshToken",
+        value: "",
+        res,
+        maxAge: 0,
+        path: "/",
+      });
+    }
+
+    return send(res, 200, {
+      message: "Session revoked successfully",
+      revokedCurrent: isRevokingCurrent,
+    });
+  } catch (error) {
+    console.error("Error revoking session:", error);
+    return send(res, 500, { error: "Internal server error" });
+  }
+}
+
+export async function handleRevokeAllOtherSessions(
+  req: IncomingMessage,
+  res: ServerResponse
+): Promise<void> {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return send(res, 401, { error: "No token provided" });
+
+    const token = authHeader.split(" ")[1];
+    if (!token) return send(res, 401, { error: "Invalid authorization format" });
+
+    const decoded = jwt.verify(token, env.ACCESS_TOKEN_SECRET) as jwt.JwtPayload;
+    if (!decoded || !decoded.email) {
+      return send(res, 401, { error: "Invalid token payload" });
+    }
+
+    const userResult = await pool.query(
+      "SELECT id FROM users WHERE email = $1 AND is_deleted = false",
+      [decoded.email]
+    );
+    const user = userResult.rows[0];
+    if (!user) return send(res, 404, { error: "User not found" });
+
+    const cookies = parseCookies(req);
+    const currentRefreshToken = cookies["refreshToken"];
+    let currentJti: string | null = null;
+    if (currentRefreshToken) {
+      try {
+        const decodedRefresh = jwt.verify(
+          currentRefreshToken,
+          env.REFRESH_TOKEN_SECRET!
+        ) as jwt.JwtPayload;
+        currentJti = decodedRefresh?.jti || null;
+      } catch {
+        // ignore
+      }
+    }
+
+    if (currentJti) {
+      await pool.query(
+        "DELETE FROM refresh_tokens WHERE user_id = $1 AND jti != $2",
+        [user.id, currentJti]
+      );
+    } else {
+      await pool.query("DELETE FROM refresh_tokens WHERE user_id = $1", [
+        user.id,
+      ]);
+    }
+
+    return send(res, 200, {
+      message: "All other sessions revoked successfully",
+    });
+  } catch (error) {
+    console.error("Error revoking all other sessions:", error);
+    return send(res, 500, { error: "Internal server error" });
+  }
+}
+

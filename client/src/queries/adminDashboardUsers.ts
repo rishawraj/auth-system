@@ -23,11 +23,28 @@ export const deleteUser = async ({ id }: { id: string }) => {
   });
 };
 
-// todo not from here
+export const getAdminUserSessions = async (userId: string) => {
+  return fetchWithAuth<{ status: string; data: { sessions: any[] } }>(
+    `/admin/users/${userId}/sessions`,
+  );
+};
+
+export const revokeAdminUserSessions = async ({
+  userId,
+  jti,
+}: {
+  userId: string;
+  jti?: string;
+}) => {
+  return fetchWithAuth(`/admin/users/${userId}/revoke-sessions`, {
+    method: "POST",
+    body: JSON.stringify({ jti }),
+  });
+};
+
 export const verifyEmail = async (code: string) => {
   const API_URL = import.meta.env.VITE_API_BASE_URL;
   const token = getToken();
-  console.log({ code, token });
 
   const response = await fetch(`${API_URL}/verify-email`, {
     method: "POST",
@@ -37,8 +54,11 @@ export const verifyEmail = async (code: string) => {
     },
     body: JSON.stringify({ code }),
   });
-  const data = await response.json();
-  console.log({ data });
+  const data = (await response.json()) as {
+    accessToken: string;
+    error?: string;
+    message?: string;
+  };
 
   if (!response.ok)
     throw new Error(data.error || data.message || "failed to update email");

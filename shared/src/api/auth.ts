@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { PublicUserSchema } from "../models/user.js";
+import { PublicUserSchema, SessionSchema } from "../models/user.js";
 
 // ========================= Register ============================
 export const RegisterRequestSchema = z.object({
@@ -117,3 +117,24 @@ export const MeResponseSchema = z.object({
 });
 
 export type MeResponse = z.infer<typeof MeResponseSchema>;
+
+// ========================= Session Management ============================
+export const GetSessionsResponseSchema = z.object({
+  sessions: z.array(SessionSchema),
+});
+
+export type GetSessionsResponse = z.infer<typeof GetSessionsResponseSchema>;
+
+export const RevokeSessionRequestSchema = z.object({
+  jti: z.string().min(1, "JTI is required"),
+});
+
+export type RevokeSessionRequest = z.infer<typeof RevokeSessionRequestSchema>;
+
+export const RevokeSessionResponseSchema = z.object({
+  message: z.string(),
+  revokedCurrent: z.boolean().optional(),
+});
+
+export type RevokeSessionResponse = z.infer<typeof RevokeSessionResponseSchema>;
+

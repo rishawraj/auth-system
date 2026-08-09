@@ -3,7 +3,13 @@ import {
   useNavigate,
   useSearch,
 } from "@tanstack/react-router";
-import React, { useState, useEffect, useCallback, ChangeEvent, KeyboardEvent } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  ChangeEvent,
+  KeyboardEvent,
+} from "react";
 
 import { setToken, setType } from "../../utils/authToken";
 

@@ -18,6 +18,7 @@ import {
   adminDashboardPaginatedUsersQuery,
   adminLogsQuery,
 } from "../../../../queries/dashboard";
+import { LayoutDashboard, ChevronLeft, ChevronRight } from "lucide-react";
 import { getUserFromToken } from "../../../../utils/authToken";
 
 export const Route = createFileRoute("/_auth/_isAdmin/admin/")({
@@ -77,14 +78,18 @@ function RouteComponent() {
       <NavBar />
       {/* Apply global background and text colors here */}
       <div className="bg-background text-text min-h-screen space-y-8 p-6">
-        {/* Page Header using your custom font */}
-        <header className="mb-8">
-          <h1 className="font-fraunces text-primary text-4xl font-bold">
-            Dashboard Overview
-          </h1>
-          <p className="text-text/70 mt-1">
-            Manage your users and monitor system activity.
-          </p>
+        {/* Page Header */}
+        <header className="mb-8 flex flex-col gap-4 pt-16 sm:flex-row sm:items-center sm:justify-between sm:pt-20">
+          <div>
+            <h1 className="font-fraunces text-primary flex items-center gap-3 text-4xl font-bold">
+              <LayoutDashboard className="text-accent h-9 w-9 shrink-0" />
+              Dashboard Overview
+            </h1>
+            <p className="text-text/70 mt-1 text-sm sm:text-base">
+              Manage system users, active sessions, and monitor security
+              activity.
+            </p>
+          </div>
         </header>
 
         {/* Stats Row */}
@@ -108,7 +113,7 @@ function RouteComponent() {
 
         {/* Bento Grid Layout for Main Content */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          {/* Main Column: Users Table (Takes up 2 columns on large screens) */}
+          {/* Main Column: Users Table */}
           <div className="flex flex-col gap-6 lg:col-span-2">
             <AdminDashboardUsers
               users={adminDashboardUsers?.data?.data?.users || []}
@@ -116,25 +121,30 @@ function RouteComponent() {
               onSearchChange={setSearch}
             />
 
-            {/* Re-styled Pagination */}
-            <div className="bg-secondary/30 mx-auto flex w-max items-center justify-center gap-4 rounded-full px-6 py-3 shadow-sm">
+            {/* Pagination Controls with Icons */}
+            <div className="bg-secondary/30 border-primary/10 mx-auto flex w-max items-center justify-center gap-4 rounded-full border px-6 py-2.5 shadow-sm">
               <button
                 disabled={page === 1}
                 onClick={() => setPage((prev) => prev - 1)}
-                className="bg-background text-primary hover:bg-primary hover:text-background rounded-md px-4 py-1.5 text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50"
+                className="bg-background text-primary hover:bg-primary hover:text-background inline-flex cursor-pointer items-center gap-1 rounded-full px-4 py-1.5 text-xs font-semibold transition-colors disabled:pointer-events-none disabled:opacity-40"
               >
+                <ChevronLeft className="h-4 w-4" />
                 Previous
               </button>
-              <span className="text-text text-sm font-medium">Page {page}</span>
+              <span className="text-text text-xs font-bold tracking-wide">
+                Page {page} of{" "}
+                {adminDashboardUsers?.data?.data?.pagination?.totalPages || 1}
+              </span>
               <button
                 disabled={
                   page >=
                   (adminDashboardUsers?.data?.data?.pagination?.totalPages || 1)
                 }
                 onClick={() => setPage((prev) => prev + 1)}
-                className="bg-background text-primary hover:bg-primary hover:text-background rounded-md px-4 py-1.5 text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50"
+                className="bg-background text-primary hover:bg-primary hover:text-background inline-flex cursor-pointer items-center gap-1 rounded-full px-4 py-1.5 text-xs font-semibold transition-colors disabled:pointer-events-none disabled:opacity-40"
               >
                 Next
+                <ChevronRight className="h-4 w-4" />
               </button>
             </div>
           </div>

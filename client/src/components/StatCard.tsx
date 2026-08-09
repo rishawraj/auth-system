@@ -20,31 +20,34 @@
 //   );
 // }
 
-// components/StatCard.tsx
-import { User, Key, AlertTriangle } from "lucide-react"; // Or your preferred icon library
+import { Users, CheckCircle2, AlertTriangle, Laptop } from "lucide-react";
 
 type Props = {
   label: string;
   value: number;
-  color: "green" | "red" | "blue";
+  color: "green" | "red" | "blue" | "indigo";
 };
 
-// Map the color prop to specific border, text, and icon styles
 const styleMap = {
   blue: {
     border: "border-blue-500",
     text: "text-blue-400",
-    icon: <User className="h-6 w-6 text-blue-500" />,
+    icon: <Users className="h-6 w-6 text-blue-500" />,
   },
   green: {
-    border: "border-green-500",
-    text: "text-green-400",
-    icon: <Key className="h-6 w-6 text-green-500" />,
+    border: "border-emerald-500",
+    text: "text-emerald-400",
+    icon: <CheckCircle2 className="h-6 w-6 text-emerald-500" />,
   },
   red: {
     border: "border-red-500",
     text: "text-red-400",
     icon: <AlertTriangle className="h-6 w-6 text-red-500" />,
+  },
+  indigo: {
+    border: "border-indigo-500",
+    text: "text-indigo-400",
+    icon: <Laptop className="h-6 w-6 text-indigo-500" />,
   },
 };
 
