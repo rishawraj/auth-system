@@ -2,8 +2,8 @@ import { describe, test, expect } from "vitest";
 import {
   LoginRequestSchema,
   RegisterRequestSchema,
-  SessionSchema,
 } from "../api/auth.js";
+import { SessionSchema } from "../models/user.js";
 
 describe("Shared Zod Schemas", () => {
   describe("LoginRequestSchema", () => {
