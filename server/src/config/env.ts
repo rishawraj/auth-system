@@ -4,10 +4,16 @@ import path from "path";
 
 const environment = process.env.NODE_ENV || "development";
 
-// Load .env file
+// Load .env file with fallback for test mode
 dotenv.config({
   path: path.resolve(process.cwd(), `.env.${environment}`),
 });
+
+if (environment === "test" && !process.env.DB_HOST) {
+  dotenv.config({
+    path: path.resolve(process.cwd(), ".env.development"),
+  });
+}
 
 // Define the schema for environment variables
 const envSchema = z

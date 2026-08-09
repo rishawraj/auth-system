@@ -9,7 +9,7 @@
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "preview": "vite preview",
-    "test": "vitest",
+    "test": "vitest run",
     "format": "prettier --write \"**/*.{ts,tsx}\""
   },
   "dependencies": {
