@@ -1,26 +1,35 @@
-import * as matchers from "@testing-library/jest-dom/matchers";
+import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
-import { expect, afterEach, vi } from "vitest";
-
-// Extend Vitest's expect method with testing-library matchers
-expect.extend(matchers);
+import { afterEach, beforeEach, vi } from "vitest";
 
 // Cleanup after each test case (removes components from the DOM)
 afterEach(() => {
   cleanup();
 });
 
-// Mock matchMedia if it's not available (needed for some UI components)
-Object.defineProperty(window, "matchMedia", {
-  writable: true,
-  value: vi.fn().mockImplementation((query) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: vi.fn(),
-    removeListener: vi.fn(),
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  })),
+// Suppress JSDOM scrollTo not-implemented warnings
+window.scrollTo = vi.fn();
+
+// Robust matchMedia stub for framer-motion and theme switching in JSDOM
+function setupMatchMedia() {
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    configurable: true,
+    value: (query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }),
+  });
+}
+
+setupMatchMedia();
+
+beforeEach(() => {
+  setupMatchMedia();
 });
