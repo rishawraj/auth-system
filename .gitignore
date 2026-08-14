@@ -8,3 +8,5 @@ audit.md
 docs/
 dist/
 notes.md
+playwright-report
+test-results

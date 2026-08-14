@@ -4,14 +4,26 @@ import path from "path";
 
 const environment = process.env.NODE_ENV || "development";
 
-// Load .env file with fallback for test mode
+// Load .env file with fallback for test mode or root execution
 dotenv.config({
   path: path.resolve(process.cwd(), `.env.${environment}`),
 });
 
-if (environment === "test" && !process.env.DB_HOST) {
+if (!process.env.DB_HOST) {
   dotenv.config({
     path: path.resolve(process.cwd(), ".env.development"),
+  });
+}
+
+if (!process.env.DB_HOST) {
+  dotenv.config({
+    path: path.resolve(process.cwd(), "server", `.env.${environment}`),
+  });
+}
+
+if (!process.env.DB_HOST) {
+  dotenv.config({
+    path: path.resolve(process.cwd(), "server", ".env.development"),
   });
 }
 

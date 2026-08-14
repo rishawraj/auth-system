@@ -20,6 +20,7 @@
     "build:server": "npm run build --workspace=server",
     "build:client": "npm run build --workspace=client",
     "test": "npm run test --workspace=server && npm run test --workspace=client",
+    "test:e2e": "playwright test",
     "lint": "npm run lint --workspaces",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "prepare": "husky || true"
@@ -32,6 +33,13 @@
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
-    "husky": "^9.1.7"
+    "@playwright/test": "^1.62.1",
+    "@types/bcrypt": "^6.0.0",
+    "@types/pg": "^8.21.0",
+    "bcrypt": "^6.0.0",
+    "dotenv": "^17.4.2",
+    "husky": "^9.1.7",
+    "otpauth": "^9.5.1",
+    "pg": "^8.23.0"
   }
 }
