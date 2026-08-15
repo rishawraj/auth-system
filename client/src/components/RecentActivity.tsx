@@ -1,4 +1,5 @@
 import { CheckCircle2, XCircle, Clock, Mail } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface RecentActivity {
   success: boolean;
@@ -10,6 +11,8 @@ type Props = {
   data: RecentActivity[] | undefined;
 };
 
+const customEase = [0.23, 1, 0.32, 1]; // Strong ease-out
+
 export function RecentActivity({ data }: Props) {
   return (
     <div className="border-primary/10 bg-secondary/10 rounded-2xl border p-5 shadow-sm">
@@ -20,8 +23,15 @@ export function RecentActivity({ data }: Props) {
       <div className="space-y-3">
         {data && data.length > 0 ? (
           data.map((item, idx) => (
-            <div
+            <motion.div
               key={idx}
+              initial={{ opacity: 0, y: 12, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{
+                duration: 0.4,
+                delay: idx * 0.05,
+                ease: customEase,
+              }}
               className="bg-background/40 border-primary/10 flex items-center justify-between rounded-xl border p-3 text-sm"
             >
               <div className="flex items-center gap-2.5">
@@ -53,7 +63,7 @@ export function RecentActivity({ data }: Props) {
                   </>
                 )}
               </span>
-            </div>
+            </motion.div>
           ))
         ) : (
           <p className="text-text/50 py-4 text-center text-xs">

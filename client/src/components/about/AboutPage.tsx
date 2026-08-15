@@ -1,12 +1,16 @@
+// src/components/about/AboutPage.tsx
 import { motion } from "framer-motion";
 
 import { PageIntro } from "../layout/PageIntro";
+
 const STACK = [
   { name: "React", note: "TanStack Router & Query for routing and data" },
   { name: "Node.js", note: "Raw HTTP handlers — no framework in between" },
   { name: "PostgreSQL", note: "Transactions, migrations, compound cursors" },
   { name: "Docker", note: "Compose-based deployment, Nginx in front" },
 ];
+
+const customEase = [0.23, 1, 0.32, 1]; // Strong ease-out
 
 export const AboutPage = () => (
   <div className="bg-background px-4 py-20 md:py-28">
@@ -19,10 +23,10 @@ export const AboutPage = () => (
 
       {/* Stack */}
       <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        whileInView={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0, y: 16, scale: 0.98 }}
+        whileInView={{ opacity: 1, y: 0, scale: 1 }}
         viewport={{ once: true, margin: "-80px" }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.4, ease: customEase }}
         className="border-secondary bg-secondary mt-16 grid gap-px overflow-hidden rounded-xl border sm:grid-cols-2"
       >
         {STACK.map((item) => (
@@ -37,10 +41,10 @@ export const AboutPage = () => (
 
       {/* Security principles */}
       <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        whileInView={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0, y: 16, scale: 0.98 }}
+        whileInView={{ opacity: 1, y: 0, scale: 1 }}
         viewport={{ once: true, margin: "-80px" }}
-        transition={{ duration: 0.5, delay: 0.1 }}
+        transition={{ duration: 0.4, delay: 0.08, ease: customEase }}
         className="border-accent mt-16 border-l-2 pl-6"
       >
         <h2 className="text-text font-serif text-xl md:text-2xl">
@@ -58,10 +62,10 @@ export const AboutPage = () => (
 
       {/* Repo link */}
       <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        whileInView={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0, y: 16, scale: 0.98 }}
+        whileInView={{ opacity: 1, y: 0, scale: 1 }}
         viewport={{ once: true, margin: "-80px" }}
-        transition={{ duration: 0.5, delay: 0.15 }}
+        transition={{ duration: 0.4, delay: 0.16, ease: customEase }}
         className="mt-16 flex flex-col items-center gap-3 text-center"
       >
         <p className="text-text/60 text-sm">
@@ -71,7 +75,7 @@ export const AboutPage = () => (
           href="https://github.com/rishawraj/auth-system/"
           target="_blank"
           rel="noreferrer"
-          className="border-secondary text-text hover:border-primary hover:text-primary focus-visible:ring-accent rounded-full border px-6 py-2 text-xs font-medium tracking-wide uppercase transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+          className="btn-press border-secondary text-text hover:border-primary hover:text-primary focus-visible:ring-accent rounded-full border px-6 py-2 text-xs font-medium tracking-wide uppercase focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
         >
           View source on GitHub
         </a>

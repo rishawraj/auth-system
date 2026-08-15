@@ -154,7 +154,7 @@ export function DevicesSessions() {
             <button
               onClick={() => fetchSessions(true)}
               disabled={refreshing || loading}
-              className="rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-indigo-600 disabled:opacity-50 dark:hover:bg-gray-700 dark:hover:text-indigo-400"
+              className="btn-press rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-indigo-600 disabled:opacity-50 dark:hover:bg-gray-700 dark:hover:text-indigo-400"
               title="Refresh sessions"
             >
               <RefreshCw
@@ -168,16 +168,14 @@ export function DevicesSessions() {
         </div>
 
         {otherSessionsCount > 0 && (
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+          <button
             onClick={() => setShowConfirmAll(true)}
             disabled={revokingAll}
-            className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3.5 py-2 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:opacity-50 dark:border-red-800/50 dark:bg-red-950/40 dark:text-red-400 dark:hover:bg-red-900/60"
+            className="btn-press inline-flex cursor-pointer items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3.5 py-2 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:opacity-50 dark:border-red-800/50 dark:bg-red-950/40 dark:text-red-400 dark:hover:bg-red-900/60"
           >
             <LogOut className="h-4 w-4" />
             Sign out all other devices ({otherSessionsCount})
-          </motion.button>
+          </button>
         )}
       </div>
 
@@ -232,7 +230,7 @@ export function DevicesSessions() {
                 <button
                   type="button"
                   onClick={() => setShowConfirmAll(false)}
-                  className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                  className="btn-press rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
                 >
                   Cancel
                 </button>
@@ -240,7 +238,7 @@ export function DevicesSessions() {
                   type="button"
                   onClick={handleRevokeAllOther}
                   disabled={revokingAll}
-                  className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500 disabled:opacity-50"
+                  className="btn-press flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500 disabled:opacity-50"
                 >
                   {revokingAll ? "Signing out..." : "Yes, sign out all"}
                 </button>
@@ -323,7 +321,7 @@ export function DevicesSessions() {
                       handleRevokeSingle(session.jti, session.is_current)
                     }
                     disabled={revokingJti === session.jti}
-                    className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-50 ${
+                    className={`btn-press inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-50 ${
                       session.is_current
                         ? "text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40"
                         : "text-gray-600 hover:bg-gray-200/60 hover:text-red-600 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-red-400"

@@ -7,17 +7,13 @@ import { useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import React, { useEffect, useState } from "react";
 
-// interface FormData {
-//   name: string;
-//   email: string;
-//   password: string;
-// }
-
 interface FormErrors {
   name?: string;
   email?: string;
   password?: string;
 }
+
+const customEase = [0.23, 1, 0.32, 1]; // Strong ease-out
 
 export default function UserRegistrationForm() {
   const [formData, setFormData] = useState<RegisterRequest>({
@@ -133,8 +129,8 @@ export default function UserRegistrationForm() {
   };
 
   const formAnimation = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 },
+    hidden: { opacity: 0, y: 16, scale: 0.98 },
+    visible: { opacity: 1, y: 0, scale: 1 },
   };
 
   return (
@@ -143,22 +139,22 @@ export default function UserRegistrationForm() {
         initial="hidden"
         animate="visible"
         variants={formAnimation}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.4, ease: customEase }}
         className="w-full max-w-md space-y-8"
       >
         <div>
           <motion.h2
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
+            initial={{ opacity: 0, y: -16, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.4, delay: 0.1, ease: customEase }}
             className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white"
           >
             Create your account
           </motion.h2>
           <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4, delay: 0.15, ease: customEase }}
             className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400"
           >
             Join us today
@@ -166,15 +162,16 @@ export default function UserRegistrationForm() {
         </div>
 
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4, delay: 0.2, ease: customEase }}
           className="bg-secondary rounded-lg px-6 py-8 shadow-xl sm:px-10"
         >
           {success ? (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4, ease: customEase }}
               className="space-y-6"
             >
               <div className="rounded-md bg-green-50 p-4 dark:bg-green-900/50">
@@ -212,7 +209,7 @@ export default function UserRegistrationForm() {
                 >
                   Full Name
                 </label>
-                <motion.div whileTap={{ scale: 0.995 }} className="mt-1">
+                <div className="mt-1">
                   <input
                     id="name"
                     name="name"
@@ -221,13 +218,14 @@ export default function UserRegistrationForm() {
                     required
                     value={formData.name}
                     onChange={handleChange}
-                    className="bg-background block w-full appearance-none rounded-lg border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm dark:border-gray-600"
+                    className="bg-background block w-full appearance-none rounded-lg border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm transition-colors focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm dark:border-gray-600"
                   />
-                </motion.div>
+                </div>
                 {errors.name && (
                   <motion.p
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0, y: -4, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ duration: 0.2, ease: customEase }}
                     className="mt-2 text-sm text-red-600 dark:text-red-400"
                   >
                     {errors.name}
@@ -242,7 +240,7 @@ export default function UserRegistrationForm() {
                 >
                   Email address
                 </label>
-                <motion.div whileTap={{ scale: 0.995 }} className="mt-1">
+                <div className="mt-1">
                   <input
                     id="email"
                     name="email"
@@ -251,13 +249,14 @@ export default function UserRegistrationForm() {
                     required
                     value={formData.email}
                     onChange={handleChange}
-                    className="text-text bg-background block w-full appearance-none rounded-lg border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm dark:border-gray-600 dark:placeholder-gray-400"
+                    className="text-text bg-background block w-full appearance-none rounded-lg border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm transition-colors focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm dark:border-gray-600 dark:placeholder-gray-400"
                   />
-                </motion.div>
+                </div>
                 {errors.email && (
                   <motion.p
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0, y: -4, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ duration: 0.2, ease: customEase }}
                     className="mt-2 text-sm text-red-600 dark:text-red-400"
                   >
                     {errors.email}
@@ -272,7 +271,7 @@ export default function UserRegistrationForm() {
                 >
                   Password
                 </label>
-                <motion.div whileTap={{ scale: 0.995 }} className="mt-1">
+                <div className="mt-1">
                   <input
                     id="password"
                     name="password"
@@ -281,13 +280,14 @@ export default function UserRegistrationForm() {
                     required
                     value={formData.password}
                     onChange={handleChange}
-                    className="text-text bg-background block w-full appearance-none rounded-lg border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm dark:border-gray-600"
+                    className="text-text bg-background block w-full appearance-none rounded-lg border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm transition-colors focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm dark:border-gray-600"
                   />
-                </motion.div>
+                </div>
                 {errors.password && (
                   <motion.p
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0, y: -4, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ duration: 0.2, ease: customEase }}
                     className="mt-2 text-sm text-red-600 dark:text-red-400"
                   >
                     {errors.password}
@@ -297,8 +297,9 @@ export default function UserRegistrationForm() {
 
               {errorMessage && (
                 <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ duration: 0.3, ease: customEase }}
                   className="rounded-md bg-red-50 p-4 dark:bg-red-900/50"
                 >
                   <p className="text-sm text-red-800 dark:text-red-200">
@@ -307,30 +308,25 @@ export default function UserRegistrationForm() {
                 </motion.div>
               )}
 
-              <motion.div
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
+              <button
+                type="submit"
+                disabled={loading || cooldown > 0}
+                className={`btn-press flex w-full cursor-pointer justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 dark:bg-indigo-500 dark:hover:bg-indigo-400 ${loading ? "transitioning" : ""}`}
               >
-                <button
-                  type="submit"
-                  disabled={loading || cooldown > 0}
-                  className="flex w-full cursor-pointer justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 dark:bg-indigo-500 dark:hover:bg-indigo-400"
-                >
-                  {loading ? (
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{
-                        duration: 1,
-                        repeat: Infinity,
-                        ease: "linear",
-                      }}
-                      className="h-5 w-5 rounded-full border-2 border-white border-t-transparent"
-                    />
-                  ) : (
-                    `${cooldown > 0 ? `Try again in ${formatCooldown(cooldown)}` : "Submit"}`
-                  )}
-                </button>
-              </motion.div>
+                {loading ? (
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{
+                      duration: 1,
+                      repeat: Infinity,
+                      ease: "linear",
+                    }}
+                    className="h-5 w-5 rounded-full border-2 border-white border-t-transparent"
+                  />
+                ) : (
+                  `${cooldown > 0 ? `Try again in ${formatCooldown(cooldown)}` : "Submit"}`
+                )}
+              </button>
 
               <div className="text-center text-sm">
                 <span className="text-gray-600 dark:text-gray-400">
@@ -339,7 +335,7 @@ export default function UserRegistrationForm() {
                 <button
                   type="button"
                   onClick={() => navigate({ to: "/login" })}
-                  className="cursor-pointer font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
+                  className="btn-press cursor-pointer font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
                 >
                   Sign in
                 </button>

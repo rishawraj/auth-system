@@ -22,6 +22,8 @@ const STEPS = [
   },
 ] as const;
 
+const customEase = [0.23, 1, 0.32, 1]; // Strong ease-out
+
 export const HowItWorks = () => {
   return (
     <section className="bg-secondary/25 px-4 py-20 md:py-28">
@@ -37,10 +39,10 @@ export const HowItWorks = () => {
           {STEPS.map((step, i) => (
             <motion.div
               key={step.number}
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, y: 16, scale: 0.98 }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
               viewport={{ once: true, margin: "-80px" }}
-              transition={{ duration: 0.5, delay: i * 0.1 }}
+              transition={{ duration: 0.4, delay: i * 0.08, ease: customEase }}
               className="relative"
             >
               <span className="text-accent/40 font-serif text-4xl">

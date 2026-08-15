@@ -181,7 +181,7 @@ Instructions:
               <div className="mb-4">
                 <button
                   onClick={() => setCodesRevealed(!codesRevealed)}
-                  className="flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                  className="btn-press flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
                 >
                   {codesRevealed ? (
                     <EyeOff className="h-4 w-4" />
@@ -207,7 +207,7 @@ Instructions:
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.05 }}
-                        className="group relative rounded-lg border-2 border-gray-200 bg-gray-50 p-4 text-left transition-all duration-200 hover:border-blue-400 hover:shadow-md dark:border-gray-600 dark:bg-gray-700 dark:hover:border-blue-500"
+                        className="btn-press group relative rounded-lg border-2 border-gray-200 bg-gray-50 p-4 text-left transition-all duration-200 hover:border-blue-400 hover:shadow-md dark:border-gray-600 dark:bg-gray-700 dark:hover:border-blue-500"
                         onClick={() => copyToClipboard(code)}
                       >
                         <div className="flex items-center justify-between">
@@ -249,7 +249,7 @@ Instructions:
                   <div className="flex flex-col gap-3 sm:flex-row">
                     <button
                       onClick={copyAllCodes}
-                      className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700"
+                      className="btn-press flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700"
                     >
                       {allCopied ? (
                         <>
@@ -266,7 +266,7 @@ Instructions:
 
                     <button
                       onClick={downloadCodes}
-                      className="flex items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 font-medium text-white transition-colors hover:bg-green-700"
+                      className="btn-press flex items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 font-medium text-white transition-colors hover:bg-green-700"
                     >
                       <Download className="h-4 w-4" />
                       Download as File
@@ -300,7 +300,7 @@ Instructions:
                     //todo handle this in parent component
                     navigate({ to: "/profile" });
                   }}
-                  className="rounded-lg bg-gray-200 px-6 py-2 font-medium text-gray-700 transition-colors hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                  className="btn-press rounded-lg bg-gray-200 px-6 py-2 font-medium text-gray-700 transition-colors hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
                 >
                   I've Saved My Codes
                 </button>

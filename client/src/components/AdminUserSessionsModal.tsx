@@ -105,7 +105,7 @@ export default function AdminUserSessionsModal({
           {/* Close button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 rounded-lg p-1 text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
+            className="btn-press absolute top-4 right-4 rounded-lg p-1 text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
           >
             <X className="h-5 w-5" />
           </button>
@@ -135,7 +135,7 @@ export default function AdminUserSessionsModal({
                   }
                 }}
                 disabled={revokeMutation.isPending}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-red-800/60 bg-red-950/50 px-3 py-1.5 text-xs font-semibold text-red-300 transition-colors hover:bg-red-900/60 disabled:opacity-50"
+                className="btn-press inline-flex items-center gap-1.5 rounded-lg border border-red-800/60 bg-red-950/50 px-3 py-1.5 text-xs font-semibold text-red-300 transition-colors hover:bg-red-900/60 disabled:opacity-50"
               >
                 <LogOut className="h-4 w-4" />
                 Revoke All Sessions
@@ -198,7 +198,7 @@ export default function AdminUserSessionsModal({
                       })
                     }
                     disabled={revokeMutation.isPending}
-                    className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-900/50 bg-red-950/30 px-3 py-1.5 text-xs font-medium text-red-400 transition-colors hover:bg-red-900/50 hover:text-white disabled:opacity-50"
+                    className="btn-press inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-900/50 bg-red-950/30 px-3 py-1.5 text-xs font-medium text-red-400 transition-colors hover:bg-red-900/50 hover:text-white disabled:opacity-50"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                     Revoke
