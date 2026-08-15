@@ -1,7 +1,7 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { Outlet, createRootRouteWithContext } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
-import { ToastContainer } from "react-toastify";
+import { Toaster } from "sonner";
 
 import { useTheme } from "../hooks/useTheme";
 import { ThemeProvider } from "../Providers/ThemeProvider";
@@ -18,17 +18,11 @@ const RootLayout = () => {
       <div className="bg-background text-text min-h-screen">
         {/* <Navbar /> */}
         <Outlet />
-        <ToastContainer
+        <Toaster
           position="top-right"
-          autoClose={5000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme={theme === "system" ? "dark" : theme}
+          richColors
+          closeButton
+          theme={theme === "system" ? "system" : theme}
         />
       </div>
       <TanStackRouterDevtools />

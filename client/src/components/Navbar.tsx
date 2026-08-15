@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 import { ThemeToggle } from "./ThemeToggle";
 

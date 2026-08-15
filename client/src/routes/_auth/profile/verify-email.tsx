@@ -5,6 +5,7 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 import { verifyEmail } from "../../../queries/adminDashboardUsers";
 import { fetchWithAuth } from "../../../utils/api";
 import { setToken } from "../../../utils/authToken";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_auth/profile/verify-email")({
   component: RouteComponent,
@@ -43,11 +44,14 @@ function RouteComponent() {
     onSuccess: (data) => {
       console.log("verified", data);
       setToken(data.accessToken);
-      alert("email updated");
+      toast.success("Email updated successfully");
       naviate({ to: "/profile" });
     },
     onError: (error) => {
       console.error(error.message);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to verify email",
+      );
     },
   });
 

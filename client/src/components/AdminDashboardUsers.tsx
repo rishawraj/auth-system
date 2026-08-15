@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
   UserCog,
@@ -8,8 +9,11 @@ import {
   Trash2,
   ShieldCheck,
   XCircle,
+  X,
+  AlertTriangle,
 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { deleteUser, toggleUserStatus } from "../queries/adminDashboardUsers";
 import { adminLogsQuery, statsQuery } from "../queries/dashboard";
@@ -30,11 +34,13 @@ const AdminDashboardUsers = ({
   const [hightlightedWord, setHighlightedWord] = useState("");
   const [selectedUserForSessions, setSelectedUserForSessions] =
     useState<User | null>(null);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
   const queryClient = useQueryClient();
   const userStatusMutation = useMutation({
     mutationFn: toggleUserStatus,
     onSuccess: async () => {
+      toast.success("User status updated successfully");
       await queryClient.invalidateQueries({
         queryKey: ["admin-dashboard-users"],
       });
@@ -45,13 +51,17 @@ const AdminDashboardUsers = ({
     },
     onError: (error) => {
       console.error("Mutation failed: ", error);
-      alert("Could not update user status");
+      toast.error(
+        error instanceof Error ? error.message : "Could not update user status",
+      );
     },
   });
 
   const userDeleteMutation = useMutation({
     mutationFn: deleteUser,
     onSuccess: async () => {
+      toast.success("User deleted successfully");
+      setUserToDelete(null);
       await queryClient.invalidateQueries({
         queryKey: ["admin-dashboard-users"],
       });
@@ -66,7 +76,9 @@ const AdminDashboardUsers = ({
     },
     onError: (error) => {
       console.error("Mutation failed", error);
-      alert("Could not delete user");
+      toast.error(
+        error instanceof Error ? error.message : "Could not delete user",
+      );
     },
   });
 
@@ -249,14 +261,7 @@ const AdminDashboardUsers = ({
 
                         {/* Delete Icon Button */}
                         <button
-                          onClick={() => {
-                            if (
-                              confirm(
-                                `Are you sure you want to delete user ${user.name}?`,
-                              )
-                            )
-                              userDeleteMutation.mutate({ id: user.id });
-                          }}
+                          onClick={() => setUserToDelete(user)}
                           disabled={
                             user.is_super_user || userDeleteMutation.isPending
                           }
@@ -291,6 +296,94 @@ const AdminDashboardUsers = ({
           onClose={() => setSelectedUserForSessions(null)}
         />
       )}
+
+      {/* Delete User Confirmation Modal */}
+      <AnimatePresence>
+        {userToDelete && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="border-primary/20 bg-background text-text w-full max-w-md rounded-2xl border p-6 shadow-2xl"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-500/15 text-red-500">
+                  <Trash2 className="h-6 w-6" />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setUserToDelete(null)}
+                  className="text-text/50 hover:text-text rounded-lg p-1.5 transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="mt-4">
+                <h3 className="text-text text-lg font-bold">
+                  Delete User Account?
+                </h3>
+                <p className="text-text/70 mt-2 text-sm leading-relaxed">
+                  Are you sure you want to permanently delete{" "}
+                  <span className="text-text font-semibold">
+                    {userToDelete.name}
+                  </span>{" "}
+                  (
+                  <span className="text-primary font-mono text-xs">
+                    {userToDelete.email}
+                  </span>
+                  )?
+                </p>
+                <div className="mt-3 flex items-start gap-2.5 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-400">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span>
+                    This action cannot be undone. All active sessions, tokens,
+                    and data associated with this user will be removed
+                    immediately.
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setUserToDelete(null)}
+                  disabled={userDeleteMutation.isPending}
+                  className="border-primary/20 hover:bg-secondary/40 text-text/80 rounded-lg border px-4 py-2 text-sm font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    userDeleteMutation.mutate({ id: userToDelete.id })
+                  }
+                  disabled={userDeleteMutation.isPending}
+                  className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-red-600/25 transition-all hover:bg-red-500 disabled:opacity-50"
+                >
+                  {userDeleteMutation.isPending ? (
+                    <>
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      <span>Deleting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-4 w-4" />
+                      <span>Yes, Delete User</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

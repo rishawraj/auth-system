@@ -4,8 +4,9 @@ import {
   useSuspenseQuery,
 } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
+import { LayoutDashboard, ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 import AdminDashboardUsers from "../../../../components/AdminDashboardUsers";
 import AdminLogs from "../../../../components/AdminLogs";
@@ -18,7 +19,6 @@ import {
   adminDashboardPaginatedUsersQuery,
   adminLogsQuery,
 } from "../../../../queries/dashboard";
-import { LayoutDashboard, ChevronLeft, ChevronRight } from "lucide-react";
 import { getUserFromToken } from "../../../../utils/authToken";
 
 export const Route = createFileRoute("/_auth/_isAdmin/admin/")({

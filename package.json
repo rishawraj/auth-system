@@ -21,6 +21,8 @@
     "build:client": "npm run build --workspace=client",
     "test": "npm run test --workspace=server && npm run test --workspace=client",
     "test:e2e": "playwright test",
+    "test:e2e-ui": "npx playwright test --ui",
+    "test:e2e-headed": "playwright test --headed",
     "lint": "npm run lint --workspaces",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "prepare": "husky || true"

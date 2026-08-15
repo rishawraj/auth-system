@@ -12,7 +12,7 @@ import {
   LogOut,
   RefreshCw,
 } from "lucide-react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 import {
   getAdminUserSessions,

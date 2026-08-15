@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 import { fetchWithAuth } from "../../utils/api";
 
