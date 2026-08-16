@@ -168,9 +168,21 @@ export async function logLoginAttempt({
 }) {
   try {
     let attemptCount = 1;
+    let isNewDevice = false;
 
     if (userId) {
       await pool.query("BEGIN");
+
+      // Check if this is a new device for a successful login
+      if (success && userAgent) {
+        const existingLogin = await pool.query(
+          "SELECT 1 FROM login_activity WHERE user_id = $1 AND success = true AND user_agent = $2 LIMIT 1",
+          [userId, userAgent]
+        );
+        if (existingLogin.rowCount === 0) {
+          isNewDevice = true;
+        }
+      }
 
       const result = await pool.query(
         `
@@ -195,6 +207,14 @@ export async function logLoginAttempt({
       `,
       [userId, email, success, ip, userAgent, oauthProvider, attemptCount]
     );
+
+    // If new device, queue an email alert
+    if (isNewDevice) {
+      await pool.query(
+        `INSERT INTO email_outbox (to_email, template, payload) VALUES ($1, $2, $3)`,
+        [email, "new_device_login", { ip, userAgent, time: new Date().toISOString() }]
+      );
+    }
 
     if (userId) {
       await pool.query("COMMIT");

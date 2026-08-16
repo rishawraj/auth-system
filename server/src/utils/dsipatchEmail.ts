@@ -3,6 +3,7 @@ import { sendExistingAccountEmail } from "./sendExistingAccountNotice.email.js";
 import { sendRegenerate2FABackupCodesOTPEmail } from "./sendRegenerate2FAOTP.email.js";
 import { sendResetPasswordEmail } from "./sendResetPassowrd.email.js";
 import { sendVerificationEmail } from "./sendVerification.email.js";
+import { sendNewDeviceLoginEmail } from "./sendNewDeviceLogin.email.js";
 
 export async function dispatchEmail(
   template: string,
@@ -24,6 +25,14 @@ export async function dispatchEmail(
 
     case "existing_account_notice":
       return sendExistingAccountEmail(to);
+
+    case "new_device_login":
+      return sendNewDeviceLoginEmail(
+        to,
+        payload.ip as string,
+        payload.userAgent as string,
+        payload.time as string
+      );
 
     default:
       throw new Error(`Unknown email template: ${template}`);
