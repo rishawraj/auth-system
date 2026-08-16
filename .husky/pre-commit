@@ -16,6 +16,3 @@ cd server || exit 1
 echo "Running test"
 npm run test
 cd ..
-
-echo "Running commitlint"
-npx --no -- commitlint --edit "$1"

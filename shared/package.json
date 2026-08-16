@@ -27,6 +27,7 @@
     "clean": "rm -rf dist",
     "build": "npm run clean && tsc",
     "dev": "tsc -w",
+    "lint": "tsc --noEmit",
     "test": "vitest run"
   },
   "peerDependencies": {
