@@ -34,6 +34,10 @@ const envSchema = z
       .enum(["development", "production", "test"])
       .default("development"),
 
+    LOG_LEVEL: z
+      .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])
+      .optional(),
+
     FRONTEND_URL: z
       .string()
       .url({ message: "FRONTEND_URL must be a valid URL" })

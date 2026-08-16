@@ -158,6 +158,11 @@ services:
       POSTGRES_DB: auth_system_db
     volumes:
       - pgdata:/var/lib/postgresql/data
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U rishaw -d auth_system_db"]
       interval: 5s
@@ -176,6 +181,11 @@ services:
   server:
     image: ${serverImage.imageUri}
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     ports:
       - "3000:3000"
     env_file: .env.docker
@@ -188,6 +198,11 @@ services:
   nginx:
     image: ${clientImage.imageUri}
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     ports:
       - "80:80"
     depends_on:

@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import { env } from "../config/env.js";
+import { workerLogger } from "./logger.js";
 import "dotenv/config";
 
 export async function sendDisable2FAOtpEmail(to: string, code: string) {
@@ -31,5 +32,5 @@ export async function sendDisable2FAOtpEmail(to: string, code: string) {
   };
 
   const info = await transporter.sendMail(mailOptions);
-  console.log("Disable 2FA OTP email sent: " + info.response);
+  workerLogger.info({ recipient: to, response: info.response }, "Disable 2FA OTP email sent");
 }

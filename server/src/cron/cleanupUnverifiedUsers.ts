@@ -1,12 +1,13 @@
 import cron from "node-cron";
 import { pool } from "../config/db.config.js";
+import { cronLogger } from "../utils/logger.js";
 
 async function cleanupUnverifiedUsers() {
   try {
     await pool.query("SELECT cleanup_unverified_users()");
-    console.log("[Cron] Unverified user cleanup completed.");
+    cronLogger.info("Unverified user cleanup completed successfully");
   } catch (error) {
-    console.error("[Cron] Failed to cleanup unverified users:", error);
+    cronLogger.error({ err: error }, "Failed to cleanup unverified users");
   }
 }
 
@@ -18,5 +19,6 @@ export function startCronJobs() {
     void cleanupUnverifiedUsers();
   });
 
-  console.log("[Cron] Scheduled unverified user cleanup (daily at 00:00).");
+  cronLogger.info("Scheduled unverified user cleanup (daily at 00:00)");
 }
+

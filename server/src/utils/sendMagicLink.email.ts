@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import { env } from "../config/env.js";
+import { workerLogger } from "./logger.js";
 import "dotenv/config";
 
 export async function sendMagicLinkEmail(to: string, magicLink: string) {
@@ -40,5 +41,5 @@ export async function sendMagicLinkEmail(to: string, magicLink: string) {
   };
 
   const info = await transporter.sendMail(mailOptions);
-  console.log("Magic link email sent: " + info.response);
+  workerLogger.info({ recipient: to, response: info.response }, "Magic link email sent");
 }

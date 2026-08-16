@@ -4,40 +4,27 @@ import { env } from "./config/env.js";
 import { startCronJobs } from "./cron/cleanupUnverifiedUsers.js";
 import { processEmailOutbox } from "./workers/emailOutbox.worker.js";
 import { standardApiLimiter } from "./utils/rateLimiter.js";
-
-function formatHttpMethod(method: string | undefined): string {
-  const reset = "\x1b[0m";
-  const bold = "\x1b[1m";
-
-  switch (method?.toUpperCase()) {
-    case "GET":
-      return `\x1b[32m${bold}GET${reset}`; // Green
-    case "POST":
-      return `\x1b[36m${bold}POST${reset}`; // Cyan
-    case "PATCH":
-      return `\x1b[35m${bold}PATCH${reset}`; // Magenta
-    case "PUT":
-      return `\x1b[33m${bold}PUT${reset}`; // Yellow
-    case "DELETE":
-      return `\x1b[31m${bold}DELETE${reset}`; // Red
-    case "OPTIONS":
-      return `\x1b[90m${bold}OPTIONS${reset}`; // Gray
-    case "HEAD":
-      return `\x1b[90m${bold}HEAD${reset}`; // Gray
-    default:
-      return `${bold}${method || "UNKNOWN"}${reset}`;
-  }
-}
+import { logger, logHttpRequest } from "./utils/logger.js";
 
 const handler: http.RequestListener = (req, res) => {
   void handleRequest(req, res);
 };
 
 async function handleRequest(req: IncomingMessage, res: ServerResponse) {
-  // Wrap the async logic in an async IIFE
+  const startTime = performance.now();
+
   try {
-    // log incoming request with color-coded HTTP method
-    console.log(`${formatHttpMethod(req.method)} \x1b[90m${req.url || "/"}\x1b[0m`);
+    const rawIp =
+      (Array.isArray(req.headers["x-forwarded-for"])
+        ? req.headers["x-forwarded-for"][0]
+        : req.headers["x-forwarded-for"]?.split(",")[0]) ||
+      req.socket.remoteAddress ||
+      "unknown_ip";
+
+    // Attach request completion logger
+    res.on("finish", () => {
+      logHttpRequest(req, res, startTime, rawIp);
+    });
 
     const FRONTEND_URL = env.FRONTEND_URL;
 
@@ -69,13 +56,6 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
       res.end();
       return;
     }
-
-    const rawIp =
-      (Array.isArray(req.headers["x-forwarded-for"])
-        ? req.headers["x-forwarded-for"][0]
-        : req.headers["x-forwarded-for"]?.split(",")[0]) ||
-      req.socket.remoteAddress ||
-      "unknown_ip";
 
     try {
       await standardApiLimiter.consume(rawIp);
@@ -109,7 +89,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
       res.end("Not Found\n");
     }
   } catch (error) {
-    console.error("Server error:", error);
+    logger.error({ err: error }, "Unhandled internal server error");
 
     if (!res.writableEnded) {
       res.writeHead(500, { "content-type": "text/plain" });
@@ -125,8 +105,10 @@ if (import.meta.url === "file://" + process.argv[1]) {
 
   const server = http.createServer(handler);
   server.listen(3000, () => {
-    console.log(`server is running in [${env.NODE_ENV}]`);
-    console.log("server is running on http://localhost:3000");
+    logger.info(
+      { port: 3000, env: env.NODE_ENV },
+      `Auth server running on http://localhost:3000 [${env.NODE_ENV}]`
+    );
   });
 }
 

@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import { env } from "../config/env.js";
+import { workerLogger } from "./logger.js";
 import "dotenv/config";
 
 export async function sendVerificationEmail(to: string, code: string) {
@@ -29,5 +30,5 @@ export async function sendVerificationEmail(to: string, code: string) {
   };
 
   const info = await transporter.sendMail(mailOptions);
-  console.log("Verification email sent: " + info.response);
+  workerLogger.info({ recipient: to, response: info.response }, "Verification email sent");
 }

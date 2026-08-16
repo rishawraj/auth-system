@@ -1,6 +1,7 @@
 import { pool } from "../config/db.config.js";
 import { env } from "../config/env.js";
 import { dispatchEmail } from "../utils/dsipatchEmail.js";
+import { workerLogger } from "../utils/logger.js";
 
 const BATCH_SIZE = 20;
 
@@ -23,14 +24,20 @@ export async function processEmailOutbox() {
       try {
         await dispatchEmail(row.template, row.to_email, row.payload);
 
-        console.log(`sent email, ${row.id}`);
+        workerLogger.info(
+          { outboxId: row.id, template: row.template, recipient: row.to_email },
+          `Dispatched email outbox #${row.id}`
+        );
 
         await client.query(
           `UPDATE email_outbox SET status = 'sent', updated_at = now() WHERE id = $1`,
           [row.id]
         );
       } catch (error) {
-        console.error(error);
+        workerLogger.error(
+          { err: error, outboxId: row.id, template: row.template },
+          `Failed to dispatch email outbox #${row.id}`
+        );
         const attempts = row.attempts + 1;
         const exhausted = attempts >= row.max_attempts;
 
@@ -80,8 +87,9 @@ export async function processEmailOutbox() {
     await client.query("COMMIT");
   } catch (error) {
     await client.query("ROLLBACK");
-    console.error("Outbox processing failed", error);
+    workerLogger.error({ err: error }, "Outbox batch processing transaction failed");
   } finally {
     client?.release();
   }
 }
+

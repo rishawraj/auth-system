@@ -1,6 +1,7 @@
 import nodemailer from "nodemailer";
 import { env } from "../config/env.js";
 import { parseDevice } from "./deviceParser.js";
+import { workerLogger } from "./logger.js";
 import "dotenv/config";
 
 export async function sendNewDeviceLoginEmail(
@@ -42,5 +43,5 @@ export async function sendNewDeviceLoginEmail(
   };
 
   const info = await transporter.sendMail(mailOptions);
-  console.log("New device login email sent: " + info.response);
+  workerLogger.info({ recipient: to, response: info.response }, "New device login email sent");
 }

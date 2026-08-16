@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import { env } from "../config/env.js";
+import { workerLogger } from "./logger.js";
 import "dotenv/config";
 
 export async function sendRegenerate2FABackupCodesOTPEmail(
@@ -37,5 +38,5 @@ export async function sendRegenerate2FABackupCodesOTPEmail(
   };
 
   const info = await transporter.sendMail(mailOptions);
-  console.log("Regenerate 2FA backup codes OTP email sent: " + info.response);
+  workerLogger.info({ recipient: to, response: info.response }, "Regenerate 2FA backup codes OTP email sent");
 }

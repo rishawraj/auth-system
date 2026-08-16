@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import { env } from "../config/env.js";
+import { workerLogger } from "./logger.js";
 import "dotenv/config";
 
 export async function sendExistingAccountEmail(to: string) {
@@ -53,6 +54,5 @@ If you did not try to create an account, you can safely ignore this email.`,
   };
 
   const info = await transporter.sendMail(mailOptions);
-
-  console.log("Existing account email sent: " + info.response);
+  workerLogger.info({ recipient: to, response: info.response }, "Existing account email sent");
 }

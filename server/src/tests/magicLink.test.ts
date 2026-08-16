@@ -116,7 +116,8 @@ describe("Magic Link Authentication Integration Tests (/magic-link/send, /magic-
       // Verify cookie
       const cookies = res.headers["set-cookie"];
       expect(cookies).toBeDefined();
-      expect(cookies.some((c: string) => c.includes("refreshToken="))).toBe(true);
+      const cookieArray = Array.isArray(cookies) ? cookies : [cookies as string];
+      expect(cookieArray.some((c: string) => c.includes("refreshToken="))).toBe(true);
 
       // Verify token is marked as used
       const { rows } = await pool.query(

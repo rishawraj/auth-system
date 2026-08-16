@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import crypto from "node:crypto";
 import { env } from "../config/env.js";
 import { pool } from "../config/db.config.js";
+import { authLogger } from "./logger.js";
 
 type CodeWithExpiry = {
   code: string;
@@ -130,23 +131,22 @@ export async function generateBackupCodes(count = 10): Promise<BackupCode[]> {
 }
 
 export async function deleteBackupCodes(userId: string) {
-  console.log(`[DEBUG] Attempting to delete codes for user: ${userId}`);
+  authLogger.debug({ userId }, "Attempting to delete backup codes for user");
   try {
     await pool.query("DELETE FROM two_fa_backup_codes WHERE user_id = $1", [
       userId,
     ]);
-    console.log(`[DEBUG] Successfully deleted codes for user: ${userId}`); // This log will likely not appear
+    authLogger.debug({ userId }, "Successfully deleted backup codes for user");
     return true;
   } catch (error) {
-    console.error(
-      `[DEBUG] Error deleting backup codes for user: ${userId}`,
-      error
+    authLogger.error(
+      { err: error, userId },
+      "Error deleting backup codes for user"
     );
     return false;
   }
 }
 
-//
 export function normalizeIP(ip: string | undefined): string | undefined {
   return ip?.replace("::ffff:", "");
 }
@@ -225,6 +225,6 @@ export async function logLoginAttempt({
     }
 
     // never block auth because logging failed.
-    console.error("Failed to log login attemp:", error);
+    authLogger.error({ err: error, userId, email }, "Failed to log login attempt");
   }
 }
