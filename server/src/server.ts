@@ -5,6 +5,30 @@ import { startCronJobs } from "./cron/cleanupUnverifiedUsers.js";
 import { processEmailOutbox } from "./workers/emailOutbox.worker.js";
 import { standardApiLimiter } from "./utils/rateLimiter.js";
 
+function formatHttpMethod(method: string | undefined): string {
+  const reset = "\x1b[0m";
+  const bold = "\x1b[1m";
+
+  switch (method?.toUpperCase()) {
+    case "GET":
+      return `\x1b[32m${bold}GET${reset}`; // Green
+    case "POST":
+      return `\x1b[36m${bold}POST${reset}`; // Cyan
+    case "PATCH":
+      return `\x1b[35m${bold}PATCH${reset}`; // Magenta
+    case "PUT":
+      return `\x1b[33m${bold}PUT${reset}`; // Yellow
+    case "DELETE":
+      return `\x1b[31m${bold}DELETE${reset}`; // Red
+    case "OPTIONS":
+      return `\x1b[90m${bold}OPTIONS${reset}`; // Gray
+    case "HEAD":
+      return `\x1b[90m${bold}HEAD${reset}`; // Gray
+    default:
+      return `${bold}${method || "UNKNOWN"}${reset}`;
+  }
+}
+
 const handler: http.RequestListener = (req, res) => {
   void handleRequest(req, res);
 };
@@ -12,8 +36,8 @@ const handler: http.RequestListener = (req, res) => {
 async function handleRequest(req: IncomingMessage, res: ServerResponse) {
   // Wrap the async logic in an async IIFE
   try {
-    // log incoming request
-    console.log(`\x1b[32m\x1b[44m${req.method} ${req.url}.\x1b[0m`);
+    // log incoming request with color-coded HTTP method
+    console.log(`${formatHttpMethod(req.method)} \x1b[90m${req.url || "/"}\x1b[0m`);
 
     const FRONTEND_URL = env.FRONTEND_URL;
 

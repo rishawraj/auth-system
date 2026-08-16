@@ -13,6 +13,7 @@ export const setToken = (token: string): void => {
 
 export const removeToken = (): void => {
   localStorage.removeItem("token"); // Remove token from localStorage
+  localStorage.removeItem("type"); // Remove type from localStorage
 };
 
 export const isTokenExpired = (token: string): boolean => {

@@ -17,10 +17,15 @@ const handleGoogleLogin = async () => {
 const customEase = [0.23, 1, 0.32, 1]; // Strong ease-out
 
 export default function UserLoginForm() {
+  const [authMethod, setAuthMethod] = useState<"password" | "magic-link">(
+    "password",
+  );
   const [formData, setFormData] = useState<api.LoginRequst>({
     email: "",
     password: "",
   });
+  const [magicLinkEmail, setMagicLinkEmail] = useState("");
+  const [magicLinkSent, setMagicLinkSent] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -131,6 +136,48 @@ export default function UserLoginForm() {
     }
   };
 
+  const handleMagicLinkSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const emailToUse = magicLinkEmail || formData.email;
+    const parsed = api.SendMagicLinkRequestSchema.safeParse({
+      email: emailToUse,
+    });
+    if (!parsed.success) {
+      setErrorMessage("Please enter a valid email address.");
+      return;
+    }
+
+    setLoading(true);
+    setErrorMessage("");
+
+    try {
+      const response = await fetch(`${API_URL}/magic-link/send`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ email: emailToUse }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setErrorMessage(
+          data?.error || data?.message || "Failed to send magic link.",
+        );
+        return;
+      }
+
+      setMagicLinkSent(true);
+    } catch (err) {
+      console.error("Error sending magic link:", err);
+      setErrorMessage("Unable to connect to the server. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const formAnimation = {
     hidden: { opacity: 0, y: 16, scale: 0.98 },
     visible: { opacity: 1, y: 0, scale: 1 },
@@ -170,114 +217,241 @@ export default function UserLoginForm() {
           transition={{ duration: 0.4, delay: 0.2, ease: customEase }}
           className="bg-secondary rounded-lg px-6 py-8 shadow-xl sm:px-10"
         >
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div>
-              <label
-                htmlFor="email"
-                className="text-text block text-sm font-medium"
-              >
-                Email
-              </label>
-              <div className="mt-1">
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="bg-background block w-full appearance-none rounded-lg border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm transition-colors focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
-                />
-              </div>
-              {errors.email && (
-                <motion.p
-                  initial={{ opacity: 0, y: -4, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{ duration: 0.2, ease: customEase }}
-                  className="mt-2 text-sm text-red-600 dark:text-red-400"
-                >
-                  {errors.email}
-                </motion.p>
-              )}
-            </div>
-
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-              >
-                Password
-              </label>
-              <div className="mt-1">
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="bg-background block w-full appearance-none rounded-lg border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm transition-colors focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
-                />
-              </div>
-              {errors.password && (
-                <motion.p
-                  initial={{ opacity: 0, y: -4, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{ duration: 0.2, ease: customEase }}
-                  className="mt-2 text-sm text-red-600 dark:text-red-400"
-                >
-                  {errors.password}
-                </motion.p>
-              )}
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="text-sm">
-                <button
-                  type="button"
-                  onClick={() => navigate({ to: "/forgot-password" })}
-                  className="btn-press cursor-pointer font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
-                >
-                  Forgot your password?
-                </button>
-              </div>
-            </div>
-
-            {errorMessage && (
-              <motion.div
-                initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.3, ease: customEase }}
-                className="rounded-md bg-red-50 p-4 dark:bg-red-900/50"
-              >
-                <p className="text-sm text-red-800 dark:text-red-200">
-                  {errorMessage}
-                </p>
-              </motion.div>
-            )}
-
+          {/* Method selector tabs */}
+          <div className="bg-background/60 mb-6 flex rounded-lg p-1">
             <button
-              type="submit"
-              disabled={loading}
-              className={`btn-press flex w-full cursor-pointer justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 dark:bg-indigo-500 dark:hover:bg-indigo-400 ${loading ? "transitioning" : ""}`}
+              type="button"
+              onClick={() => {
+                setAuthMethod("password");
+                setErrorMessage("");
+              }}
+              className={`btn-press flex-1 cursor-pointer rounded-md py-1.5 text-xs font-semibold transition-all sm:text-sm ${
+                authMethod === "password"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-text/70 hover:text-text"
+              }`}
             >
-              {loading ? (
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{
-                    duration: 1,
-                    repeat: Infinity,
-                    ease: "linear",
-                  }}
-                  className="h-5 w-5 rounded-full border-2 border-white border-t-transparent"
-                />
-              ) : (
-                "Sign in"
-              )}
+              Password
             </button>
-          </form>
+            <button
+              type="button"
+              onClick={() => {
+                setAuthMethod("magic-link");
+                setErrorMessage("");
+                if (formData.email && !magicLinkEmail) {
+                  setMagicLinkEmail(formData.email);
+                }
+              }}
+              className={`btn-press flex-1 cursor-pointer rounded-md py-1.5 text-xs font-semibold transition-all sm:text-sm ${
+                authMethod === "magic-link"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-text/70 hover:text-text"
+              }`}
+            >
+              ✨ Magic Link
+            </button>
+          </div>
+
+          {authMethod === "password" ? (
+            <form className="space-y-6" onSubmit={handleSubmit}>
+              <div>
+                <label
+                  htmlFor="email"
+                  className="text-text block text-sm font-medium"
+                >
+                  Email
+                </label>
+                <div className="mt-1">
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="bg-background block w-full appearance-none rounded-lg border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm transition-colors focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
+                  />
+                </div>
+                {errors.email && (
+                  <motion.p
+                    initial={{ opacity: 0, y: -4, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ duration: 0.2, ease: customEase }}
+                    className="mt-2 text-sm text-red-600 dark:text-red-400"
+                  >
+                    {errors.email}
+                  </motion.p>
+                )}
+              </div>
+
+              <div>
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  Password
+                </label>
+                <div className="mt-1">
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    autoComplete="current-password"
+                    required
+                    value={formData.password}
+                    onChange={handleChange}
+                    className="bg-background block w-full appearance-none rounded-lg border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm transition-colors focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
+                  />
+                </div>
+                {errors.password && (
+                  <motion.p
+                    initial={{ opacity: 0, y: -4, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ duration: 0.2, ease: customEase }}
+                    className="mt-2 text-sm text-red-600 dark:text-red-400"
+                  >
+                    {errors.password}
+                  </motion.p>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="text-sm">
+                  <button
+                    type="button"
+                    onClick={() => navigate({ to: "/forgot-password" })}
+                    className="btn-press cursor-pointer font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
+                  >
+                    Forgot your password?
+                  </button>
+                </div>
+              </div>
+
+              {errorMessage && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ duration: 0.3, ease: customEase }}
+                  className="rounded-md bg-red-50 p-4 dark:bg-red-900/50"
+                >
+                  <p className="text-sm text-red-800 dark:text-red-200">
+                    {errorMessage}
+                  </p>
+                </motion.div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className={`btn-press flex w-full cursor-pointer justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 dark:bg-indigo-500 dark:hover:bg-indigo-400 ${loading ? "transitioning" : ""}`}
+              >
+                {loading ? (
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{
+                      duration: 1,
+                      repeat: Infinity,
+                      ease: "linear",
+                    }}
+                    className="h-5 w-5 rounded-full border-2 border-white border-t-transparent"
+                  />
+                ) : (
+                  "Sign in"
+                )}
+              </button>
+            </form>
+          ) : (
+            <div className="space-y-6">
+              {magicLinkSent ? (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.3, ease: customEase }}
+                  className="bg-primary/10 border-primary/20 space-y-4 rounded-xl border p-4 text-center"
+                >
+                  <div className="text-2xl">✨</div>
+                  <h3 className="text-text font-bold">Check your inbox</h3>
+                  <p className="text-text/70 text-xs sm:text-sm">
+                    We sent a magic sign-in link to{" "}
+                    <span className="font-semibold text-indigo-600 dark:text-indigo-400">
+                      {magicLinkEmail || formData.email}
+                    </span>
+                    . Click the link in your email to sign in instantly.
+                  </p>
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setMagicLinkSent(false)}
+                      className="btn-press cursor-pointer text-xs font-medium text-indigo-600 hover:underline dark:text-indigo-400"
+                    >
+                      Didn't receive it? Try again
+                    </button>
+                  </div>
+                </motion.div>
+              ) : (
+                <form className="space-y-6" onSubmit={handleMagicLinkSubmit}>
+                  <div>
+                    <label
+                      htmlFor="magic-email"
+                      className="text-text block text-sm font-medium"
+                    >
+                      Email address
+                    </label>
+                    <div className="mt-1">
+                      <input
+                        id="magic-email"
+                        name="magic-email"
+                        type="email"
+                        autoComplete="email"
+                        required
+                        placeholder="you@example.com"
+                        value={magicLinkEmail || formData.email}
+                        onChange={(e) => setMagicLinkEmail(e.target.value)}
+                        className="bg-background block w-full appearance-none rounded-lg border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm transition-colors focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
+                      />
+                    </div>
+                    <p className="text-text/60 mt-1.5 text-xs">
+                      We'll send you a passwordless one-click sign-in link.
+                    </p>
+                  </div>
+
+                  {errorMessage && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      transition={{ duration: 0.3, ease: customEase }}
+                      className="rounded-md bg-red-50 p-4 dark:bg-red-900/50"
+                    >
+                      <p className="text-sm text-red-800 dark:text-red-200">
+                        {errorMessage}
+                      </p>
+                    </motion.div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className={`btn-press flex w-full cursor-pointer justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 dark:bg-indigo-500 dark:hover:bg-indigo-400 ${loading ? "transitioning" : ""}`}
+                  >
+                    {loading ? (
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{
+                          duration: 1,
+                          repeat: Infinity,
+                          ease: "linear",
+                        }}
+                        className="h-5 w-5 rounded-full border-2 border-white border-t-transparent"
+                      />
+                    ) : (
+                      "Send Magic Link"
+                    )}
+                  </button>
+                </form>
+              )}
+            </div>
+          )}
 
           <div className="mt-6">
             <div className="relative">

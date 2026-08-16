@@ -27,6 +27,7 @@ export interface TestUserOptions {
 export async function cleanDatabase(): Promise<void> {
   const tables = [
     "two_fa_backup_codes",
+    "magic_link_tokens",
     "refresh_tokens",
     "email_outbox",
     "rate_limits",

@@ -157,4 +157,38 @@ describe("UserLoginForm Component", () => {
     await user.click(screen.getByRole("button", { name: /sign up now/i }));
     expect(mockNavigate).toHaveBeenCalledWith({ to: "/register" });
   });
+
+  test("switches to magic link tab and submits magic link request successfully", async () => {
+    const user = userEvent.setup();
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        message:
+          "If an account exists for this email, a magic link has been sent.",
+      }),
+    } as Response);
+
+    render(<UserLoginForm />);
+
+    // Click on Magic Link tab
+    await user.click(screen.getByRole("button", { name: /magic link/i }));
+
+    expect(screen.getByPlaceholderText("you@example.com")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /send magic link/i }),
+    ).toBeInTheDocument();
+
+    await user.type(
+      screen.getByPlaceholderText("you@example.com"),
+      "magic@example.com",
+    );
+    await user.click(screen.getByRole("button", { name: /send magic link/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/check your inbox/i)).toBeInTheDocument();
+      expect(screen.getByText(/magic@example\.com/i)).toBeInTheDocument();
+    });
+  });
 });

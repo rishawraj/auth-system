@@ -4,6 +4,7 @@ import { sendRegenerate2FABackupCodesOTPEmail } from "./sendRegenerate2FAOTP.ema
 import { sendResetPasswordEmail } from "./sendResetPassowrd.email.js";
 import { sendVerificationEmail } from "./sendVerification.email.js";
 import { sendNewDeviceLoginEmail } from "./sendNewDeviceLogin.email.js";
+import { sendMagicLinkEmail } from "./sendMagicLink.email.js";
 
 export async function dispatchEmail(
   template: string,
@@ -33,6 +34,9 @@ export async function dispatchEmail(
         payload.userAgent as string,
         payload.time as string
       );
+
+    case "magic_link":
+      return sendMagicLinkEmail(to, payload.magicLink as string);
 
     default:
       throw new Error(`Unknown email template: ${template}`);

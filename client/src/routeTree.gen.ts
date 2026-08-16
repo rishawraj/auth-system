@@ -33,6 +33,7 @@ import { Route as AuthProfileIndexImport } from "./routes/_auth/profile/index";
 import { Route as AuthProfileVerifyEmailImport } from "./routes/_auth/profile/verify-email";
 import { Route as AuthProfileSettingsImport } from "./routes/_auth/profile/settings";
 import { Route as AuthProfileEditImport } from "./routes/_auth/profile/edit";
+import { Route as authMagicLinkVerifyImport } from "./routes/(auth)/magic-link.verify";
 import { Route as AuthIsAdminAdminIndexImport } from "./routes/_auth/_isAdmin/admin/index";
 import { Route as AuthIsAdminAdminSettingsImport } from "./routes/_auth/_isAdmin/admin/settings";
 import { Route as authAuthGoogleCallbackImport } from "./routes/(auth)/auth.google.callback";
@@ -167,6 +168,12 @@ const AuthProfileEditRoute = AuthProfileEditImport.update({
   id: "/profile/edit",
   path: "/profile/edit",
   getParentRoute: () => AuthRoute,
+} as any);
+
+const authMagicLinkVerifyRoute = authMagicLinkVerifyImport.update({
+  id: "/(auth)/magic-link/verify",
+  path: "/magic-link/verify",
+  getParentRoute: () => rootRoute,
 } as any);
 
 const AuthIsAdminAdminIndexRoute = AuthIsAdminAdminIndexImport.update({
@@ -317,6 +324,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AuthRegenerate2FAcodesImport;
       parentRoute: typeof AuthImport;
     };
+    "/(auth)/magic-link/verify": {
+      id: "/(auth)/magic-link/verify";
+      path: "/magic-link/verify";
+      fullPath: "/magic-link/verify";
+      preLoaderRoute: typeof authMagicLinkVerifyImport;
+      parentRoute: typeof rootRoute;
+    };
     "/_auth/profile/edit": {
       id: "/_auth/profile/edit";
       path: "/profile/edit";
@@ -431,6 +445,7 @@ export interface FileRoutesByFullPath {
   "/2FAEnable": typeof Auth2FAEnableRoute;
   "/logout": typeof AuthLogoutRoute;
   "/regenerate2FAcodes": typeof AuthRegenerate2FAcodesRoute;
+  "/magic-link/verify": typeof authMagicLinkVerifyRoute;
   "/profile/edit": typeof AuthProfileEditRoute;
   "/profile/settings": typeof AuthProfileSettingsRoute;
   "/profile/verify-email": typeof AuthProfileVerifyEmailRoute;
@@ -458,6 +473,7 @@ export interface FileRoutesByTo {
   "/2FAEnable": typeof Auth2FAEnableRoute;
   "/logout": typeof AuthLogoutRoute;
   "/regenerate2FAcodes": typeof AuthRegenerate2FAcodesRoute;
+  "/magic-link/verify": typeof authMagicLinkVerifyRoute;
   "/profile/edit": typeof AuthProfileEditRoute;
   "/profile/settings": typeof AuthProfileSettingsRoute;
   "/profile/verify-email": typeof AuthProfileVerifyEmailRoute;
@@ -487,6 +503,7 @@ export interface FileRoutesById {
   "/_auth/_isAdmin": typeof AuthIsAdminRouteWithChildren;
   "/_auth/logout": typeof AuthLogoutRoute;
   "/_auth/regenerate2FAcodes": typeof AuthRegenerate2FAcodesRoute;
+  "/(auth)/magic-link/verify": typeof authMagicLinkVerifyRoute;
   "/_auth/profile/edit": typeof AuthProfileEditRoute;
   "/_auth/profile/settings": typeof AuthProfileSettingsRoute;
   "/_auth/profile/verify-email": typeof AuthProfileVerifyEmailRoute;
@@ -516,6 +533,7 @@ export interface FileRouteTypes {
     | "/2FAEnable"
     | "/logout"
     | "/regenerate2FAcodes"
+    | "/magic-link/verify"
     | "/profile/edit"
     | "/profile/settings"
     | "/profile/verify-email"
@@ -542,6 +560,7 @@ export interface FileRouteTypes {
     | "/2FAEnable"
     | "/logout"
     | "/regenerate2FAcodes"
+    | "/magic-link/verify"
     | "/profile/edit"
     | "/profile/settings"
     | "/profile/verify-email"
@@ -569,6 +588,7 @@ export interface FileRouteTypes {
     | "/_auth/_isAdmin"
     | "/_auth/logout"
     | "/_auth/regenerate2FAcodes"
+    | "/(auth)/magic-link/verify"
     | "/_auth/profile/edit"
     | "/_auth/profile/settings"
     | "/_auth/profile/verify-email"
@@ -592,6 +612,7 @@ export interface RootRouteChildren {
   authResetPasswordRoute: typeof authResetPasswordRoute;
   authUsebackupcodeRoute: typeof authUsebackupcodeRoute;
   authVerifyRoute: typeof authVerifyRoute;
+  authMagicLinkVerifyRoute: typeof authMagicLinkVerifyRoute;
   authAuthGoogleCallbackRoute: typeof authAuthGoogleCallbackRoute;
 }
 
@@ -608,6 +629,7 @@ const rootRouteChildren: RootRouteChildren = {
   authResetPasswordRoute: authResetPasswordRoute,
   authUsebackupcodeRoute: authUsebackupcodeRoute,
   authVerifyRoute: authVerifyRoute,
+  authMagicLinkVerifyRoute: authMagicLinkVerifyRoute,
   authAuthGoogleCallbackRoute: authAuthGoogleCallbackRoute,
 };
 
@@ -633,6 +655,7 @@ export const routeTree = rootRoute
         "/(auth)/reset-password",
         "/(auth)/use_backup_code",
         "/(auth)/verify",
+        "/(auth)/magic-link/verify",
         "/(auth)/auth/google/callback"
       ]
     },
@@ -711,6 +734,9 @@ export const routeTree = rootRoute
     "/_auth/regenerate2FAcodes": {
       "filePath": "_auth/regenerate2FAcodes.tsx",
       "parent": "/_auth"
+    },
+    "/(auth)/magic-link/verify": {
+      "filePath": "(auth)/magic-link.verify.tsx"
     },
     "/_auth/profile/edit": {
       "filePath": "_auth/profile/edit.tsx",

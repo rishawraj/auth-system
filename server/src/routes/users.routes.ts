@@ -17,6 +17,8 @@ import {
   handleGetSessions,
   handleRevokeSession,
   handleRevokeAllOtherSessions,
+  handleSendMagicLink,
+  handleVerifyMagicLink,
 } from "../controllers/user.controller.js";
 import {
   handleGoogleAuth,
@@ -27,6 +29,16 @@ import {
 export default async (req: IncomingMessage, res: ServerResponse) => {
   const parsedUrl = new URL(req.url || "", `http://${req.headers.host}`);
   const pathname = parsedUrl.pathname;
+
+  if (req.method === "POST" && pathname === "/magic-link/send") {
+    await handleSendMagicLink(req, res);
+    return true;
+  }
+
+  if (req.method === "POST" && pathname === "/magic-link/verify") {
+    await handleVerifyMagicLink(req, res);
+    return true;
+  }
 
   if (req.method === "GET" && pathname === "/sessions") {
     await handleGetSessions(req, res);

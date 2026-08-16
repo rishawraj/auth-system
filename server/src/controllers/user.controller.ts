@@ -764,72 +764,65 @@ export async function handleMe(req: IncomingMessage, res: ServerResponse) {
 }
 
 export async function handleLogout(req: IncomingMessage, res: ServerResponse) {
-  const body = await readBody<{ type: string }>(req);
+  let type: string | undefined;
+  try {
+    const body = await readBody<{ type?: string }>(req);
+    type = body?.type;
+  } catch {
+    // ignore if body is missing
+  }
 
-  const type = body?.type;
-
-  if (type === "email") {
-    return handleEmailLogout(req, res);
-  } else if (type === "google") {
+  if (type === "google") {
     return handleGoogleLogout(req, res);
   } else {
-    return send(res, 400, { error: "Invalid logout type" });
+    // Handles 'email', 'magic_link', or default
+    return handleEmailLogout(req, res);
   }
 }
 
 async function handleEmailLogout(req: IncomingMessage, res: ServerResponse) {
-  console.log("in here email logout");
   const cookies = parseCookies(req);
   const refreshToken = cookies["refreshToken"];
 
+  // Always clear the refresh token cookie
+  setServerCookie({
+    name: "refreshToken",
+    value: "",
+    res,
+    maxAge: 0,
+    path: "/",
+    isProduction: process.env.NODE_ENV === "production",
+  });
+
   if (!refreshToken) {
     return send(res, 200, {
-      message: "Already logged out",
+      message: "Logged out successfully",
     });
   }
 
   let decoded;
   try {
     decoded = jwt.verify(refreshToken, env.REFRESH_TOKEN_SECRET!);
-  } catch (error) {
-    console.log(error);
-
-    send(res, 401, { error: "Invalid or expired refresh token" });
-    return;
-  }
-
-  const { jti } = decoded;
-
-  if (!jti) {
-    send(res, 401, { error: "Invalid or expired refresh token" });
-    return;
-  }
-
-  try {
-    const result = await pool.query(
-      "DELETE FROM refresh_tokens WHERE jti = $1",
-      [jti]
-    );
-
-    if (result.rowCount === 0) {
-      console.log("refresh token not found");
-      return send(res, 401, { error: "Invalid or expired refresh token" });
-    }
-
-    setServerCookie({
-      name: "refreshToken",
-      value: "",
-      res,
-      maxAge: 0,
-      path: "/",
+  } catch {
+    return send(res, 200, {
+      message: "Logged out successfully",
     });
-    res.writeHead(200, { "content-type": "application/json" });
-
-    res.end(JSON.stringify({ message: "Logged out successfully" }));
-  } catch (error) {
-    console.error("Logout error:", error);
-    send(res, 500, { error: "Internal server error" });
   }
+
+  const jti =
+    typeof decoded === "object" && decoded !== null ? decoded.jti : null;
+
+  if (jti) {
+    try {
+      await pool.query("DELETE FROM refresh_tokens WHERE jti = $1", [jti]);
+    } catch (error) {
+      console.error("Logout error deleting session from DB:", error);
+    }
+  }
+
+  return send(res, 200, {
+    message: "Logged out successfully",
+  });
 }
 
 export async function handleGoogleLogout(
@@ -1041,7 +1034,10 @@ export async function handleUpdateEmail(
     );
 
     const userAgent = (req.headers["user-agent"] as string) || null;
-    const rawIp = req.headers["x-forwarded-for"]?.toString().split(",")[0] || req.socket.remoteAddress || undefined;
+    const rawIp =
+      req.headers["x-forwarded-for"]?.toString().split(",")[0] ||
+      req.socket.remoteAddress ||
+      undefined;
     const ip_address = normalizeIP(rawIp) || null;
 
     await pool.query(
@@ -1307,7 +1303,11 @@ export async function handleResendVerifyEmailCode(
       await client.query(
         `INSERT INTO email_outbox (to_email, template, payload)
              VALUES ($1, $2, $3)`,
-        [user.pending_email, "verification_code", JSON.stringify({ code: result.code })]
+        [
+          user.pending_email,
+          "verification_code",
+          JSON.stringify({ code: result.code }),
+        ]
       );
 
       await client.query("COMMIT");
@@ -1687,7 +1687,10 @@ export async function handleTokenRefresh(
         return send(res, 401, { error: "Invalid or expired refresh token" });
       }
 
-      const rawIp = req.headers["x-forwarded-for"]?.toString().split(",")[0] || req.socket.remoteAddress || undefined;
+      const rawIp =
+        req.headers["x-forwarded-for"]?.toString().split(",")[0] ||
+        req.socket.remoteAddress ||
+        undefined;
       const ip_address = normalizeIP(rawIp) || null;
       const userAgent = (req.headers["user-agent"] as string) || null;
 
@@ -1745,9 +1748,13 @@ export async function handleGetSessions(
     if (!authHeader) return send(res, 401, { error: "No token provided" });
 
     const token = authHeader.split(" ")[1];
-    if (!token) return send(res, 401, { error: "Invalid authorization format" });
+    if (!token)
+      return send(res, 401, { error: "Invalid authorization format" });
 
-    const decoded = jwt.verify(token, env.ACCESS_TOKEN_SECRET) as jwt.JwtPayload;
+    const decoded = jwt.verify(
+      token,
+      env.ACCESS_TOKEN_SECRET
+    ) as jwt.JwtPayload;
     if (!decoded || !decoded.email) {
       return send(res, 401, { error: "Invalid token payload" });
     }
@@ -1815,9 +1822,13 @@ export async function handleRevokeSession(
     if (!authHeader) return send(res, 401, { error: "No token provided" });
 
     const token = authHeader.split(" ")[1];
-    if (!token) return send(res, 401, { error: "Invalid authorization format" });
+    if (!token)
+      return send(res, 401, { error: "Invalid authorization format" });
 
-    const decoded = jwt.verify(token, env.ACCESS_TOKEN_SECRET) as jwt.JwtPayload;
+    const decoded = jwt.verify(
+      token,
+      env.ACCESS_TOKEN_SECRET
+    ) as jwt.JwtPayload;
     if (!decoded || !decoded.email) {
       return send(res, 401, { error: "Invalid token payload" });
     }
@@ -1887,9 +1898,13 @@ export async function handleRevokeAllOtherSessions(
     if (!authHeader) return send(res, 401, { error: "No token provided" });
 
     const token = authHeader.split(" ")[1];
-    if (!token) return send(res, 401, { error: "Invalid authorization format" });
+    if (!token)
+      return send(res, 401, { error: "Invalid authorization format" });
 
-    const decoded = jwt.verify(token, env.ACCESS_TOKEN_SECRET) as jwt.JwtPayload;
+    const decoded = jwt.verify(
+      token,
+      env.ACCESS_TOKEN_SECRET
+    ) as jwt.JwtPayload;
     if (!decoded || !decoded.email) {
       return send(res, 401, { error: "Invalid token payload" });
     }
@@ -1936,3 +1951,257 @@ export async function handleRevokeAllOtherSessions(
   }
 }
 
+export async function handleSendMagicLink(
+  req: IncomingMessage,
+  res: ServerResponse
+) {
+  const ip =
+    req.headers["x-forwarded-for"]?.toString().split(",")[0] ||
+    req.socket.remoteAddress ||
+    "unknown_ip";
+
+  try {
+    await emailLimiter.consume(ip);
+  } catch (err) {
+    if (isRateLimiterRejection(err)) {
+      res.setHeader("Retry-After", Math.round(err.msBeforeNext / 1000));
+      res.setHeader("X-RateLimit-Limit", 5);
+      res.setHeader("X-RateLimit-Remaining", err.remainingPoints);
+      res.setHeader(
+        "X-RateLimit-Reset",
+        new Date(Date.now() + err.msBeforeNext).toISOString()
+      );
+      return send(res, 429, {
+        error: "Too many requests. Please try again later.",
+      });
+    }
+    console.error("Rate limiter failure:", err);
+    return send(res, 500, { error: "Internal server error" });
+  }
+
+  try {
+    const body = await readBody(req);
+    const parsed = api.SendMagicLinkRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      return send(res, 400, { error: "A valid email is required" });
+    }
+
+    const email = parsed.data.email.trim().toLowerCase();
+
+    const genericResponse = {
+      message:
+        "If an account exists for this email, a magic link has been sent.",
+    };
+
+    const userResult = await pool.query<User>(
+      "SELECT * FROM users WHERE LOWER(email) = $1 AND is_deleted = false",
+      [email]
+    );
+
+    const user = userResult.rows[0];
+
+    if (!user || !user.is_active) {
+      return send(res, 200, genericResponse);
+    }
+
+    // Generate secure random token
+    const rawToken = crypto.randomBytes(32).toString("hex");
+    const tokenHash = crypto
+      .createHash("sha256")
+      .update(rawToken)
+      .digest("hex");
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+
+    const magicLink = `${env.FRONTEND_URL}/magic-link/verify?token=${rawToken}&email=${encodeURIComponent(user.email)}`;
+
+    console.log("======");
+    console.log({ magicLink });
+    console.log("======");
+
+    let client: PoolClient | undefined;
+    try {
+      client = await pool.connect();
+      await client.query("BEGIN");
+
+      // Invalidate existing unused magic tokens for this user
+      await client.query(
+        "UPDATE magic_link_tokens SET used = true WHERE user_id = $1 AND used = false",
+        [user.id]
+      );
+
+      // Insert new token
+      await client.query(
+        `INSERT INTO magic_link_tokens (user_id, email, token_hash, expires_at)
+         VALUES ($1, $2, $3, $4)`,
+        [user.id, user.email, tokenHash, expiresAt]
+      );
+
+      // Insert into email outbox
+      await client.query(
+        `INSERT INTO email_outbox (to_email, template, payload, expires_at)
+         VALUES ($1, $2, $3, $4)`,
+        [user.email, "magic_link", JSON.stringify({ magicLink }), expiresAt]
+      );
+
+      await client.query("COMMIT");
+    } catch (error) {
+      if (client) await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client?.release();
+    }
+
+    return send(res, 200, genericResponse);
+  } catch (error) {
+    console.error("Error in handleSendMagicLink:", error);
+    return send(res, 500, { error: "Internal server error" });
+  }
+}
+
+export async function handleVerifyMagicLink(
+  req: IncomingMessage,
+  res: ServerResponse
+) {
+  const ip =
+    req.headers["x-forwarded-for"]?.toString().split(",")[0] ||
+    req.socket.remoteAddress ||
+    "unknown_ip";
+
+  try {
+    const body = await readBody(req);
+    const parsed = api.VerifyMagicLinkRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      return send(res, 400, { error: "Token and email are required" });
+    }
+
+    const { token, email } = parsed.data;
+    const normalizedEmail = email.trim().toLowerCase();
+
+    try {
+      await Promise.all([
+        bruteForceLimiter.consume(ip),
+        bruteForceLimiter.consume(normalizedEmail),
+      ]);
+    } catch (err) {
+      if (isRateLimiterRejection(err)) {
+        return send(res, 429, {
+          error: "Too many attempts. Please try again later",
+        });
+      }
+      console.error("Rate limiter failure:", err);
+      return send(res, 500, { error: "Internal server error" });
+    }
+
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+
+    let client: PoolClient | undefined;
+    try {
+      client = await pool.connect();
+      await client.query("BEGIN");
+
+      const tokenResult = await client.query(
+        `SELECT * FROM magic_link_tokens
+         WHERE token_hash = $1 AND LOWER(email) = $2 AND used = false AND expires_at > NOW()
+         FOR UPDATE`,
+        [tokenHash, normalizedEmail]
+      );
+
+      const magicRecord = tokenResult.rows[0];
+      console.log({ magicRecord });
+      if (!magicRecord) {
+        await client.query("ROLLBACK");
+        return send(res, 400, {
+          error: "Invalid, used, or expired magic link",
+        });
+      }
+
+      // Mark token as used
+      await client.query(
+        "UPDATE magic_link_tokens SET used = true, used_at = NOW() WHERE id = $1",
+        [magicRecord.id]
+      );
+
+      // Fetch user
+      const userResult = await client.query<User>(
+        "SELECT * FROM users WHERE id = $1 AND is_deleted = false",
+        [magicRecord.user_id]
+      );
+      const user = userResult.rows[0];
+
+      if (!user) {
+        await client.query("ROLLBACK");
+        return send(res, 404, { error: "User not found" });
+      }
+
+      if (!user.is_active) {
+        await client.query("ROLLBACK");
+        return send(res, 403, {
+          error: "Your account is deactivated. Please contact support.",
+        });
+      }
+
+      const rawIp =
+        (Array.isArray(req.headers["x-forwarded-for"])
+          ? req.headers["x-forwarded-for"][0]
+          : req.headers["x-forwarded-for"]?.split(",")[0]) ||
+        req.socket.remoteAddress;
+
+      const ip_address = normalizeIP(rawIp);
+      const userAgent = req.headers["user-agent"];
+
+      const accessToken = generateAccessToken({
+        email: user.email,
+        is_super_user: user.is_super_user,
+      });
+
+      const jti = randomUUID();
+      const refreshToken = generateRefreshToken({
+        email: user.email,
+        jti,
+      });
+      const refreshTokenHash = hashToken(refreshToken);
+      const expiryTime = new Date(Date.now() + env.REFRESH_TOKEN_EXPIRY * 1000);
+
+      await client.query(
+        "INSERT INTO refresh_tokens (user_id, token_hash, expires_at, jti, ip_address, user_agent, last_used_at, issued_at) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())",
+        [user.id, refreshTokenHash, expiryTime, jti, ip_address, userAgent]
+      );
+
+      await client.query("COMMIT");
+
+      setServerCookie({
+        name: "refreshToken",
+        value: refreshToken,
+        res,
+        maxAge: env.REFRESH_TOKEN_EXPIRY,
+        path: "/",
+        isProduction: process.env.NODE_ENV === "production",
+      });
+
+      if (!user.is_two_factor_enabled) {
+        logLoginAttempt({
+          userId: user.id,
+          email: user.email,
+          success: true,
+          ip: ip_address || null,
+          userAgent,
+        });
+      }
+
+      return send(res, 200, {
+        message: "Login successful",
+        accessToken,
+        type: "magic_link",
+        isTwoFactorEnabled: user.is_two_factor_enabled,
+      });
+    } catch (error) {
+      if (client) await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client?.release();
+    }
+  } catch (error) {
+    console.error("Error in handleVerifyMagicLink:", error);
+    return send(res, 500, { error: "Internal server error" });
+  }
+}

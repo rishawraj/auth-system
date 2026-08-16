@@ -138,3 +138,39 @@ export const RevokeSessionResponseSchema = z.object({
 
 export type RevokeSessionResponse = z.infer<typeof RevokeSessionResponseSchema>;
 
+// ========================= Magic Link ============================
+export const SendMagicLinkRequestSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .min(1, "Email is required")
+    .email("Invalid email address"),
+});
+
+export type SendMagicLinkRequest = z.infer<typeof SendMagicLinkRequestSchema>;
+
+export const SendMagicLinkResponseSchema = z.object({
+  message: z.string(),
+});
+
+export type SendMagicLinkResponse = z.infer<typeof SendMagicLinkResponseSchema>;
+
+export const VerifyMagicLinkRequestSchema = z.object({
+  token: z.string().min(1, "Token is required"),
+  email: z
+    .string()
+    .trim()
+    .min(1, "Email is required")
+    .email("Invalid email address"),
+});
+
+export type VerifyMagicLinkRequest = z.infer<typeof VerifyMagicLinkRequestSchema>;
+
+export const VerifyMagicLinkResponseSchema = z.object({
+  message: z.string(),
+  accessToken: z.string(),
+  type: z.string(),
+  isTwoFactorEnabled: z.boolean(),
+});
+
+export type VerifyMagicLinkResponse = z.infer<typeof VerifyMagicLinkResponseSchema>;
