@@ -11,7 +11,7 @@
   - double submit cookie tokens
   - SameSite=Strict/lax
 
-- [ ] New Devices login email alerts
+- [x] New Devices login email alerts
 
   - [x] login/signup UI update
   - [x] fix types with shared dir
@@ -32,4 +32,4 @@
   - JSON logs with request-correlation ID threaded through every handler.
   - Grafana panels (login/success/failure-rate) p99 latency, active sessions.
 
-- [ ] test suite
+- [x] test suite

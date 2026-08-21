@@ -10,3 +10,4 @@ dist/
 notes.md
 playwright-report
 test-results
+notes*.md
