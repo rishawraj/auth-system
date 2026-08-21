@@ -24,7 +24,7 @@ import qrcode from "qrcode";
 import { env } from "../config/env.js";
 import { parseDevice } from "../utils/deviceParser.js";
 import busboy from "busboy";
-import { uploadToR2 } from "../utils/uploadToR2.js";
+import { uploadAvatar } from "../utils/storage.js";
 import { PoolClient } from "pg";
 
 import { api, models } from "@auth-system/shared";
@@ -548,7 +548,7 @@ export async function updateProfile(
                 const buffer = Buffer.concat(chunks);
                 const ext = ALLOWED_MIME[info.mimeType];
                 const key = `avatar/user-${user.id}.${ext}`;
-                profilePicUrl = await uploadToR2(buffer, key, info.mimeType);
+                profilePicUrl = await uploadAvatar(buffer, key, info.mimeType);
                 resolveFile();
               } catch (error) {
                 rejectFile(error as Error);

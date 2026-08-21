@@ -121,6 +121,17 @@ const envSchema = z
       .string()
       .url({ message: "DOMAIN must be a valid URL" })
       .min(1, { message: "DOMAIN is required" }),
+
+    // Optional: Cloudflare R2 / S3 storage for avatars.
+    // When absent, the server falls back to local filesystem storage.
+    CF_ACCOUNT_ID: z.string().optional(),
+    R2_ACCESS_KEY_ID: z.string().optional(),
+    R2_SECRET_ACCESS_KEY: z.string().optional(),
+    R2_BUCKET_NAME: z.string().optional(),
+    R2_PUBLIC_URL: z.string().url().optional(),
+
+    // Override the local upload directory (defaults to <cwd>/data)
+    UPLOAD_DIR: z.string().optional(),
   })
   .readonly();
 

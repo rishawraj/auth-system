@@ -189,6 +189,8 @@ services:
     ports:
       - "3000:3000"
     env_file: .env.docker
+    volumes:
+      - avatars:/app/data
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -205,11 +207,14 @@ services:
         max-file: "3"
     ports:
       - "80:80"
+    volumes:
+      - avatars:/var/www/uploads:ro
     depends_on:
       - server
 
 volumes:
   pgdata:
+  avatars:
 COMPEOF`,
 
       // Launch

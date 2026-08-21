@@ -62,6 +62,9 @@ services:
       db:
         condition: service_healthy
 
+    volumes:
+      - avatars:/app/data
+
   nginx:
     build:
       context: .
@@ -82,5 +85,9 @@ services:
     depends_on:
       - server
 
+    volumes:
+      - avatars:/var/www/uploads:ro
+
 volumes:
   pgdata:
+  avatars:
